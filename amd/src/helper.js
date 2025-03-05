@@ -13,8 +13,6 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-import {typeset} from 'filter_mathjaxloader/loader';
-
 /**
  * Copy ai reply to clipboard.
  * @param {*} element

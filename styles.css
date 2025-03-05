@@ -28,6 +28,10 @@
 }
 
 .block_ai_chat_modal .modal-dialog {
+  display: flex;
+  align-items: end;
+}
+.block_ai_chat_modal .modal-dialog .modal-content {
   min-height: 500px;
 }
 .block_ai_chat_modal .modal-header {
@@ -38,7 +42,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  width: calc(100% - 2rem);
+  width: calc(100% - 1.7rem);
   font-size: 1rem;
 }
 .block_ai_chat_modal .modal-header .modal-title .block_ai_chat_title {
@@ -129,12 +133,12 @@
 }
 .block_ai_chat_modal .block_ai_chat-input .ai_chat_icon_button {
   position: absolute;
-  top: 0.6rem;
-  left: 0.55rem;
+  top: 0.75rem;
+  left: 0.6rem;
 }
 .block_ai_chat_modal .block_ai_chat-input textarea {
   height: inherit;
-  padding: 1rem 4.1rem 1rem 2.7rem;
+  padding: 1rem 4.1rem 1rem 2.5rem;
   resize: none;
   overflow: auto;
   line-height: 1.5rem;
@@ -166,9 +170,6 @@
   align-items: center;
   height: 1.3rem;
   font-size: 50%;
-}
-.block_ai_chat_modal .headeroptions .dropdown-menu {
-  left: 36px !important;
 }
 .block_ai_chat_modal .headeroptions .dropdown-menu #block_ai_chat_delete_dialog {
   color: #ff3333;
@@ -207,7 +208,7 @@
   align-items: center;
   flex-direction: column;
   padding-bottom: 0.4rem;
-  margin-top: -1rem;
+  margin-top: -0.5rem;
   z-index: 1;
   min-height: 2rem;
 }
@@ -270,11 +271,19 @@ body.block_ai_chat_chatwindow .block_ai_chat_modal .modal-dialog {
   position: fixed;
   max-height: calc(100vh - 6rem);
   right: 2rem;
-  bottom: 3rem;
+  bottom: 5.5rem;
   filter: drop-shadow(3px 3px 4px black);
 }
 body.block_ai_chat_chatwindow a#block_ai_chat_chatwindow {
   color: #007bff;
+}
+body.block_ai_chat_chatwindow .headeroptions .dropdown-menu {
+  left: 33px !important;
+}
+@media screen and (max-height: 662px) {
+  body.block_ai_chat_chatwindow .modal-dialog .modal-content {
+    min-height: 400px;
+  }
 }
 
 body.block_ai_chat_chatwindow,
@@ -304,7 +313,9 @@ body.block_ai_chat_dockright .local_ai_manager-ai-warning div {
 
 body.block_ai_chat_openfull .block_ai_chat_modal .modal-dialog {
   max-width: 95%;
-  min-height: calc(100vh - 3.5rem);
+}
+body.block_ai_chat_openfull .block_ai_chat_modal .modal-dialog .modal-content {
+  min-height: calc(100vh - 7.5rem);
 }
 body.block_ai_chat_openfull .block_ai_chat_modal .block_ai_chat_modal_body {
   max-width: 1080px;
@@ -321,13 +332,13 @@ body.block_ai_chat_dockright .block_ai_chat_modal .modal-dialog {
   position: fixed;
   width: 50%;
   max-width: 50%;
-  height: calc(100% - 60.2px);
   right: 0;
   bottom: 0;
   margin-top: 0;
   margin-bottom: 0;
 }
 body.block_ai_chat_dockright .block_ai_chat_modal .modal-dialog .modal-content {
+  height: calc(100% - 5px);
   border-radius: 0;
   border-top: none;
   border-bottom: none;
