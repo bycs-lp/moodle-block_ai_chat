@@ -204,6 +204,10 @@ final class ai_chat_test extends \advanced_testcase {
                 ]),
         );
 
+        // Tenants are not restricted per default, so addaichat form element should exist.
+        \core\di::get(\local_ai_manager\local\config_manager::class)->set_config('tenantenabled', true);
+        $this->assertTrue(\core\di::get(\local_ai_manager\local\config_manager::class)->is_tenant_enabled());
+
         $category = $this->getDataGenerator()->create_category();
         $course = $this->getDataGenerator()->create_course(['category' => $category->id]);
         $coursecontext = \context_course::instance($course->id);
@@ -220,7 +224,6 @@ final class ai_chat_test extends \advanced_testcase {
                 'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => '']);
         $mform = $editform->get_mform();
 
-        // Tenants are not restricted per default, so addaichat form element should exist.
         $addaichatelement = $mform->getElement('addaichat');
         $this->assertNotEmpty($addaichatelement);
 
@@ -256,7 +259,6 @@ final class ai_chat_test extends \advanced_testcase {
                 'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => '']);
         $mform = $editform->get_mform();
 
-        // Tenants are not restricted per default, so addaichat form element should exist.
         $addaichatelement = $mform->getElement('addaichat');
         $this->assertNotEmpty($addaichatelement);
 
