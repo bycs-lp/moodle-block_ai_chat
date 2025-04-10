@@ -204,9 +204,7 @@ final class ai_chat_test extends \advanced_testcase {
                 ]),
         );
 
-        // Tenants are not restricted per default, so addaichat form element should exist.
-        \core\di::get(\local_ai_manager\local\config_manager::class)->set_config('tenantenabled', true);
-        $this->assertTrue(\core\di::get(\local_ai_manager\local\config_manager::class)->is_tenant_enabled());
+        // We disable the restriction of tenants.
 
         $category = $this->getDataGenerator()->create_category();
         $course = $this->getDataGenerator()->create_course(['category' => $category->id]);
@@ -220,9 +218,23 @@ final class ai_chat_test extends \advanced_testcase {
         // Create an course settings edit form mock.
         $course = file_prepare_standard_editor($course, 'summary', $editoroptions,
                 $coursecontext, 'course', 'summary', 0);
+
+        // First of all define the case that the tenant is not restricted, but still not enabled. We should not see a checkbox.
+        set_config('restricttenants', false, 'local_ai_manager');
+        \core\di::get(\local_ai_manager\local\config_manager::class)->set_config('tenantenabled', false);
+        $this->assertFalse(\core\di::get(\local_ai_manager\local\config_manager::class)->is_tenant_enabled());
         $editform = new mock_course_edit_form(null, ['course' => $course, 'category' => $category,
                 'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => '']);
         $mform = $editform->get_mform();
+        $this->assertFalse($mform->elementExists('addaichat'));
+
+        // Now enable the tenant.
+        \core\di::get(\local_ai_manager\local\config_manager::class)->set_config('tenantenabled', true);
+        $this->assertTrue(\core\di::get(\local_ai_manager\local\config_manager::class)->is_tenant_enabled());
+        $editform = new mock_course_edit_form(null, ['course' => $course, 'category' => $category,
+                'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => '']);
+        $mform = $editform->get_mform();
+        $this->assertTrue($mform->elementExists('addaichat'));
 
         $addaichatelement = $mform->getElement('addaichat');
         $this->assertNotEmpty($addaichatelement);
