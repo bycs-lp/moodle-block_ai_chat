@@ -446,7 +446,7 @@ const enterQuestion = async(question) => {
     let requestresult = await manager.askLocalAiManager('chat', question, contextid, options);
 
     // Handle errors.
-    if (requestresult.code != 200) {
+    if (requestresult === null || requestresult.code != 200) {
         requestresult = await errorHandling(requestresult, question, contextid, options);
     }
 
@@ -828,8 +828,11 @@ const clickSubmitButton = () => {
  */
 const errorHandling = async(requestresult, question, contextid, options) => {
 
+    // If we receive requestresult === null, that means the user has aborted the flow in between.
+    const interrupted = requestresult === null;
+
     // If code 409, conversationid is already taken, try get new a one.
-    if (requestresult.code == 409) {
+    if (!interrupted && requestresult.code == 409) {
         while (requestresult.code == 409) {
             try {
                 let idresult = await externalServices.getNewConversationId(contextid);
@@ -840,14 +843,17 @@ const errorHandling = async(requestresult, question, contextid, options) => {
             }
             // Retry with new id.
             requestresult = await manager.askLocalAiManager('chat', question, contextid, options);
-            return requestresult;
         }
+        return requestresult;
     }
 
-    // If any other errorcode, alert with errormessage.
-    const errorString = await getString('errorwithcode', 'block_ai_chat', requestresult.code);
-    const result = JSON.parse(requestresult.result);
-    await displayAlert(errorString, result.message);
+    if (!interrupted) {
+        // If any other errorcode, alert with errormessage.
+        const errorString = await getString('errorwithcode', 'block_ai_chat', requestresult.code);
+        const result = JSON.parse(requestresult.result);
+        await displayAlert(errorString, result.message);
+    }
+
 
     // Change answer styling to differentiate from ai.
     const answerdivs = document.querySelectorAll('.awaitanswer');
@@ -856,7 +862,13 @@ const errorHandling = async(requestresult, question, contextid, options) => {
     messagediv.classList.add('text-danger');
 
     // And write generic error message in chatbot.
-    requestresult.result = await getString('error', 'block_ai_chat');
+    if (interrupted) {
+        requestresult = {
+            result: 'ABGEBROCHEN'
+        };
+    } else {
+        requestresult.result = await getString('error', 'block_ai_chat');
+    }
     return requestresult;
 };
 
