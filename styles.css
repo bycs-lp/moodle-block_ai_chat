@@ -365,8 +365,8 @@ body.block_ai_chat_replacehelp #page-footer [data-region=footer-container-popove
 body.block_ai_chat_replacehelp #ai_chat_button {
   bottom: 1.9rem;
 }
-body.block_ai_chat_replacehelp .block_ai_chat_chatwindow .block_ai_chat_modal .modal-dialog {
-  bottom: 5.5rem;
+body.block_ai_chat_replacehelp.block_ai_chat_chatwindow .block_ai_chat_modal .modal-dialog {
+  bottom: 3.5rem;
 }
 
 #add_persona,

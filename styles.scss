@@ -389,8 +389,8 @@ body.block_ai_chat_replacehelp {
     #ai_chat_button {
         bottom: 1.9rem;
     }
-    .block_ai_chat_chatwindow .block_ai_chat_modal .modal-dialog {
-        bottom: 5.5rem;
+    &.block_ai_chat_chatwindow .block_ai_chat_modal .modal-dialog {
+        bottom: 3.5rem;
     }
 }
 
