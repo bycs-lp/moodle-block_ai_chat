@@ -271,7 +271,7 @@ body.block_ai_chat_chatwindow .block_ai_chat_modal .modal-dialog {
   position: fixed;
   max-height: calc(100vh - 6rem);
   right: 2rem;
-  bottom: 5.5rem;
+  bottom: 3.5rem;
   filter: drop-shadow(3px 3px 4px black);
 }
 body.block_ai_chat_chatwindow a#block_ai_chat_chatwindow {
@@ -364,6 +364,9 @@ body.block_ai_chat_replacehelp #page-footer [data-region=footer-container-popove
 }
 body.block_ai_chat_replacehelp #ai_chat_button {
   bottom: 1.9rem;
+}
+body.block_ai_chat_replacehelp .block_ai_chat_chatwindow .block_ai_chat_modal .modal-dialog {
+  bottom: 5.5rem;
 }
 
 #add_persona,
