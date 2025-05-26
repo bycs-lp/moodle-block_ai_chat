@@ -315,7 +315,7 @@ body.block_ai_chat_openfull .block_ai_chat_modal .modal-dialog {
   max-width: 95%;
 }
 body.block_ai_chat_openfull .block_ai_chat_modal .modal-dialog .modal-content {
-  min-height: calc(100vh - 7.5rem);
+  min-height: calc(100vh - 3.5rem);
 }
 body.block_ai_chat_openfull .block_ai_chat_modal .block_ai_chat_modal_body {
   max-width: 1080px;
