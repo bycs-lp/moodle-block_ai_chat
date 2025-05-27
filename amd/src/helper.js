@@ -13,6 +13,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+import {notifyFilterContentUpdated} from 'core_filters/events';
+
 /**
  * Copy ai reply to clipboard.
  * @param {*} element
@@ -119,24 +121,12 @@ export const hash = async(stringToHash) => {
  *  @returns {void}
  */
 export const renderMathjax = () => {
-    // Render formulas with mathjax v3.
+    // Render formulas using filter_mathjaxloader.
     if (typeof window.MathJax !== "undefined") {
-        // Default delimiters now work with mathjax v3, we set it to make sure.
-        window.MathJax.config = {
-            tex: {
-                inlineMath: [['$', '$'], ['\\(', '\\)']],
-                displayMath: [['$$', '$$'], ['\\[', '\\]']],
-            },
-            options: {
-                skipHtmlTags: ['script', 'noscript', 'style', 'textarea', 'pre', 'code'],
-                ignoreHtmlClass: 'tex2jax_ignore',
-                processHtmlClass: 'tex2jax_process'
-            }
-        };
         const content = document.querySelector('.block_ai_chat-output');
         if (content) {
-            // Rendering content.
-            window.MathJax.typesetPromise([content]);
+            // Dispatch event to trigger rendering.
+            notifyFilterContentUpdated(content);
         }
     }
 };
