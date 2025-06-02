@@ -370,8 +370,11 @@ body.block_ai_chat_dockright {
 body.block_ai_chat_chatwindow,
 body.block_ai_chat_dockright,
 body.block_ai_chat_openfull {
-    .block_floatingbutton-floatingicons {
+    &.block_ai_chat_replacehelp .block_floatingbutton-floatingicons {
         bottom: calc(2.5rem + 36px);
+    }
+    .block_floatingbutton-floatingicons {
+             bottom: calc(4.75rem + 36px);
     }
 }
 @media (max-width: 576px) {
@@ -406,4 +409,3 @@ body.block_ai_chat_replacehelp {
 .select-spacer {
     font-size: .25rem;
 }
-

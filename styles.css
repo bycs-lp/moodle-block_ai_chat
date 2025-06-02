@@ -348,10 +348,15 @@ body.block_ai_chat_dockright a#block_ai_chat_dockright {
   color: #007bff;
 }
 
+body.block_ai_chat_chatwindow.block_ai_chat_replacehelp .block_floatingbutton-floatingicons,
+body.block_ai_chat_dockright.block_ai_chat_replacehelp .block_floatingbutton-floatingicons,
+body.block_ai_chat_openfull.block_ai_chat_replacehelp .block_floatingbutton-floatingicons {
+  bottom: calc(2.5rem + 36px);
+}
 body.block_ai_chat_chatwindow .block_floatingbutton-floatingicons,
 body.block_ai_chat_dockright .block_floatingbutton-floatingicons,
 body.block_ai_chat_openfull .block_floatingbutton-floatingicons {
-  bottom: calc(2.5rem + 36px);
+  bottom: calc(4.75rem + 36px);
 }
 
 @media (max-width: 576px) {
