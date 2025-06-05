@@ -66,14 +66,15 @@ class get_all_conversations extends external_api {
 
         // Read from local_ai_manager and get all own conversations.
         $result = [];
-        $response = \local_ai_manager\ai_manager_utils::get_log_entries('block_ai_chat', $contextid, $USER->id, 0, false);
+        // We limit to purpose 'chat' here because we do not want the requests from the integrated tiny_ai tools to be loaded
+        // for displaying our conversations. This especially is a performance issue, because the field 'requestoptions' contains
+        // base64 decoded images for purpose 'itt', for example, which slows down the database query extremely.
+        $response = \local_ai_manager\ai_manager_utils::get_log_entries('block_ai_chat', $contextid, $USER->id,
+                0, false, '*', ['chat']);
         // Go over all log entries and create conversation items.
         foreach ($response as $value) {
             // Ignore values without itemid.
             if (empty($value->itemid)) {
-                continue;
-            }
-            if ($value->purpose !== 'chat') {
                 continue;
             }
             $connectorfactory = \core\di::get(\local_ai_manager\local\connector_factory::class);
