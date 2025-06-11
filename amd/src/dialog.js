@@ -370,7 +370,6 @@ const showConversation = async(id = 0) => {
     clearMessages();
     setModalHeader();
     await showMessages();
-    helper.renderMathjax();
 };
 // Make globally accessible since it is used to show history in dropdownmenuitem.mustache.
 document.showConversation = showConversation;
@@ -489,7 +488,8 @@ const showReply = async(text) => {
     let fields = document.querySelectorAll('.block_ai_chat_modal .awaitanswer .text');
     const field = fields[fields.length - 1];
     // Render the reply.
-    field.innerHTML = text;
+    const {html, js} = await Templates.renderForPromise('block_ai_chat/reply', {text});
+    Templates.replaceNodeContents(field, html, js);
     field.classList.remove('small');
 
     // Remove awaitanswer class.

@@ -13,7 +13,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-import {typeset} from 'filter_mathjaxloader/loader';
+import {notifyFilterContentUpdated} from 'core_filters/events';
 
 /**
  * Copy ai reply to clipboard.
@@ -121,24 +121,12 @@ export const hash = async(stringToHash) => {
  *  @returns {void}
  */
 export const renderMathjax = () => {
-    // Render formulas with mathjax 2.7.9.
+    // Render formulas using filter_mathjaxloader.
     if (typeof window.MathJax !== "undefined") {
-        // Change delimiters so they work with chatgpt.
-        window.MathJax.Hub.Config({
-            tex2jax: {
-                inlineMath: [['$', '$'], ['\\(', '\\)']],
-                displayMath: [['$$', '$$'], ['\\[', '\\]']],
-            },
-        });
         const content = document.querySelector('.block_ai_chat-output');
         if (content) {
-            // Maybe somebody knows why it works if you use mathjax .Queue and typeset().
-            // I just know that it does.
-            // Claude says: This works because you're essentially giving MathJax two chances to render - the first call
-            // queues it up, and the second call (Moodle's built-in function) ensures it completes. While it might seem
-            // redundant, if it's working reliably, there's nothing wrong with this approach.
-            window.MathJax.Hub.Queue(["Typeset", window.MathJax.Hub, content]);
-            typeset(content);
+            // Dispatch event to trigger rendering.
+            notifyFilterContentUpdated(content);
         }
     }
 };

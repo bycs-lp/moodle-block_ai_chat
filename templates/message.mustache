@@ -27,12 +27,12 @@
 }}
 {{! Show message from user or ai }}
 {{#sender}}
-<div class="message agent">    
+<div class="message agent">
 {{/sender}}
 {{^sender}}
 <div class="message ai">
 {{/sender}}
-    <div class="content">
+    <div class="content filter_mathjaxloader_equation">
         <img src="{{globals.config.wwwroot}}/blocks/ai_chat/pix/ai-icon.svg" alt="" class="ai_chat_icon mr-2">
         <div class="copiedtoast">{{#str}} copied, block_ai_chat {{/str}}</div>
         <a class="copy"><i class="fa fa-copy"></i></a>
@@ -40,11 +40,11 @@
             {{{content}}}
         </div>
     </div>
-</div>    
+</div>
 {{! Insert placeholder in case of pending question }}
 {{^answer}}
 <div class="message ai">
-    <div class="content awaitanswer">
+    <div class="content awaitanswer filter_mathjaxloader_equation">
     <img src="{{globals.config.wwwroot}}/blocks/ai_chat/pix/ai-icon.svg" alt="" class="ai_chat_icon mr-2">
         <div class="copiedtoast">{{#str}} copied, block_ai_chat {{/str}}</div>
         <a class="copy"><i class="fa fa-copy"></i></a>
@@ -55,3 +55,4 @@
     </div>
 </div>
 {{/answer}}
+</div>

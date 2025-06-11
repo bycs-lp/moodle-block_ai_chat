@@ -33,7 +33,12 @@
 
 .block_ai_chat_modal{
     .modal-dialog {
-        min-height: 500px;
+        display: flex;
+        align-items: end;
+        .modal-content {
+            min-height: 500px;
+        }
+
     }
     .modal-header {
         width: 100%;
@@ -42,7 +47,7 @@
            display: flex;
            justify-content: space-between;
            align-items: center;
-           width: calc(100% - 2rem);
+           width: calc(100% - 1.7rem);
            font-size: 1rem;
            .block_ai_chat_title {
                 text-overflow: ellipsis;
@@ -97,7 +102,7 @@
             width: 1.5rem;
             height: 1.5rem;
         }
-        &.awaitanswer {            
+        &.awaitanswer {
             .ai_chat_icon,
             .copy {
                 display: none;
@@ -138,13 +143,13 @@
         position: relative;
         .ai_chat_icon_button {
             position: absolute;
-            top: 0.6rem;
-            left: .55rem;
+            top: .75rem;
+            left: .6rem;
         }
     }
     .block_ai_chat-input textarea {
         height: inherit;
-        padding: 1rem 4.1rem 1rem 2.7rem;
+        padding: 1rem 4.1rem 1rem 2.5rem;
         resize: none;
         overflow: auto;
         line-height: 1.5rem;
@@ -165,7 +170,7 @@
         right: .7rem;
         i {
             padding: 6.5px 0;
-        }        
+        }
     }
     .headeroptions {
         display: flex;
@@ -177,7 +182,6 @@
             font-size: 50%;
         }
         .dropdown-menu {
-            left: 36px !important;
             #block_ai_chat_delete_dialog {
                 color: #ff3333;
                 &:hover {
@@ -217,7 +221,7 @@
            align-items: center;
            flex-direction: column;
            padding-bottom: .4rem;
-           margin-top: -1rem;
+           margin-top: -.5rem;
            z-index: 1;
            min-height: 2rem;
            .local_ai_manager-infobox.alert.alert-success,
@@ -263,7 +267,7 @@
     &.onhistorypage {
         .block_ai_chat-output {
             display: flex;
-            flex-direction: column-reverse;            
+            flex-direction: column-reverse;
         }
         .infobox,
         #block_ai_chat_userquota {
@@ -271,7 +275,7 @@
         }
         .gradient-overlay {
             display: none;
-        } 
+        }
     }
 }
 @media (min-width: 497px) {
@@ -287,11 +291,21 @@ body.block_ai_chat_chatwindow {
         position: fixed;
         max-height: calc(100vh - 6rem);
         right: 2rem;
-        bottom: 3rem;
+        bottom: 5.5rem;
         filter: drop-shadow(3px 3px 4px black);
     }
     a#block_ai_chat_chatwindow {
         color: #007bff;
+    }
+    .headeroptions {
+        .dropdown-menu {
+            left: 33px !important;
+        }
+    }
+    @media screen and (max-height: 662px) {
+        .modal-dialog .modal-content {
+            min-height: 400px;
+        }
     }
 }
 body.block_ai_chat_chatwindow,
@@ -316,7 +330,9 @@ body.block_ai_chat_openfull {
     .block_ai_chat_modal {
         .modal-dialog {
             max-width: 95%;
-            min-height: calc(100vh - 3.5rem);
+            .modal-content {
+                min-height: calc(100vh - 3.5rem);
+            }
         }
         .block_ai_chat_modal_body {
             max-width: 1080px;
@@ -335,12 +351,12 @@ body.block_ai_chat_dockright {
         position: fixed;
         width: 50%;
         max-width: 50%;
-        height: calc(100% - 60.2px);
         right: 0;
         bottom: 0;
         margin-top: 0;
         margin-bottom: 0;
         .modal-content {
+            height: calc(100% - 5px);
             border-radius: 0;
             border-top: none;
             border-bottom: none;
@@ -354,8 +370,11 @@ body.block_ai_chat_dockright {
 body.block_ai_chat_chatwindow,
 body.block_ai_chat_dockright,
 body.block_ai_chat_openfull {
-    .block_floatingbutton-floatingicons {
+    &.block_ai_chat_replacehelp .block_floatingbutton-floatingicons {
         bottom: calc(2.5rem + 36px);
+    }
+    .block_floatingbutton-floatingicons {
+             bottom: calc(4.75rem + 36px);
     }
 }
 @media (max-width: 576px) {
@@ -373,6 +392,9 @@ body.block_ai_chat_replacehelp {
     #ai_chat_button {
         bottom: 1.9rem;
     }
+    &.block_ai_chat_chatwindow .block_ai_chat_modal .modal-dialog {
+        bottom: 3.5rem;
+    }
 }
 
 #add_persona,
@@ -387,4 +409,3 @@ body.block_ai_chat_replacehelp {
 .select-spacer {
     font-size: .25rem;
 }
-
