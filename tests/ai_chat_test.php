@@ -154,6 +154,9 @@ final class ai_chat_test extends \advanced_testcase {
 
         // Set proper pagetype.
         set_config('showonpagetypes', 'vendor-bin-phpunit', 'block_ai_chat');
+        $configmanager = \core\di::get(\local_ai_manager\local\config_manager::class);
+        $configmanager->set_config('tenantenabled', true);
+
         // Dispatch.
         ob_start();
         di::get(\core\hook\manager::class)->dispatch($hook);

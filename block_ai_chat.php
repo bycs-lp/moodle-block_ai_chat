@@ -14,6 +14,7 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+use local_ai_manager\ai_manager_utils;
 use local_ai_manager\local\userinfo;
 
 /**
@@ -66,34 +67,23 @@ class block_ai_chat extends block_base {
         $this->content->footer = '';
 
         $context = \context_block::instance($this->instance->id);
-        if (!has_capability('block/ai_chat:view', $context) ||
-                !has_capability('local/ai_manager:use', $context)) {
+        if (!has_capability('block/ai_chat:view', $context)) {
             return $this->content;
-        }
-        $tenant = \core\di::get(\local_ai_manager\local\tenant::class);
-        $configmanager = \core\di::get(\local_ai_manager\local\config_manager::class);
-        $aiconfig = \local_ai_manager\ai_manager_utils::get_ai_config($USER);
-        $chatconfig = array_values(array_filter($aiconfig['purposes'], fn($purpose) => $purpose['purpose'] === 'chat'))[0];
-        if (!$tenant->is_tenant_allowed()) {
-            return $this->content;
-        }
-        if ($tenant->is_tenant_allowed() && !$configmanager->is_tenant_enabled()) {
-            if ($aiconfig['role'] === userinfo::get_role_as_string(userinfo::ROLE_BASIC)) {
-                return $this->content;
-            }
-        }
-        if (!$chatconfig['isconfigured']) {
-            if ($aiconfig['role'] === userinfo::get_role_as_string(userinfo::ROLE_BASIC)) {
-                return $this->content;
-            }
-        }
-        $coursecontext = \local_ai_manager\ai_manager_utils::find_closest_parent_course_context($context);
-        if (is_null($coursecontext) && intval($aiconfig['scope']) === userinfo::SCOPE_COURSES_ONLY) {
-            if ($aiconfig['role'] === userinfo::get_role_as_string(userinfo::ROLE_BASIC)) {
-                return $this->content;
-            }
         }
 
+        // We retrieve the config for all the purposes we are using. This includes the purposes that tiny_ai uses, because even
+        // if the chat purpose is not available, the user should still be able to use the chatbot for accessing the tiny_ai tools.
+        $aiconfig = ai_manager_utils::get_ai_config($USER, $context->id, null,
+                ['chat', 'singleprompt', 'translate', 'itt', 'imggen', 'tts']);
+        if ($aiconfig['availability']['available'] === ai_manager_utils::AVAILABILITY_HIDDEN) {
+            return $this->content;
+        }
+        $atleastonepurposenothidden =
+                array_reduce($aiconfig['purposes'], fn($a, $b) => $a || $b['available'] !== ai_manager_utils::AVAILABILITY_HIDDEN,
+                        false);
+        if (!$atleastonepurposenothidden) {
+            return $this->content;
+        }
         $this->content = new stdClass;
 
         /** @var block_ai_chat\output\renderer $aioutput */

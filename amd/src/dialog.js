@@ -15,7 +15,6 @@
 
 import Modal from 'core/modal';
 import * as externalServices from 'block_ai_chat/webservices';
-import config from 'core/config';
 import Templates from 'core/templates';
 import {alert as displayAlert, exception as displayException, deleteCancelPromise,
     confirm as confirmModal} from 'core/notification';
@@ -137,9 +136,9 @@ export const init = async(params) => {
     badge = false;
 
     // Get configuration.
-    const aiConfig = await getAiConfig();
+    const aiConfig = await getAiConfig(contextid, null, ['chat']);
     tenantConfig = aiConfig;
-    chatConfig = aiConfig.purposes.find(p => p.purpose === "chat");
+    chatConfig = aiConfig.purposes[0];
 
     // Build chat dialog modal.
     modal = await DialogModal.create({
@@ -298,7 +297,7 @@ async function showModal() {
         const aiUtilsButton = document.querySelector('[data-action="openaiutils"]');
         const uniqid = Math.random().toString(16).slice(2);
 
-        await TinyAiUtils.init(uniqid, TinyAiConstants.modalModes.standalone);
+        await TinyAiUtils.init(uniqid, contextid, TinyAiConstants.modalModes.standalone);
         aiUtilsButton.addEventListener('click', async() => {
             // We try to find selected text or images and inject it into the AI tools.
             const selectionObject = window.getSelection();
@@ -927,33 +926,11 @@ const setView = async(mode = '') => {
  * @returns {message}
  */
 const userAllowed = async() => {
-    let message;
-    if (tenantConfig.tenantenabled === false) {
-        message = await getString('error_http403disabled', 'local_ai_manager');
-        return message;
+    if (tenantConfig.availability.available === 'disabled') {
+        return tenantConfig.availability.errormessage;
     }
-    if (tenantConfig.userconfirmed === false) {
-        message = await getString('error_http403notconfirmed', 'local_ai_manager');
-        message += ". ";
-        const link = config.wwwroot + '/local/ai_manager/confirm_ai_usage.php';
-        message += await getString('confirm_ai_usage', 'block_ai_chat', link);
-        return message;
-    }
-    if (tenantConfig.userlocked === true) {
-        message = await getString('error_http403blocked', 'local_ai_manager');
-        return message;
-    }
-    if (chatConfig.isconfigured === false) {
-        message = await getString('error_purposenotconfigured', 'local_ai_manager');
-        return message;
-    }
-    if (chatConfig.lockedforrole === true) {
-        message = await getString('error_http403blocked', 'local_ai_manager');
-        return message;
-    }
-    if (chatConfig.limitreached === true) {
-        message = await getString('error_limitreached', 'local_ai_manager');
-        return message;
+    if (chatConfig.available === 'disabled') {
+        return chatConfig.errormessage;
     }
     return '';
 };
