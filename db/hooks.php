@@ -47,4 +47,8 @@ $callbacks = [
                 'hook' => \core\hook\output\before_http_headers::class,
                 'callback' => \block_ai_chat\local\hook_callbacks::class . '::handle_before_http_headers',
         ],
+        [
+                'hook' => \local_ai_manager\hook\purpose_usage::class,
+                'callback' => \block_ai_chat\local\hook_callbacks::class . '::handle_purpose_usage',
+        ],
 ];
