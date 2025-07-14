@@ -164,4 +164,19 @@ class hook_callbacks {
             $PAGE->add_body_class('block_ai_chat_replacehelp');
         }
     }
+
+    /**
+     * Provide additional information about which purposes are being used by this plugin.
+     *
+     * @param \local_ai_manager\hook\purpose_usage $hook the purpose_usage hook object
+     */
+    public static function handle_purpose_usage(\local_ai_manager\hook\purpose_usage $hook): void {
+        $hook->set_component_displayname('block_ai_chat', get_string('pluginname_userfaced', 'block_ai_chat'));
+        $hook->add_purpose_usage_description('chat', 'block_ai_chat',
+                get_string('purposeplacedescription_mainwindow', 'block_ai_chat'));
+        foreach (\tiny_ai\local\utils::get_purpose_placedescriptions() as $description) {
+            $altereddescription = get_string('toolsofaibutton', 'block_ai_chat', $description['placedescription']);
+            $hook->add_purpose_usage_description($description['purpose'], 'block_ai_chat', $altereddescription);
+        }
+    }
 }
