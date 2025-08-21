@@ -152,8 +152,8 @@ final class ai_chat_test extends \advanced_testcase {
         $aiblockinstances = $DB->get_records('block_instances', ['blockname' => 'ai_chat']);
         $this->assertEmpty($aiblockinstances);
 
-        // Set proper pagetype.
-        set_config('showonpagetypes', 'vendor-bin-phpunit', 'block_ai_chat');
+        // Set proper pagetype. We do not test the pagetype setting here, so we set it to "*" to make it show on all pages.
+        set_config('showonpagetypes', '*', 'block_ai_chat');
         $configmanager = \core\di::get(\local_ai_manager\local\config_manager::class);
         $configmanager->set_config('tenantenabled', true);
 
@@ -162,7 +162,7 @@ final class ai_chat_test extends \advanced_testcase {
         di::get(\core\hook\manager::class)->dispatch($hook);
         $output = ob_get_clean();
 
-        // Assert bock is printed.
+        // Assert block is printed.
         $this->assertStringContainsString('id="ai_chat_button"', $output);
         // Assert there is one general block instance existing.
         $aiblockinstances = $DB->get_records('block_instances', ['blockname' => 'ai_chat']);
