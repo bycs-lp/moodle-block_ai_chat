@@ -289,7 +289,7 @@
 body.block_ai_chat_chatwindow {
     .block_ai_chat_modal .modal-dialog {
         position: fixed;
-        max-height: calc(100vh - 6rem);
+        max-height: calc(100vh - 8rem);
         right: 2rem;
         bottom: 5.5rem;
         filter: drop-shadow(3px 3px 4px black);
@@ -393,6 +393,7 @@ body.block_ai_chat_replacehelp {
         bottom: 1.9rem;
     }
     &.block_ai_chat_chatwindow .block_ai_chat_modal .modal-dialog {
+        max-height: calc(100vh - 6rem);
         bottom: 3.5rem;
     }
 }
