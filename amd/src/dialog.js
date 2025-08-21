@@ -1056,9 +1056,14 @@ const showPersonasModal = () => {
             select.insertBefore(systemtemplates, select.options[2]);
             // // Add usertemplates heading.
             if (useroptions) {
-                // Get last systemtemplate position.
-                const maxValue = Math.max(...templateids.map(id => parseInt(id)));
-                const lastSystemOption = Array.from(select.options).find(opt => parseInt(opt.value) === maxValue);
+                let lastSystemOption;
+                if (templateids.length === 0) {
+                    lastSystemOption = systemtemplates;
+                } else {
+                    // Get last systemtemplate position.
+                    const maxValue = Math.max(...templateids.map(id => parseInt(id)));
+                    lastSystemOption = Array.from(select.options).find(opt => parseInt(opt.value) === maxValue);
+                }
                 // Add heading.
                 const usertemplates = new Option(strUserTemplates, '', false, false);
                 usertemplates.disabled = true;
