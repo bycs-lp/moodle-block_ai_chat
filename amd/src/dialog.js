@@ -1024,6 +1024,7 @@ const showPersonasModal = () => {
                     personaInputprompt.disabled = false;
                 } else {
                     // Should be selection "No Persona"
+                    personaNewname.value = '';
                     personaNewname.setAttribute('value', '');
                     personaInputprompt.value = '';
                     personaInputprompt.disabled = true;
