@@ -30,6 +30,10 @@
     right: calc(315px + 2rem);
 }
 
+body:not(.block_ai_chat_replacehelp).hasstickyfooter #ai_chat_button {
+    // This position is calculated in an analogous way to the boost theme.
+    bottom: calc(40px + 1rem + calc(max(80px, calc(0.9375rem * 3))));
+}
 
 .block_ai_chat_modal{
     .modal-dialog {
@@ -391,6 +395,10 @@ body.block_ai_chat_replacehelp {
     }
     #ai_chat_button {
         bottom: 1.9rem;
+    }
+    // This position is calculated in an analogous way to the boost theme.
+    &.hasstickyfooter #ai_chat_button {
+        bottom: calc(1rem + calc(max(80px, calc(0.9375rem * 3))));
     }
     &.block_ai_chat_chatwindow .block_ai_chat_modal .modal-dialog {
         max-height: calc(100vh - 6rem);
