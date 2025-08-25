@@ -27,6 +27,10 @@
   right: calc(315px + 2rem);
 }
 
+body:not(.block_ai_chat_replacehelp).hasstickyfooter #ai_chat_button {
+  bottom: calc(40px + 1rem + max(80px, 2.8125rem));
+}
+
 .block_ai_chat_modal .modal-dialog {
   display: flex;
   align-items: end;
@@ -325,7 +329,8 @@ body.block_ai_chat_openfull a#block_ai_chat_openfull {
   color: #007bff;
 }
 
-body.block_ai_chat_dockright.block_ai_chat_open #page-wrapper #page {
+body.block_ai_chat_dockright.block_ai_chat_open #page-wrapper #page,
+body.block_ai_chat_dockright.block_ai_chat_open #sticky-footer {
   margin-right: 50%;
 }
 body.block_ai_chat_dockright .block_ai_chat_modal .modal-dialog {
@@ -369,6 +374,9 @@ body.block_ai_chat_replacehelp #page-footer [data-region=footer-container-popove
 }
 body.block_ai_chat_replacehelp #ai_chat_button {
   bottom: 1.9rem;
+}
+body.block_ai_chat_replacehelp.hasstickyfooter #ai_chat_button {
+  bottom: calc(1rem + max(80px, 2.8125rem));
 }
 body.block_ai_chat_replacehelp.block_ai_chat_chatwindow .block_ai_chat_modal .modal-dialog {
   max-height: calc(100vh - 6rem);
