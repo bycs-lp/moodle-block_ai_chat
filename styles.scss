@@ -348,8 +348,11 @@ body.block_ai_chat_openfull {
     }
 }
 body.block_ai_chat_dockright {
-    &.block_ai_chat_open #page-wrapper #page {
-        margin-right: 50%;
+    &.block_ai_chat_open {
+        #page-wrapper #page,
+        #sticky-footer {
+            margin-right: 50%;
+        }
     }
     .block_ai_chat_modal .modal-dialog {
         position: fixed;

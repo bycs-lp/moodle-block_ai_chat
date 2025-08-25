@@ -329,7 +329,8 @@ body.block_ai_chat_openfull a#block_ai_chat_openfull {
   color: #007bff;
 }
 
-body.block_ai_chat_dockright.block_ai_chat_open #page-wrapper #page {
+body.block_ai_chat_dockright.block_ai_chat_open #page-wrapper #page,
+body.block_ai_chat_dockright.block_ai_chat_open #sticky-footer {
   margin-right: 50%;
 }
 body.block_ai_chat_dockright .block_ai_chat_modal .modal-dialog {
