@@ -33,6 +33,7 @@ import {escapeHTML, hash, scrollToBottom} from './helper';
 import * as TinyAiUtils from 'tiny_ai/utils';
 import TinyAiEditorUtils from 'tiny_ai/editor_utils';
 import {constants as TinyAiConstants} from 'tiny_ai/constants';
+import * as DomExtractor from 'block_ai_chat/dom_extractor';
 
 // Declare variables.
 const VIEW_CHATWINDOW = 'block_ai_chat_chatwindow';
@@ -441,7 +442,8 @@ const enterQuestion = async(question) => {
     options.itemid = conversation.id;
 
     // Send to local_ai_manager.
-    let requestresult = await manager.askLocalAiManager('chat', question, contextid, options);
+    options.formelements = DomExtractor.getFormElements();
+    let requestresult = await manager.askLocalAiManager('agent', question, contextid, options);
 
     // Handle errors.
     if (requestresult.code != 200) {
