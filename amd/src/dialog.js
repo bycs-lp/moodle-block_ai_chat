@@ -334,7 +334,6 @@ async function showModal() {
     helper.focustextarea();
 }
 
-
 /**
  * Webservice Get all conversations.
  */
@@ -372,7 +371,6 @@ const showConversation = async(id = 0) => {
 };
 // Make globally accessible since it is used to show history in dropdownmenuitem.mustache.
 document.showConversation = showConversation;
-
 
 /**
  * Send input to ai connector.
@@ -1142,7 +1140,6 @@ const showPersonasModal = () => {
         manageInputs(true);
     });
 
-
     // Also enable admintemplate name input on error.
     personaForm.addEventListener(personaForm.events.SERVER_VALIDATION_ERROR, () => {
         manageInputs(true);
@@ -1156,7 +1153,6 @@ const showPersonasModal = () => {
         showUserinfo(false);
     });
 };
-
 
 /**
  * Show options modal.

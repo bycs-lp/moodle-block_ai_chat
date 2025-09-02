@@ -71,6 +71,12 @@ class renderer extends plugin_renderer_base {
                 [$params]
         );
 
+        // Make DOM parser globally accessible for console usage
+        $this->page->requires->js_call_amd(
+            'block_ai_chat/dom_parser',
+            'makeGloballyAccessible'
+        );
+
         return parent::render_from_template('block_ai_chat/floatingbutton', $params);
     }
 }
