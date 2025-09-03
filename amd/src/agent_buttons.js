@@ -62,11 +62,13 @@ const injectSuggestionIntoForm = (button) => {
     console.log("VALUE TO INJECT")
     console.log(button.dataset.block_ai_chatSuggestionvalue)
     console.log(htmlElement)
-    htmlElement.value = button.dataset.block_ai_chatSuggestionvalue;
+
     const formElements = DomExtractor.extractDomElements();
     const relatedElement = formElements.filter(formElement => formElement.id === button.dataset.block_ai_chatForElement)[0];
     console.log(relatedElement)
+
     if (relatedElement.type === 'textarea') {
+        htmlElement.value = button.dataset.block_ai_chatSuggestionvalue;
         const tiny = window.tinymce.get(relatedElement.id);
         if (tiny) {
             tiny.setContent(button.dataset.block_ai_chatSuggestionvalue);
@@ -77,14 +79,25 @@ const injectSuggestionIntoForm = (button) => {
             console.log("setting the check")
             htmlElement.checked = true;
         } else {
-            console.log("deleteing the check")
-            delete htmlElement.checked;
+            console.log("unchecking the checkbox")
+            htmlElement.checked = false;
         }
-        console.log(button.dataset.block_ai_chatSuggestionvalue)
+    } else if (relatedElement.type === 'select') {
+        console.log('its a select')
+        htmlElement.value = button.dataset.block_ai_chatSuggestionvalue;
+
+        // Trigger change event to ensure any dependent JavaScript is executed
+        const changeEvent = new Event('change', { bubbles: true });
+        htmlElement.dispatchEvent(changeEvent);
+    } else {
+        // For all other input types (text, email, number, etc.)
+        htmlElement.value = button.dataset.block_ai_chatSuggestionvalue;
     }
+
+    console.log(button.dataset.block_ai_chatSuggestionvalue)
     console.log('html element after manipulation')
     console.log(htmlElement);
-}
+};
 
 const targetFieldInView = (button) => {
     const htmlElement = document.getElementById(button.dataset.block_ai_chatForElement);
@@ -110,4 +123,4 @@ const targetFieldInView = (button) => {
             htmlElement.focus();
         }, 500);
     }
-}
+};
