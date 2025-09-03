@@ -204,6 +204,9 @@ async function showModal() {
     modalopen = true;
     const body = document.querySelector('body');
     body.classList.add(MODAL_OPEN);
+    // Moodle core adds a overflow: "hidden" to the body when opening a modal to prevent scrolling outside the modal.
+    // We however need exactly that, so we manipulate it back again.
+    body.style.overflow = 'visible';
 
     // Add listener for input submission.
     const textarea = document.getElementById('block_ai_chat-input-id');
