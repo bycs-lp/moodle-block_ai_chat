@@ -475,15 +475,15 @@ const enterQuestion = async (question) => {
                 console.log(formElement.new_value)
 
                 console.log(htmlElement.value)
-
+            console.log(formElement)
+                const extractedDomElement = options.agentoptions.formelements.filter(element => element.id === formElement.id)[0];
+                console.log(extractedDomElement)
                 suggestionContext.suggestions.push({
-                    fieldname: "PLACEHOLDER",
+                    fieldname: extractedDomElement.label,
                     explanation: formElement.explanation,
                     elementId: formElement.id,
                     suggestionvalue: formElement.new_value,
                 });
-
-
             }
         );
         console.log(suggestionContext)
