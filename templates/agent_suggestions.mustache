@@ -28,14 +28,17 @@
 {{intro}}
 <ul>
     {{#suggestions}}
-        <li>FIELDNAME: {{fieldname}}<br/>SUGGESTION: {{suggestionvalue}}<br/>EXPLANATION: {{explanation}}<br/>
-            <button class="btn btn-primary btn-sm" data-block_ai_chat-action="accept_suggestion" data-block_ai_chat-for-element="{{elementId}}"
-            data-block_ai_chat-suggestionvalue="{{suggestionvalue}}">ACCEPT</button>
-            <button class="btn btn-secondary btn-sm" data-block_ai_chat-action="decline_suggestion" data-block_ai_chat-for-element="{{elementId}}">DECLINE</button>
+        <li><b>{{#str}}suggestionfieldname, block_ai_chat{{/str}}:</b> {{fieldname}}
+            <br/><b>{{#str}}suggestionlabel, block_ai_chat{{/str}}:</b> {{suggestionvalue}}
+            <br/><b>{{#str}}suggestionexplanation, block_ai_chat{{/str}}:</b> {{explanation}}<br/>
             <button class="btn btn-icon btn-outline-primary btn-sm me-2" data-block_ai_chat-action="target_suggestion"
-                data-block_ai_chat-for-element="{{elementId}}" title="Target this field">
+                data-block_ai_chat-for-element="{{elementId}}" title="{{#str}}suggestiontarget, block_ai_chat{{/str}}">
                 <i class="icon fa fa-bullseye fa-fw" aria-hidden="true"></i>
+                <span class="sr-only">{{#str}}suggestiontarget, block_ai_chat{{/str}}</span>
             </button>
+            <button class="btn btn-info btn-sm" data-block_ai_chat-action="accept_suggestion" data-block_ai_chat-for-element="{{elementId}}"
+            data-block_ai_chat-suggestionvalue="{{suggestionvalue}}" title="{{#str}}suggestionaccept, block_ai_chat{{/str}}">{{#str}}suggestionaccept, block_ai_chat{{/str}}</button>
+            <button class="btn btn-secondary btn-sm" data-block_ai_chat-action="decline_suggestion" data-block_ai_chat-for-element="{{elementId}}" title="{{#str}}suggestiondecline, block_ai_chat{{/str}}">{{#str}}suggestiondecline, block_ai_chat{{/str}}</button>
         </li>
     {{/suggestions}}
 </ul>
