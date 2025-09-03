@@ -445,7 +445,8 @@ const enterQuestion = async (question) => {
 
     // Send to local_ai_manager.
     options.agentoptions = {
-        formelements: DomExtractor.extractDomElements()
+        formelements: DomExtractor.extractDomElements(),
+        pagetype: document.body.id
     };
 
     // TODO if else agent mode or not
