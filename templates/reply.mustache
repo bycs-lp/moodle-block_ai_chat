@@ -21,8 +21,14 @@
 
     Example context (json):
     {
-        "text": "the AI answer"
+        "text": "the AI answer",
+        "suggestions": [
+            {
+            },
+            {
+            }
+        ]
     }
 }}
-<div class="filter_mathjaxloader_equation">{{{text}}}</div>
+<div class="filter_mathjaxloader_equation">{{{text}}}<br/>{{> block_ai_chat/agent_suggestions}}</div>
 
