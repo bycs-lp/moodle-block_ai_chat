@@ -31,7 +31,11 @@
         <li>FIELDNAME: {{fieldname}}<br/>SUGGESTION: {{suggestionvalue}}<br/>EXPLANATION: {{explanation}}<br/>
             <button class="btn btn-primary btn-sm" data-block_ai_chat-action="accept_suggestion" data-block_ai_chat-for-element="{{elementId}}"
             data-block_ai_chat-suggestionvalue="{{suggestionvalue}}">ACCEPT</button>
-            <button class="btn btn-danger btn-sm" data-block_ai_chat-action="decline_suggestion" data-block_ai_chat-for-element="{{elementId}}">DECLINE</button>
+            <button class="btn btn-secondary btn-sm" data-block_ai_chat-action="decline_suggestion" data-block_ai_chat-for-element="{{elementId}}">DECLINE</button>
+            <button class="btn btn-icon btn-outline-primary btn-sm me-2" data-block_ai_chat-action="target_suggestion"
+                data-block_ai_chat-for-element="{{elementId}}" title="Target this field">
+                <i class="icon fa fa-bullseye fa-fw" aria-hidden="true"></i>
+            </button>
         </li>
     {{/suggestions}}
 </ul>
@@ -42,4 +46,3 @@
         AgentButtons.init();
     });
 {{/js}}
-

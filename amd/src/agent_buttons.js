@@ -44,7 +44,15 @@ export const init = () => {
             const acceptButton = document.querySelector('[data-block_ai_chat-action="accept_suggestion"][data-block_ai_chat-for-element="' + button.dataset.block_ai_chatForElement + '"]');
             acceptButton.disabled = true;
         })
-    })
+    });
+
+    document.querySelectorAll('[data-block_ai_chat-action="target_suggestion"]').forEach(button => {
+        console.log(button)
+        button.addEventListener('click', (e) => {
+            console.log(button.dataset);
+            targetFieldInView(button);
+        })
+    });
 
 };
 
@@ -76,4 +84,30 @@ const injectSuggestionIntoForm = (button) => {
     }
     console.log('html element after manipulation')
     console.log(htmlElement);
+}
+
+const targetFieldInView = (button) => {
+    const htmlElement = document.getElementById(button.dataset.block_ai_chatForElement);
+    console.log("TARGETING FIELD");
+    console.log(htmlElement);
+
+    if (!htmlElement) {
+        console.warn('Target element not found:', button.dataset.block_ai_chatForElement);
+        return;
+    }
+
+    // Scroll element into view with smooth behavior and center it
+    htmlElement.scrollIntoView({
+        behavior: 'smooth',
+        block: 'center',
+        inline: 'nearest'
+    });
+
+    // Focus the element if it's focusable
+    if (htmlElement.focus && typeof htmlElement.focus === 'function') {
+        // Small delay to ensure scroll is complete
+        setTimeout(() => {
+            htmlElement.focus();
+        }, 500);
+    }
 }
