@@ -57,5 +57,16 @@ if ($hassiteconfig) {
                 PARAM_TEXT
             )
         );
+
+        // Add text with link to management as setting.
+        $settings->add(new admin_setting_description(
+            'block_ai_chat/manageaicontext',
+            get_string('linktomanageaicontextpage', 'block_ai_chat'),
+            html_writer::link(
+                new moodle_url('/blocks/ai_chat/manage_aicontext.php'),
+                get_string('manageaicontext', 'block_ai_chat'),
+                ['class' => 'btn btn-secondary mb-5']
+            )
+        ));
     }
 }

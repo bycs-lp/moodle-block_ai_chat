@@ -30,18 +30,26 @@ class options_form extends dynamic_form {
     /** @var int $contextid */
     protected int $contextid;
 
+    /** @var string $component The component name of the plugin using block_ai_chat */
+    protected string $component;
+
     /**
      * Form definition.
      */
     public function definition() {
         // Load default and user personas here since select options need to be inserted.
         $contextid = $this->optional_param('contextid', null, PARAM_INT);
+        $component = $this->optional_param('component', null, PARAM_INT);
 
         $mform =& $this->_form;
 
         $mform->addElement('hidden', 'contextid');
         $mform->setType('contextid', PARAM_INT);
         $mform->setDefault('contextid', $contextid);
+
+        $mform->addElement('hidden', 'component');
+        $mform->setType('component', PARAM_COMPONENT);
+        $mform->setDefault('component', $component);
 
         $mform->addElement('text', 'historycontextmax', get_string('historycontextmax', 'block_ai_chat'));
         $mform->setType('historycontextmax', PARAM_INT);

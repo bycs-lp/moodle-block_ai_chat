@@ -37,8 +37,9 @@ class select_persona extends external_api {
      */
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
-            'contextid' => new external_value(PARAM_INT, 'Block contextid.', VALUE_REQUIRED),
-            'personaid' => new external_value(PARAM_INT, 'Persona id.', VALUE_REQUIRED),
+            'contextid' => new external_value(PARAM_INT, 'Block contextid.'),
+            'component' => new external_value(PARAM_COMPONENT, 'The component name calling the AI'),
+            'personaid' => new external_value(PARAM_INT, 'Persona id.'),
         ]);
     }
 
@@ -46,23 +47,26 @@ class select_persona extends external_api {
      * Select a persona for the given context.
      *
      * @param int $contextid the context id
+     * @param string $component the component name of the plugin using block_ai_chat
      * @param int $personaid the persona id
      * @return array response array including status code and content array containing reactive state updates
      */
-    public static function execute(int $contextid, int $personaid): array {
+    public static function execute(int $contextid, string $component, int $personaid): array {
         [
             'contextid' => $contextid,
+            'component' => $component,
             'personaid' => $personaid,
         ] =
         self::validate_parameters(self::execute_parameters(), [
             'contextid' => $contextid,
+            'component' => $component,
             'personaid' => $personaid,
         ]);
         self::validate_context(\core\context_helper::instance_by_id($contextid));
 
         require_capability('block/ai_chat:edit', \context::instance_by_id($contextid));
 
-        $manager = new manager($contextid);
+        $manager = new manager($contextid, $component);
         return $manager->select_persona($personaid);
     }
 

@@ -34,7 +34,9 @@ along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 }}
 
 {{! This template is overwriting the title region of the modal, so we have to take care of the bootstrap modal attributes. }}
-<h5 class="modal-title text-truncate block_ai_chat_title" data-id="title-{{uniqid}}" data-block_ai_chat-component="title" data-region="title"></h5>
+<div class="modal-title" data-id="title-{{uniqid}}" data-block_ai_chat-component="title" data-region="title">
+    <h5 class="text-truncate block_ai_chat_title" data-block_ai_chat-element="titleheading"></h5>
+</div>
 {{#js}}
     require(['block_ai_chat/components/title'], function(component) {
     component.init('[data-block_ai_chat-component="title"][data-id="title-{{uniqid}}"]');

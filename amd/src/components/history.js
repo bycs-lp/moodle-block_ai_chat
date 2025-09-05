@@ -55,7 +55,8 @@ class History extends BaseContent {
         // Iterate over conversations and group by date.
         let groupedByDate = {};
         const conversationlist = await callExternalFunction('block_ai_chat_get_all_conversations', {
-            contextid: this.reactive.state.static.contextid
+            contextid: this.reactive.state.static.contextid,
+            component: this.reactive.state.static.component,
         });
         if (conversationlist === null) {
             return;

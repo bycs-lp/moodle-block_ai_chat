@@ -38,6 +38,7 @@ class get_messages extends external_api {
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
             'contextid' => new external_value(PARAM_INT, 'Contextid', VALUE_REQUIRED),
+            'component' => new external_value(PARAM_COMPONENT, 'The component name calling the AI', VALUE_REQUIRED),
             'conversationid' => new external_value(PARAM_INT, 'Conversation id', VALUE_DEFAULT, 0),
         ]);
     }
@@ -46,17 +47,20 @@ class get_messages extends external_api {
      * Retrieve the messages of a conversation.
      *
      * @param int $contextid the context id
+     * @param string $component the component name of the plugin using block_ai_chat
      * @param int $conversationid or 0, if all messages should be retrieved
      * @return array response array including status code and content array containing reactive state updates
      */
-    public static function execute(int $contextid, int $conversationid): array {
+    public static function execute(int $contextid, string $component, int $conversationid): array {
         global $USER;
         [
             'contextid' => $contextid,
+            'component' => $component,
             'conversationid' => $conversationid,
         ] =
             self::validate_parameters(self::execute_parameters(), [
                 'contextid' => $contextid,
+                'component' => $component,
                 'conversationid' => $conversationid,
             ]);
         self::validate_context(\core\context_helper::instance_by_id($contextid));
@@ -64,7 +68,7 @@ class get_messages extends external_api {
         require_capability('block/ai_chat:view', \context::instance_by_id($contextid));
         require_capability('local/ai_manager:use', \context::instance_by_id($contextid));
 
-        $manager = new manager($contextid);
+        $manager = new manager($contextid, $component);
         return $manager->get_messages($USER->id, $conversationid);
     }
 

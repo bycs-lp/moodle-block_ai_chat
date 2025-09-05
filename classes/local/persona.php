@@ -47,9 +47,10 @@ class persona {
      */
     public static function install_default_personas(): void {
         global $DB;
+        $adminuser = get_admin();
         $records = [];
         $records[] = (object) [
-            'userid' => 0,
+            'userid' => $adminuser->id,
             'name' => 'Persona 1',
             'prompt' => 'You are a helpful assistant.',
             'userinfo' => 'You are speaking to a helpful assistant. You can ask questions about anything.',
@@ -58,7 +59,7 @@ class persona {
             'timemodified' => time(),
         ];
         $records[] = (object) [
-            'userid' => 0,
+            'userid' => $adminuser->id,
             'name' => 'Persona 2',
             'prompt' => 'You are a unhelpful assistant.',
             'userinfo' => 'You are speaking to a unhelpful assistant. You can ask questions about anything.',

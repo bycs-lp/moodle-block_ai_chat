@@ -16,6 +16,8 @@
 import {BaseComponent} from 'core/reactive';
 import {renderInfoBox} from 'local_ai_manager/infobox';
 import {renderWarningBox} from 'local_ai_manager/warningbox';
+import {events} from 'local_ai_manager/events';
+import {debounce} from 'core/utils';
 
 /**
  * Component representing a message in the ai_chat.
@@ -40,12 +42,19 @@ class Boxes extends BaseComponent {
         this.selectors = {
             INFOBOX: `[data-block_ai_chat-element='ai_manager-infobox']`,
             WARNINGBOX: `[data-block_ai_chat-element='ai_manager-warningbox']`,
+            // CARE: This is outside of this component's root element.
+            MODAL_CONTENT: `.modal-content`,
+            // CARE: This is outside of this component's root element.
+            OUTPUT_WRAPPER: `[data-block_ai_chat-element='outputwrapper']`,
         };
+        this._debouncedCollapseBoxes = debounce(this._collapseBoxes.bind(this), 250);
     }
 
     getWatchers() {
         return [
             {watch: `config.view:updated`, handler: this._showOrHideBoxes},
+            {watch: `messages.rendered:updated`, handler: this._debouncedCollapseBoxes},
+            {watch: `messages:deleted`, handler: this._debouncedCollapseBoxes},
         ];
     }
 
@@ -71,6 +80,21 @@ class Boxes extends BaseComponent {
         } else {
             this.getElement(this.selectors.INFOBOX).classList.add('d-none');
             this.getElement(this.selectors.WARNINGBOX).classList.add('d-none');
+        }
+    }
+
+    _collapseBoxes() {
+        const chatOutputWrapper = this.getElement().closest(this.selectors.MODAL_CONTENT)
+            .querySelector(this.selectors.OUTPUT_WRAPPER);
+        const hasVisibleScrollbar = chatOutputWrapper.scrollHeight > chatOutputWrapper.clientHeight;
+        const infoboxTargetElement = this.getElement(this.selectors.INFOBOX);
+        const warningboxTargetElement = this.getElement(this.selectors.WARNINGBOX);
+        if (hasVisibleScrollbar) {
+            infoboxTargetElement.dispatchEvent(new CustomEvent(events.collapseInfoBox));
+            warningboxTargetElement.dispatchEvent(new CustomEvent(events.collapseWarningBox));
+        } else {
+            infoboxTargetElement.dispatchEvent(new CustomEvent(events.maximizeInfoBox));
+            warningboxTargetElement.dispatchEvent(new CustomEvent(events.maximizeWarningBox));
         }
     }
 }

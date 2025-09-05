@@ -34,6 +34,9 @@ class persona_form extends dynamic_form {
     /** @var int $contextid */
     protected int $contextid;
 
+    /** @var string $component The component name of the plugin using block_ai_chat */
+    protected string $component;
+
     /**
      * Form definition.
      */
@@ -44,6 +47,10 @@ class persona_form extends dynamic_form {
         $mform->addElement('hidden', 'contextid');
         $mform->setType('contextid', PARAM_INT);
         $mform->setDefault('contextid', $this->optional_param('contextid', null, PARAM_INT));
+
+        $mform->addElement('hidden', 'component');
+        $mform->setType('component', PARAM_COMPONENT);
+        $mform->setDefault('component', $this->component);
 
         $mform->addElement('hidden', 'personaid');
         $mform->setType('personaid', PARAM_INT);
@@ -92,6 +99,10 @@ class persona_form extends dynamic_form {
         if (!isset($this->contextid)) {
             $this->contextid = $this->optional_param('contextid', null, PARAM_INT);
         }
+        // Same for component parameter.
+        if (!isset($this->component)) {
+            $this->component = $this->optional_param('component', null, PARAM_COMPONENT);
+        }
         return \context::instance_by_id($this->contextid);
     }
 
@@ -102,7 +113,7 @@ class persona_form extends dynamic_form {
     protected function check_access_for_dynamic_submission(): void {
         global $USER;
         require_capability('block/ai_chat:view', $this->get_context_for_dynamic_submission());
-        $manager = new manager($this->contextid);
+        $manager = new manager($this->contextid, $this->component);
         $manager->require_manage_persona($this->_ajaxformdata['personaid'], $USER->id);
     }
 
@@ -153,7 +164,7 @@ class persona_form extends dynamic_form {
         $personadata->userinfo = $formdata->userinfo;
         $personadata->type = isset($formdata->type) ? $formdata->type : null;
 
-        $manager = new manager($this->contextid);
+        $manager = new manager($this->contextid, $this->component);
         return $manager->edit_persona($personadata, $USER->id);
     }
 
@@ -167,8 +178,8 @@ class persona_form extends dynamic_form {
             'personaid' => $this->_ajaxformdata['personaid'],
             'userid' => $this->_ajaxformdata['userid'],
             'name' => $this->_ajaxformdata['name'],
-            'prompt' => format_text($this->_ajaxformdata['prompt'], FORMAT_MOODLE, ['para' => false, 'filter' => false]),
-            'userinfo' => format_text($this->_ajaxformdata['userinfo'], FORMAT_MOODLE, ['para' => false, 'filter' => false]),
+            'prompt' => clean_text($this->_ajaxformdata['prompt']),
+            'userinfo' => clean_text($this->_ajaxformdata['userinfo']),
             'type' => $this->_ajaxformdata['type'],
         ];
 

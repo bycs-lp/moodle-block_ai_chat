@@ -22,8 +22,9 @@ import {getAiConfig} from 'local_ai_manager/config';
 import {getString} from 'core/str';
 import {alert as displayAlert} from 'core/notification';
 import {showErrorToast} from 'block_ai_chat/utils';
-import Popover from 'theme_boost/bootstrap/popover';
-
+import {MODES} from 'block_ai_chat/constants';
+import * as DomExtractor from 'block_ai_chat/dom_extractor';
+import {debounce} from 'core/utils';
 
 class Chat extends BaseContent {
     /**
@@ -58,6 +59,8 @@ class Chat extends BaseContent {
             CHAT_OUTPUT: `[data-block_ai_chat-element='chatoutput']`,
             HISTORY_MARKER: `[data-block_ai_chat-element='historymarker']`,
         };
+        this._debouncedScrollToBottom = debounce(this._scrollToBottom.bind(this), 250);
+        this._debouncedFocusInputTextarea = debounce(this._focusInputTextarea.bind(this), 250);
     }
 
     /**
@@ -74,9 +77,6 @@ class Chat extends BaseContent {
         return [
             ...super.getWatchers(),
             {watch: `messages:created`, handler: this._addMessageToChatArea},
-            {watch: `messages:created`, handler: this._updateHistoryMarker},
-            {watch: `messages:deleted`, handler: this._updateHistoryMarker},
-            {watch: `config.conversationContextLimit:updated`, handler: this._updateHistoryMarker},
             {watch: `personas${this.reactive.state.config.currentPersona}:deleted`, handler: this._removeCurrentPersona},
             {watch: `config.loadingState:updated`, handler: this._handleLoadingStateUpdated},
         ];
@@ -87,17 +87,27 @@ class Chat extends BaseContent {
         placeholder.setAttribute('data-id', element.id);
         let node = this.getElement(this.selectors.CHAT_OUTPUT);
         node.appendChild(placeholder);
-        const templateData = {
+
+        const responseIsAgentResponse = element.messageMode === 'agent';
+
+        let templateData = {
             id: element.id,
+            agentMode: responseIsAgentResponse,
             senderai: element.sender === 'ai',
-            content: element.content,
             loading: element.hasOwnProperty('loading') ? element.loading : false,
         };
+        if (responseIsAgentResponse) {
+            const agentResponse = responseIsAgentResponse ? this._getAgentAnswerTemplateContext(element.content) : {};
+            templateData = {...templateData, ...agentResponse};
+        } else {
+            templateData.content = element.content;
+        }
         const newcomponent = await this.renderComponent(placeholder, 'block_ai_chat/components/message', templateData);
         const newelement = newcomponent.getElement();
         node.replaceChild(newelement, placeholder);
-        this._scrollToBottom();
-        this._focusInputTextarea();
+        this.reactive.dispatch('setMessageRendered', element.id, true);
+        this._debouncedScrollToBottom();
+        this._debouncedFocusInputTextarea();
     }
 
 
@@ -109,26 +119,38 @@ class Chat extends BaseContent {
             await showErrorToast(errorString);
             return;
         }
-        this.reactive.dispatch('submitAiRequest', prompt);
+        const additionalOptions = {};
+        if (this.reactive.state.config.mode === MODES.AGENT) {
+            additionalOptions.agentoptions = {
+                formelements: DomExtractor.extractDomElements(),
+                pageid: document.body.id
+            };
+        }
+        this.reactive.dispatch('submitAiRequest', prompt, additionalOptions);
     }
 
     async _handleLoadingStateUpdated({element}) {
         const loadingSpinnerMessage = {
             'id': 'loadingspinner',
             'sender': 'ai',
-            'loading': true
+            'loading': true,
+            'agentMode': false
         };
 
         const temporaryPromptMessage = {
             'id': 'temporaryprompt',
             'sender': 'user',
             'content': this.getElement(this.selectors.INPUT_TEXTAREA).value,
+            'agentMode': false
         };
 
         if (element.loadingState) {
             await this._addMessageToChatArea({element: temporaryPromptMessage});
             await this._addMessageToChatArea({element: loadingSpinnerMessage});
-            this.getElement(this.selectors.INPUT_TEXTAREA).value = '';
+            const inputTextarea = this.getElement(this.selectors.INPUT_TEXTAREA);
+            inputTextarea.value = '';
+            // Very hacky, but we need to fire this event manually to trigger the auto-resize.
+            inputTextarea.dispatchEvent(new Event('input'));
         }
     }
 
@@ -143,60 +165,11 @@ class Chat extends BaseContent {
         this.reactive.dispatch('selectCurrentPersona', 0);
     }
 
-    async _updateHistoryMarker() {
-        setTimeout(async() => {
-            // Remove existing marker
-            const existingMarker = this.getElement().querySelector(this.selectors.HISTORY_MARKER);
-            if (existingMarker) {
-                existingMarker.remove();
-            }
-
-            const chatOutput = this.getElement(this.selectors.CHAT_OUTPUT);
-            if (!chatOutput) {
-                return;
-            }
-
-            const messages = Array.from(chatOutput.querySelectorAll('[data-block_ai_chat-component="message"]'));
-            const contextLimit = this.reactive.state.config.conversationContextLimit;
-
-            if (messages.length <= contextLimit) {
-                return;
-            }
-
-            // Marker position: after message at index (length - 2 * contextLimit - 1).
-            // History length of 4 messages actually means 4 user messages and 4 AI messages = 8 messages total.
-            const markerPosition = messages.length - 2 * contextLimit - 1;
-            const messageBeforeContext = messages[markerPosition];
-
-            if (messageBeforeContext) {
-                const marker = document.createElement('div');
-                marker.setAttribute('data-block_ai_chat-element', 'historymarker');
-                marker.className = 'block_ai_chat-history-marker';
-
-                // Fetch the string for the popover content
-                const historyLengthInfo = await getString('historylengthinfo', 'block_ai_chat');
-                // TODO Refactor to template.
-                marker.innerHTML = `
-                    <hr class="block_ai_chat-history-line">
-                    <span class="badge rounded-pill text-primary bg-secondary cursor-pointer" role="button" tabindex="0"
-                        data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top"
-                        data-bs-content="${historyLengthInfo}" data-bs-trigger="focus"
-                        aria-label="${historyLengthInfo}">${contextLimit}</span>
-                `;
-
-                messageBeforeContext.after(marker);
-
-                // Initialize the popover
-                const badgeElement = marker.querySelector('.badge');
-                if (badgeElement) {
-                    new Popover(badgeElement);
-                }
-            }
-        }, 100);
-    }
-
     async _renderContent() {
-        const {html, js} = await Templates.renderForPromise('block_ai_chat/chat_content', {});
+        const {html, js} = await Templates.renderForPromise(
+            'block_ai_chat/chat_content',
+            {conversationContextLimit: this.reactive.state.config.conversationContextLimit}
+        );
         Templates.replaceNodeContents(this.getElement(), html, js);
         await this._setupAfterContentRendering();
         const availabilityErrorMessage = await this.isAiChatAvailable();
@@ -257,10 +230,9 @@ class Chat extends BaseContent {
         this.addEventListener(sendRequestButton, 'click', this._submitAiRequestListener);
         this.addEventListener(inputTextarea, 'keydown', this._handleKeyDownOnInputTextarea);
 
-        this._scrollToBottom();
-        this._updateHistoryMarker();
         this._enableTextAreaAutoResize();
-        this._focusInputTextarea();
+        this._debouncedScrollToBottom();
+        this._debouncedFocusInputTextarea();
     }
 
     getViewName() {
@@ -281,7 +253,7 @@ class Chat extends BaseContent {
 
     _enableTextAreaAutoResize() {
         const inputTextarea = this.getElement(this.selectors.INPUT_TEXTAREA);
-        this.addEventListener(inputTextarea, 'keydown', () => {
+        this.addEventListener(inputTextarea, 'input', () => {
             // Handle autogrow/-shrink.
             // Reset the height to auto to get the correct scrollHeight.
             inputTextarea.style.height = 'auto';
@@ -322,6 +294,33 @@ class Chat extends BaseContent {
         return '';
     }
 
+    _getAgentAnswerTemplateContext(content) {
+        const agentAnswer = JSON.parse(content);
+        const chatOutputIntroObject = agentAnswer.chatoutput.filter(object => object.type === 'intro')[0];
+        const chatOutputOutroObject = agentAnswer.chatoutput.filter(object => object.type === 'outro')[0];
+        const suggestionContext = {
+            intro: chatOutputIntroObject.text,
+            suggestions: [],
+            outro: chatOutputOutroObject.text
+        };
+        agentAnswer.formelements.forEach(async(formElement) => {
+                const htmlElement = document.getElementById(formElement.id);
+                let newValue = formElement.newValue ? formElement.newValue.trim() : '';
+                if (newValue.length === 0) {
+                    newValue = 0;
+                }
+                suggestionContext.suggestions.push({
+                    fieldname: formElement.label,
+                    explanation: formElement.explanation,
+                    elementId: formElement.id,
+                    suggestionvalue: newValue,
+                    suggestiondisplayvalue: newValue,
+                    disabledButtons: !htmlElement
+                });
+            }
+        );
+        return suggestionContext;
+    }
 }
 
 export default Chat;

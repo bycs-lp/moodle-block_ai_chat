@@ -40,6 +40,7 @@ class get_initial_state extends external_api {
         return new external_function_parameters(
             [
                 'contextid' => new external_value(PARAM_INT, 'The block_ai_chat context id'),
+                'component' => new external_value(PARAM_COMPONENT, 'The component name calling the AI', VALUE_REQUIRED),
             ]
         );
     }
@@ -48,15 +49,18 @@ class get_initial_state extends external_api {
      * Returns the initial state of the AI Chat.
      *
      * @param int $contextid The context id of the AI chat
+     * @param string $component the component name of the plugin using block_ai_chat
      * @return array response array with the initial state
      */
-    public static function execute(int $contextid): array {
+    public static function execute(int $contextid, string $component): array {
         [
             'contextid' => $contextid,
+            'component' => $component,
         ] = external_api::validate_parameters(
             self::execute_parameters(),
             [
                 'contextid' => $contextid,
+                'component' => $component,
             ]
         );
 
@@ -65,7 +69,7 @@ class get_initial_state extends external_api {
 
         require_capability('block/ai_chat:view', $context);
 
-        $manager = new manager($contextid);
+        $manager = new manager($contextid, $component);
         return $manager->get_initial_state();
     }
 

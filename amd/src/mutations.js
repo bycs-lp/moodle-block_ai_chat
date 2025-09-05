@@ -29,6 +29,7 @@ export default class {
         let ajaxresult = await callExternalFunctionReactiveUpdate('block_ai_chat_select_persona',
             {
                 contextid: stateManager.state.static.contextid,
+                component: stateManager.state.static.component,
                 personaid,
             }
         );
@@ -43,15 +44,19 @@ export default class {
         await this.setView(stateManager, 'chat');
     }
 
-    async submitAiRequest(stateManager, prompt) {
+    async submitAiRequest(stateManager, prompt, additionalOptions) {
         this.setLoadingState(stateManager, true);
         const options = {
             conversationid: stateManager.state.config.currentConversationId,
+            ...additionalOptions
         };
+
         const requestOptions = JSON.stringify(options);
         const result = await callExternalFunctionReactiveUpdate('block_ai_chat_request_ai',
             {
                 contextid: stateManager.state.static.contextid,
+                component: stateManager.state.static.component,
+                mode: stateManager.state.config.mode,
                 prompt: prompt,
                 options: requestOptions
             }
@@ -131,6 +136,7 @@ export default class {
             'block_ai_chat_get_messages',
             {
                 contextid: stateManager.state.static.contextid,
+                component: stateManager.state.static.component,
                 conversationid: stateManager.state.config.currentConversationId
             }
         );
@@ -151,6 +157,7 @@ export default class {
             'block_ai_chat_create_dummy_persona',
             {
                 contextid: stateManager.state.static.contextid,
+                component: stateManager.state.static.component
             }
         );
         if (ajaxresult === null) {
@@ -164,6 +171,7 @@ export default class {
             'block_ai_chat_duplicate_persona',
             {
                 contextid: stateManager.state.static.contextid,
+                component: stateManager.state.static.component,
                 personaid
             }
         );
@@ -178,6 +186,7 @@ export default class {
             'block_ai_chat_delete_persona',
             {
                 contextid: stateManager.state.static.contextid,
+                component: stateManager.state.static.component,
                 personaid,
             }
         );
@@ -202,6 +211,7 @@ export default class {
             'block_ai_chat_delete_conversation',
             {
                 contextid: stateManager.state.static.contextid,
+                component: stateManager.state.static.component,
                 conversationid: stateManager.state.config.currentConversationId
             }
         );
@@ -222,6 +232,29 @@ export default class {
     setModalVisibility(stateManager, visible = null) {
         stateManager.setReadOnly(false);
         stateManager.state.config.modalVisible = visible === null ? !stateManager.state.config.modalVisible : visible;
+        stateManager.setReadOnly(true);
+    }
+
+    setMode(stateManager, mode) {
+        stateManager.setReadOnly(false);
+        stateManager.state.config.mode = mode;
+        stateManager.setReadOnly(true);
+    }
+
+    /**
+     * When inserting a message, we need to set its rendered state after it has been added to the DOM.
+     * This is being done by this mutation which needs to be called from the component after rendering.
+     *
+     * @param {Object} stateManager the state manager
+     * @param {int} messageid the id of the message that has been rendered
+     */
+    setMessageRendered(stateManager, messageid) {
+        stateManager.setReadOnly(false);
+        const message = stateManager.state.messages.get(messageid);
+        if (message) {
+            message.rendered = true;
+            stateManager.state.messages.set(messageid, message);
+        }
         stateManager.setReadOnly(true);
     }
 }

@@ -1,0 +1,78 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template block_ai_chat/loading
+
+    Template which defines the data shown when question are ready.
+
+    Classes required for JS:
+    * none
+
+    Data attributes required for JS:
+    * none
+
+    Example context (json):
+    {
+        "aicontexts": [
+            {
+                "id": 5,
+                "name": "cloze",
+                "description": "Provides additional context for cloze question type",
+                "aicontext": "The cloze syntax is as follows: ...",
+            },
+            {
+                "id": 8,
+                "name": "stack",
+                "description": "Provides the stack docs",
+                "instructions": "Stack is a question type that ...",
+            }
+        ]
+    }
+}}
+<div class="d-flex flex-column">
+    <div class="mt-5 mb-5">
+        <a href="{{config.wwwroot}}/blocks/ai_chat/edit_aicontext.php" class="btn btn-primary">{{#str}}addaicontext, block_ai_chat{{/str}}</a>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered">
+            <thead>
+            <tr>
+                <th scope="col">{{#str}}name, block_ai_chat{{/str}}</th>
+                <th scope="col">{{#str}}aicontextdescription, block_ai_chat{{/str}}</th>
+                <th scope="col">{{#str}}aicontext, block_ai_chat{{/str}}</th>
+                <th scope="col">{{#str}}pagetypes, block_ai_chat{{/str}}</th>
+                <th scope="col">{{#str}}enabled, block_ai_chat{{/str}}</th>
+            </tr>
+            </thead>
+            <tbody>
+            {{#aicontexts}}
+                <tr>
+                    <td><a href="{{config.wwwroot}}/blocks/ai_chat/edit_aicontext.php?id={{id}}">{{name}}</a></td>
+                    <td><div class="block_ai_chat-aicontext_cell">{{description}}</div></td>
+                    <td><div class="block_ai_chat-aicontext_cell">{{content}}</div></td>
+                    <td>{{pagetypes}}</td>
+                    <td>
+                        {{#enabled}}<span class="text-success"><i class="fa fa-check" title="{{#str}}enabled, block_ai_chat{{/str}}"></i></span>{{/enabled}}
+                        {{^enabled}}<span class="text-danger"><i class="fa fa-ban" title="{{#str}}disabled, block_ai_chat{{/str}}"></i></span>{{/enabled}}
+                    </td>
+                </tr>
+            {{/aicontexts}}
+            </tbody>
+        </table>
+    </div>
+</div>
+
