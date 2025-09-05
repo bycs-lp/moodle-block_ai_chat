@@ -24,6 +24,7 @@
 
 /**
  * upgrade code
+ *
  * @param int $oldversion
  * @return bool
  */
@@ -44,6 +45,25 @@ function xmldb_block_ai_chat_upgrade($oldversion) {
         \block_ai_chat\local\persona::install_default_personas();
 
         upgrade_plugin_savepoint(true, 2025021000, 'block', 'ai_chat');
+    }
+
+    if ($oldversion < 2025121300) {
+        $table = new xmldb_table('block_ai_chat_personas');
+        $field = new xmldb_field('type', XMLDB_TYPE_INTEGER, '1', null, null, null, null, 'userinfo');
+
+        if (!$dbman->field_exists($table, $field)) {
+            $dbman->add_field($table, $field);
+        }
+        foreach ($DB->get_records('block_ai_chat_personas') as $persona) {
+            $persona->type = intval($persona->userid) === 0
+                ? \block_ai_chat\local\persona::TYPE_TEMPLATE
+                : \block_ai_chat\local\persona::TYPE_USER;
+            if (intval($persona->userid) === 0) {
+                $persona->userid = get_admin()->id;
+            }
+            $DB->update_record('block_ai_chat_personas', $persona);
+        }
+        upgrade_block_savepoint(true, 2025121300, 'ai_chat');
     }
 
     return true;

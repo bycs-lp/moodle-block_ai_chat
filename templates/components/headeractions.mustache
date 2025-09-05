@@ -1,0 +1,62 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template block_ai_chat/headeractions
+
+    Navigation options, as new dialog, show history etc.
+
+    Example context (json):
+    {
+        "badge": {
+            "title": "Restricted",
+            "text": "Badge Example"
+        }
+    }
+}}
+<div class="headeractions" data-block_ai_chat-element="headeractions" data-id="headeractions-{{uniqid}}">
+    {{> block_ai_chat/state_header }}
+    <div class="dropdown block_ai_chat_action_menu">
+        <button class="btn btn-icon icon-no-margin p-0 ml-2" data-toggle="dropdown" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-ellipsis"></i></button>
+        <div class="dropdown-menu dropdown-menu-right">
+            <a class="dropdown-item" href="#" data-block_ai_chat-element="newconversationbutton">{{#pix}} t/messages, core, {{#str}} newdialog, block_ai_chat {{/str}} {{/pix}}{{#str}} newdialog, block_ai_chat {{/str}}</a>
+            <a class="dropdown-item" href="#" data-block_ai_chat-element="showhistorybutton">{{#pix}} t/reload, core, {{#str}} showhistory, block_ai_chat {{/str}} {{/pix}}{{#str}} history, block_ai_chat {{/str}}</a>
+            {{#showPersona}}
+                <a class="dropdown-item" href="#" data-block_ai_chat-element="personalistbutton">{{#pix}} t/user, core, {{#str}} managepersona, block_ai_chat {{/str}} {{/pix}}{{#str}} managepersona, block_ai_chat {{/str}}</a>
+            {{/showPersona}}
+            {{#showOptions}}
+                <a class="dropdown-item" href="#" data-block_ai_chat-element="optionsbutton">{{#pix}} i/customfield, core, {{#str}} preferences, block_ai_chat {{/str}} {{/pix}}{{#str}} preferences, block_ai_chat {{/str}}</a>
+            {{/showOptions}}
+            <a class="dropdown-item" href="#" data-block_ai_chat-element="deleteconversationbutton">{{#pix}} t/delete, core, {{#str}} delete, block_ai_chat {{/str}} {{/pix}}{{#str}} delete, block_ai_chat {{/str}}</a>
+        </div>
+    </div>
+
+    {{#showViews}}
+    <div class="dropdown block_ai_chat_action_menu views">
+        <button class="btn btn-icon icon-no-margin p-0 ml-1" data-toggle="dropdown" data-bs-toggle="dropdown" aria-expanded="false"><i class="fa fa-window-restore"></i></button>
+        <div class="dropdown-menu dropdown-menu-right">
+            <a class="dropdown-item" href="#" data-block_ai_chat-element="viewmodewindowbutton"><i class="icon fa fa-window-restore"></i>{{#str}} chatwindow, block_ai_chat {{/str}}</a>
+            <a class="dropdown-item" href="#" data-block_ai_chat-element="viewmodeopenfullbutton"><i class="icon fa fa-up-right-and-down-left-from-center"></i>{{#str}} openfull, block_ai_chat {{/str}}</a>
+            <a class="dropdown-item" href="#" data-block_ai_chat-element="viewmodedockrightbutton"><i class="icon fa fa-window-restore"></i>{{#str}} dockright, block_ai_chat {{/str}}</a>
+        </div>
+    </div>
+    {{/showViews}}
+</div>
+{{#js}}
+    require(['block_ai_chat/components/headeractions'], function(component) {
+        component.init('[data-block_ai_chat-element="headeractions"][data-id="headeractions-{{uniqid}}"]');
+    });
+{{/js}}
