@@ -1,0 +1,78 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template block_ai_chat/persona_info_modal
+
+    TODO describe template persona_info_modal
+
+    Example context (json):
+    {
+    }
+}}
+
+{{< core/modal }}
+    {{$ title }}
+        {{#str}} personainfomodaltitle, block_ai_chat {{/str}}
+    {{/ title }}
+    {{$ body }}
+        <div data-block_ai_chat-element="personainfomodalcontent">
+            {{#personaSelected}}
+                <div data-block_ai_chat-element="personainfomodalcurrentpersona">
+                    <table class="table table-bordered">
+                        <tbody>
+                        <tr>
+                            <th>{{#str}}name, block_ai_chat{{/str}}</th>
+                            <td>{{personaName}}</td>
+                        </tr>
+                        <tr>
+                            <th>{{#str}}userinfo, block_ai_chat{{/str}}</th>
+                            {{! We intentionally do not sanitize personaUserInfo, because we made sure that the content has already been cleaned by the backend. }}
+                            <td>{{{personaUserInfo}}}</td>
+                        </tr>
+                        {{#showPersona}}
+                            <tr>
+                                <th>{{#str}}prompt, block_ai_chat{{/str}}</th>
+                                {{! We intentionally do not sanitize personaUserInfo, because we made sure that the content has already been cleaned by the backend. }}
+                                <td>{{{personaPrompt}}}</td>
+                            </tr>
+                        {{/showPersona}}
+                        </tbody>
+                    </table>
+                </div>
+            {{/personaSelected}}
+            {{#showPersona}}
+                <div class="d-flex flex-row w-100 justify-content-center">
+                    <button data-block_ai_chat-element="personainfomodalpersonalistbutton" class="btn btn-secondary">{{#str}}managepersona, block_ai_chat{{/str}}</button>
+                </div>
+            {{/showPersona}}
+        </div>
+    {{/ body }}
+    {{$ footer }}
+        {{#personalinkAvailable}}
+            <div class="d-flex flex-row w-100 justify-content-between align-items-center">
+                <div data-block_ai_chat-element="personainfomodalpersonalink" class="d-flex flex-row justify-content-center">
+                    <a href="{{{personalink}}}" target="_blank">{{#str}}personainfomodalpersonalink, block_ai_chat{{/str}}</a>
+                </div>
+        {{/personalinkAvailable}}
+            <button class="btn btn-primary" data-action="cancel">
+                {{#str}} ok {{/str}}
+            </button>
+        {{#personalinkAvailable}}
+            </div>
+        {{/personalinkAvailable}}
+    {{/ footer }}
+{{/core/modal}}

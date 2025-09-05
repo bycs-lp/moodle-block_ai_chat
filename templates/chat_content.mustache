@@ -1,0 +1,43 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template block_ai_chat/chat_content
+
+    Content of the chat component. Used for easily being able to re-render if necessary.
+
+    Example context (json):
+    {
+    }
+}}
+<div data-block_ai_chat-element="outputwrapper" class="block_ai_chat-output-wrapper">
+    <div class="gradient-overlay"></div>
+    <div data-block_ai_chat-element="chatoutput" class="block_ai_chat-output">
+    </div>
+</div>
+<div class="block_ai_chat-input-wrapper">
+    <div class="block_ai_chat-input">
+        <button class="btn btn-icon ai_chat_icon_button" data-block_ai_chat-element="tinyaibutton" name="Open AI tools">
+            <img src="{{globals.config.wwwroot}}/blocks/ai_chat/pix/ai-icon.svg" alt="">
+        </button>
+        <textarea class="form-control" data-block_ai_chat-element="inputtextarea" rows="1"
+                  placeholder="{{#str}} input, block_ai_chat {{/str}}"></textarea>
+        <button type="submit" data-block_ai_chat-element="submitbutton" class="btn btn-primary">
+            <i class="icon fa fa-arrow-right ml-2" aria-hidden="true"></i>
+        </button>
+    </div>
+    {{> block_ai_chat/components/userquota }}
+</div>

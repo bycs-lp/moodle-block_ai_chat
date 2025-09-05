@@ -16,13 +16,14 @@
 
 namespace block_ai_chat\external;
 
+use block_ai_chat\manager;
 use core_external\external_api;
 use core_external\external_function_parameters;
 use core_external\external_single_structure;
 use core_external\external_value;
 
 /**
- * Class delete_conversation.
+ * External function for marking a conversation as deleted.
  *
  * @package    block_ai_chat
  * @copyright  2024 Tobias Garske, ISB Bayern
@@ -30,60 +31,48 @@ use core_external\external_value;
  */
 class delete_conversation extends external_api {
     /**
-     * Describes the parameters.
+     * Describes the input parameters.
      *
-     * @return external_function_parameters
+     * @return external_function_parameters the parameters that the function accepts
      */
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
             'contextid' => new external_value(PARAM_INT, 'Course contextid.', VALUE_REQUIRED),
-            'userid' => new external_value(PARAM_INT, 'Userid.', VALUE_REQUIRED),
             'conversationid' => new external_value(PARAM_INT, 'Conversationid / Itemid.', VALUE_REQUIRED),
         ]);
     }
 
     /**
-     * Execute the service.
+     * Mark a conversation as deleted.
      *
-     * @param int $contextid
-     * @param int $userid
-     * @param int $conversationid
-     * @return array
-     * @throws invalid_parameter_exception
-     * @throws dml_exception
+     * @param int $contextid the context id
+     * @param int $conversationid the conversation id (itemid in the context of local_ai_manager)
+     * @return array response array including status code and content array containing reactive state updates
      */
-    public static function execute(int $contextid, int $userid, int $conversationid): array {
+    public static function execute(int $contextid, int $conversationid): array {
         global $USER;
-
-        self::validate_parameters(self::execute_parameters(), [
+        [
             'contextid' => $contextid,
-            'userid' => $userid,
+            'conversationid' => $conversationid,
+        ] = self::validate_parameters(self::execute_parameters(), [
+            'contextid' => $contextid,
             'conversationid' => $conversationid,
         ]);
         self::validate_context(\core\context_helper::instance_by_id($contextid));
+        require_capability('block/ai_chat:view', \context::instance_by_id($contextid));
         require_capability('local/ai_manager:use', \context::instance_by_id($contextid));
 
-        // Check userid and USER-id ?
-        // Delete conversation.
-        $response = \local_ai_manager\ai_manager_utils::mark_log_entries_as_deleted(
-            'block_ai_chat',
-            $contextid,
-            $USER->id,
-            $conversationid
-        );
-        // Maybe response missing?
-
-        return ['result' => true];
+        $manager = new manager($contextid);
+        // Passing the user id of the *CURRENT USER* is very important here regarding permission checks.
+        return $manager->delete_conversation($USER->id, $conversationid);
     }
 
     /**
-     * Describes the return structure of the service..
+     * Returns the default update structure for the Reactive UI frontend.
      *
-     * @return external_single_structure the return structure
+     * @return external_single_structure the update structure containing state updates
      */
     public static function execute_returns() {
-        return new external_single_structure([
-            'result' => new external_value(PARAM_BOOL, 'Removed successfully.'),
-        ]);
+        return manager::get_update_structure();
     }
 }

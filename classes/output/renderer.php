@@ -24,6 +24,8 @@
 
 namespace block_ai_chat\output;
 
+use block_ai_chat\local\persona;
+use block_ai_chat\manager;
 use plugin_renderer_base;
 
 /**
@@ -37,40 +39,12 @@ class renderer extends plugin_renderer_base {
      * @return string html for the page
      */
     public function render_ai_chat_content(\block_ai_chat $block): string {
-        global $USER;
-
-        // Get current personaprompt.
-        [$personaprompt, $personainfo] = \block_ai_chat\local\persona::get_current_persona($block->context->id);
-
-        $params = new \stdClass();
-        $params->new = get_string('newdialog', 'block_ai_chat');
-        $params->history = get_string('history', 'block_ai_chat');
-        $params->persona = get_string('definepersona', 'block_ai_chat');
-        $params->newpersona = get_string('newpersona', 'block_ai_chat');
-        $params->usertemplates = get_string('usertemplates', 'block_ai_chat');
-        $params->systemtemplates = get_string('systemtemplates', 'block_ai_chat');
-        $params->personaprompt = $personaprompt;
-        $params->personainfo = $personainfo;
-        $params->showpersona = has_capability('block/ai_chat:addinstance', $block->context, $USER->id);
-        $params->showoptions = has_capability('block/ai_chat:addinstance', $block->context, $USER->id);
-        $params->personalink = get_config('block_ai_chat', 'personalink');
-        $params->showpersona = is_siteadmin() || (has_capability('block/ai_chat:addinstance', $block->context, $USER->id)
-                && $block->instance->parentcontextid != 1);
-        $params->showoptions = is_siteadmin() || (has_capability('block/ai_chat:addinstance', $block->context, $USER->id)
-                && $block->instance->parentcontextid != 1);
-        $params->userid = $USER->id;
-        $params->contextid = $block->context->id;
-        $params->isadmin = is_siteadmin();
-        $params->badge = [
-            'text' => get_string('private', 'block_ai_chat'),
-            'title' => get_string('badgeprivate', 'block_ai_chat'),
-        ];
-        $this->page->requires->js_call_amd(
-            'block_ai_chat/dialog',
-            'init',
-            [$params]
+        return parent::render_from_template(
+            'block_ai_chat/floatingbutton',
+            [
+                'contextid' => $block->context->id,
+                'title' => get_string('floatingbuttontitle', 'block_ai_chat'),
+            ]
         );
-
-        return parent::render_from_template('block_ai_chat/floatingbutton', $params);
     }
 }
