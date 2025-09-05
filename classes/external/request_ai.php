@@ -21,7 +21,6 @@ use core_external\external_api;
 use core_external\external_function_parameters;
 use core_external\external_single_structure;
 use core_external\external_value;
-use moodle_exception;
 
 /**
  * Send a message to the AI and return the answer in a reactive state update format.
@@ -41,11 +40,12 @@ class request_ai extends external_api {
         return new external_function_parameters(
             [
                 'contextid' => new external_value(PARAM_INT, 'The block_ai_chat context id'),
+                'mode' => new external_value(PARAM_ALPHA, 'The mode to be used ("chat" or "agent")', VALUE_REQUIRED),
                 'prompt' => new external_value(PARAM_RAW, 'The prompt to send to the AI', VALUE_REQUIRED),
                 'options' => new external_value(
                     PARAM_RAW,
                     'Additional options for the AI request as stringified JSON',
-                    VALUE_OPTIONAL,
+                    VALUE_DEFAULT,
                     '{}'
                 ),
             ]
@@ -56,17 +56,20 @@ class request_ai extends external_api {
      * Sends a message to the AI and returns the answer in a reactive state update format.
      *
      * @param int $contextid The context id
+     * @param string $mode The mode to be used (can be "chat" or "agent")
      * @param string $prompt The prompt to send to the AI
      * @param string $options Additional options for the AI request as stringified JSON
      * @return array response array including status code and content array containing reactive state updates
      */
-    public static function execute(int $contextid, string $prompt, string $options): array {
+    public static function execute(int $contextid, string $mode, string $prompt, string $options): array {
         [
             'contextid' => $contextid,
+            'mode' => $mode,
             'prompt' => $prompt,
             'options' => $options,
         ] = external_api::validate_parameters(self::execute_parameters(), [
             'contextid' => $contextid,
+            'mode' => $mode,
             'prompt' => $prompt,
             'options' => $options,
         ]);
@@ -78,9 +81,12 @@ class request_ai extends external_api {
 
         // We do not need capability for local_ai_manager, because it is checked in the ai_manager directly.
         require_capability('block/ai_chat:view', $context);
+        if ($mode === 'agent') {
+            require_capability('block/ai_chat:useagentmode', $context);
+        }
 
         $manager = new manager($contextid);
-        return $manager->request_ai($prompt, $options);
+        return $manager->request_ai($prompt, $mode, $options);
     }
 
     /**

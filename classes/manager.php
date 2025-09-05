@@ -277,12 +277,12 @@ class manager {
             $conversationid,
             false,
             '*',
-            ['chat']
+            ['chat', 'agent']
         );
         $messages = [];
         // Go over all log entries and create conversation items.
         foreach ($logentries as $logentry) {
-            $messages = array_merge($messages, $this->convert_log_entry_to_messages($logentry));
+            $messages = array_merge($messages, $this->convert_log_entry_to_messages($logentry, $logentry->purpose));
         }
         return [
             'code' => 200,
@@ -304,7 +304,7 @@ class manager {
             0,
             false,
             'itemid',
-            ['chat'],
+            ['chat', 'agent'],
             1
         );
         if (empty($logentries)) {
@@ -387,10 +387,11 @@ class manager {
      * Perform an AI request and return the resulting messages in reactive UI state update format.
      *
      * @param string $prompt the prompt that should be sent to the AI
+     * @param string $mode the mode to be used (can be "chat" or "agent")
      * @param array $options additional request options
      * @return array response with code, message, debuginfo and content as reactive UI state updates
      */
-    public function request_ai(string $prompt, array $options): array {
+    public function request_ai(string $prompt, string $mode, array $options): array {
         global $DB, $USER;
         if (empty($options['conversationid'])) {
             $conversationid = ai_manager_utils::get_next_free_itemid('block_ai_chat', $this->context->id);
@@ -407,19 +408,43 @@ class manager {
             $conversationlimit = (int) $historycontextmaxrecord->value;
         }
         $options['conversationcontext'] = $this->retrieve_conversationcontext($options['itemid'], $USER->id, $conversationlimit);
-        $currentpersona = persona::get_current_persona($this->context->id);
-        if (!empty($currentpersona)) {
-            $options['conversationcontext'] = array_merge(
-                [
+        if ($mode === 'chat') {
+            // Persona only makes sense in chat mode.
+            $currentpersona = persona::get_current_persona($this->context->id);
+            if (!empty($currentpersona)) {
+                $options['conversationcontext'] = array_merge(
                     [
-                        'sender' => 'system',
-                        'message' => $currentpersona->prompt,
+                        [
+                            'sender' => 'system',
+                            'message' => $currentpersona->prompt,
+                        ],
                     ],
-                ],
-                $options['conversationcontext']
-            );
+                    $options['conversationcontext']
+                );
+            }
         }
-        $aimanager = new \local_ai_manager\manager('chat');
+
+        if (!empty($options['agentoptions']['pageid'])) {
+            [$pagetypeinsql, $pagetypeinparams] =
+                $DB->get_in_or_equal(
+                    matching_page_type_patterns($options['agentoptions']['pageid']),
+                    SQL_PARAMS_NAMED
+                );
+            $sql = "SELECT aic.content FROM {block_ai_chat_aicontext_usage} u
+                JOIN {block_ai_chat_aicontext} aic ON u.aicontextid = aic.id
+               WHERE u.pagetype $pagetypeinsql AND aic.enabled = :enabled";
+            $additionalcontexts = $DB->get_fieldset_sql(
+                $sql,
+                [
+                    ...$pagetypeinparams,
+                    'enabled' => 1,
+                ]
+            );
+            $options['agentoptions']['additionalcontext'] =
+                trim(array_reduce($additionalcontexts, fn($carry, $item) => $carry . PHP_EOL . trim($item), ''));
+        }
+
+        $aimanager = new \local_ai_manager\manager($mode);
         $requestresult = $aimanager->perform_request($prompt, 'block_ai_chat', $this->context->id, $options);
         if ($requestresult->get_code() !== 200) {
             return [
@@ -442,7 +467,7 @@ class manager {
      */
     public function convert_log_entry_to_messages(stdClass $logentry): array {
         $connectorfactory = \core\di::get(\local_ai_manager\local\connector_factory::class);
-        $chatpurpose = $connectorfactory->get_purpose_by_purpose_string('chat');
+        $purpose = $connectorfactory->get_purpose_by_purpose_string($logentry->purpose);
         return [
             [
                 'name' => 'messages',
@@ -452,6 +477,7 @@ class manager {
                     'conversationid' => $logentry->itemid,
                     'content' => htmlspecialchars($logentry->prompttext),
                     'sender' => 'user',
+                    'messageMode' => 'chat',
                 ]),
             ],
             [
@@ -461,8 +487,9 @@ class manager {
 
                     'id' => $logentry->id . '-2',
                     'conversationid' => $logentry->itemid,
-                    'content' => $chatpurpose->format_output($logentry->promptcompletion),
+                    'content' => $purpose->format_output($logentry->promptcompletion),
                     'sender' => 'ai',
+                    'messageMode' => $logentry->purpose === 'agent' ? 'agent' : 'chat',
                 ]),
             ],
         ];
@@ -483,8 +510,8 @@ class manager {
             $userid,
             $itemid,
             false,
-            '*',
-            ['chat'],
+            'prompttext,promptcompletion',
+            ['chat', 'agent'],
             $conversationlimit
         );
 
@@ -582,6 +609,8 @@ class manager {
         $conversationcontext =
             $DB->get_record('block_ai_chat_options', ['contextid' => $this->context->id, 'name' => 'historycontextmax']);
         $currentpersonaid = persona::get_current_persona_id($this->context->id);
+        $aiconfig = ai_manager_utils::get_ai_config($USER, $this->context->id, null, ['agent']);
+        $agentavailable = $aiconfig['purposes'][0]['available'] === ai_manager_utils::AVAILABILITY_AVAILABLE;
 
         return [
             'static' => [
@@ -589,6 +618,7 @@ class manager {
                 'userid' => $USER->id,
                 'showPersona' => $haseditcapability,
                 'showOptions' => $haseditcapability,
+                'showAgentMode' => has_capability('block/ai_chat:useagentmode', $this->context) && $agentavailable,
                 'canEditSystemPersonas' => has_capability('block/ai_chat:managepersonatemplates', $this->context),
                 'isAdmin' => is_siteadmin(),
                 // Will be shown in the persona info modal, if it is present.
@@ -633,6 +663,7 @@ class manager {
                 'userid' => new external_value(PARAM_INT, 'User ID'),
                 'showPersona' => new external_value(PARAM_BOOL, 'Configuring personas allowed'),
                 'showOptions' => new external_value(PARAM_BOOL, 'Configuring options allowed'),
+                'showAgentMode' => new external_value(PARAM_BOOL, 'Agent mode allowed'),
                 'canEditSystemPersonas' => new external_value(PARAM_BOOL, 'If user is allowed to edit system personas'),
                 'isAdmin' => new external_value(PARAM_BOOL, 'If the user is site administrator'),
                 'personalink' => new external_value(PARAM_RAW, 'External link with information about personas'),

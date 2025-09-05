@@ -3,6 +3,7 @@ import {getString} from 'core/str';
 import {confirm as confirmModal} from 'core/notification';
 import ModalForm from 'core_form/modalform';
 import ModalCancel from 'core/modal_cancel';
+import {MODES} from 'block_ai_chat/constants';
 
 /**
  * Component representing a message in the ai_chat.
@@ -33,12 +34,15 @@ class HeaderActions extends BaseComponent {
             VIEWMODE_WINDOW_BUTTON: '[data-block_ai_chat-element="viewmodewindowbutton"]',
             VIEWMODE_OPENFULL_BUTTON: '[data-block_ai_chat-element="viewmodeopenfullbutton"]',
             VIEWMODE_DOCKRIGHT_BUTTON: '[data-block_ai_chat-element="viewmodedockrightbutton"]',
-            PERSONABANNER: `[data-block_ai_chat-element='personabanner']`,
+            MODE_SWITCH: `[data-block_ai_chat-element='modeswitch']`,
+            PERSONA_BANNER: `[data-block_ai_chat-element='personabanner']`,
             PERSONA_INFO_MODAL_MANAGE_PERSONA_BUTTON: `[data-block_ai_chat-element='personainfomodalpersonalistbutton']`,
+            MFORM: `form.mform`,
         };
     }
 
     async stateReady(state) {
+        this._modeUpdated({element: state.config});
         this._refreshPersona({element: state.config});
 
         this.addEventListener(
@@ -60,10 +64,19 @@ class HeaderActions extends BaseComponent {
             );
         }
         this.addEventListener(
-            this.getElement(this.selectors.PERSONABANNER),
+            this.getElement(this.selectors.PERSONA_BANNER),
             'click',
             this._showPersonaInfoModal
         );
+
+        const modeSwitch = this.getElement(this.selectors.MODE_SWITCH);
+        if (modeSwitch) {
+            this.addEventListener(
+                this.getElement(this.selectors.MODE_SWITCH),
+                'click',
+                this._clickModeSwitchListener
+            );
+        }
 
         const optionsButton = this.getElement(this.selectors.OPTIONS_BUTTON);
         if (optionsButton) {
@@ -112,6 +125,7 @@ class HeaderActions extends BaseComponent {
     getWatchers() {
         return [
             // We update if we switch personas.
+            {watch: `config.mode:updated`, handler: this._modeUpdated},
             {watch: `config.currentPersona:updated`, handler: this._refreshPersona},
             // We also have to update if the persona information changes.
             {watch: `personas:updated`, handler: this._personaInformationChanged},
@@ -188,7 +202,7 @@ class HeaderActions extends BaseComponent {
     _refreshPersona({element}) {
         // We have a convenience method to locate elements inside the component.
         const newPersonaId = parseInt(element.currentPersona);
-        const personaBanner = this.getElement(this.selectors.PERSONABANNER);
+        const personaBanner = this.getElement(this.selectors.PERSONA_BANNER);
         if (newPersonaId === 0) {
             personaBanner.classList.add('d-none');
         } else {
@@ -245,6 +259,43 @@ class HeaderActions extends BaseComponent {
                 personaInfoModal.hide();
             });
         }
+    }
+
+    async _modeUpdated({element}) {
+        const modeChatString = await getString('modechat', 'block_ai_chat');
+        const modeAgentString = await getString('modeagent', 'block_ai_chat');
+        const modeSwitch = this.getElement(this.selectors.MODE_SWITCH);
+        if (!modeSwitch) {
+            // We have no mode switch, so nothing to do.
+            return;
+        }
+        const mformElement = document.querySelector(this.selectors.MFORM);
+        if (
+            // TODO this can be improved, for example does not really work for dynamically hidden
+            //  forms like the one mod/forum/view.php.
+            mformElement
+            && window.getComputedStyle(mformElement).display !== 'none'
+            && window.getComputedStyle(mformElement).visibility !== 'hidden'
+        ) {
+            modeSwitch.classList.remove('d-none');
+        } else {
+            modeSwitch.classList.add('d-none');
+            this.reactive.dispatch('setMode', MODES.CHAT);
+        }
+
+        modeSwitch.innerText = element.mode === MODES.AGENT ? modeAgentString : modeChatString;
+        const personaBanner = this.getElement(this.selectors.PERSONA_BANNER);
+        if (element.mode === MODES.AGENT) {
+            personaBanner.classList.add('d-none');
+        } else {
+            personaBanner.classList.remove('d-none');
+        }
+    }
+
+    _clickModeSwitchListener() {
+        const currentMode = this.reactive.state.config.mode;
+        const newMode = currentMode === MODES.AGENT ? MODES.CHAT : MODES.AGENT;
+        this.reactive.dispatch('setMode', newMode);
     }
 }
 

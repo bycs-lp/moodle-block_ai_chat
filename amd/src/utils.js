@@ -88,3 +88,21 @@ export const hash = async(stringToHash) => {
         .map((b) => b.toString(16).padStart(2, "0"))
         .join("");
 };
+
+/**
+ * Makes a straight text string without any HTML tags from a string that may contain HTML tags.
+ * @param {string} textWithTags some HTML text
+ * @returns {string} text without HTML tags
+ */
+export const stripHtmlTags = (textWithTags) => {
+    // Replace <br> and variants with space
+    let text = textWithTags.replace(/<br\s*\/?>/gi, ' ');
+    // Remove all other HTML tags
+    text = text.replace(/<[^>]*>/g, '');
+    // Remove line breaks
+    text = text.replace(/[\r\n]+/g, ' ');
+    // Normalize multiple spaces to single space
+    text = text.replace(/\s+/g, ' ');
+    // Trim leading/trailing whitespace
+    return text.trim();
+};

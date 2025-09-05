@@ -66,5 +66,34 @@ function xmldb_block_ai_chat_upgrade($oldversion) {
         upgrade_block_savepoint(true, 2025121300, 'ai_chat');
     }
 
+    if ($oldversion < 2025121301) {
+        $table = new xmldb_table('block_ai_chat_aicontext');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('name', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        $table->add_field('description', XMLDB_TYPE_TEXT, null, null, null, null, null);
+        $table->add_field('content', XMLDB_TYPE_TEXT, null, null, null, null, null);
+        $table->add_field('enabled', XMLDB_TYPE_TEXT, null, null, null, null, null);
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        $table = new xmldb_table('block_ai_chat_aicontext_usage');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('pagetype', XMLDB_TYPE_CHAR, '255', null, null, null, null);
+        $table->add_field('aicontextid', XMLDB_TYPE_INTEGER, '10', null, null, null, null);
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_key('aicontextid', XMLDB_KEY_FOREIGN, ['aicontextid'], 'block_ai_chat_aicontext', ['id']);
+        $table->add_index('pagetype-aicontextid', XMLDB_INDEX_UNIQUE, ['pagetype', 'aicontextid']);
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        upgrade_block_savepoint(true, 2025121301, 'ai_chat');
+    }
+
     return true;
 }

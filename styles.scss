@@ -39,6 +39,11 @@ body:not(.block_ai_chat_replacehelp).hasstickyfooter #ai_chat_button {
     bottom: calc(40px + 1rem + calc(max(80px, calc(0.9375rem * 3))));
 }
 
+.block_ai_chat-aicontext_cell {
+    max-height: 200px;
+    overflow-y: auto;
+}
+
 .block_ai_chat_modal{
     .modal-dialog {
         display: flex;
@@ -55,7 +60,7 @@ body:not(.block_ai_chat_replacehelp).hasstickyfooter #ai_chat_button {
             .modal-content {
                 min-width: 84vw;
             }
-        }        
+        }
     }
     .modal-header {
         width: 100%;
@@ -313,9 +318,6 @@ body:not(.block_ai_chat_replacehelp).hasstickyfooter #ai_chat_button {
             justify-content: space-between;
             gap: .2rem;
         }
-        &.card {
-            flex-direction: column-reverse;
-        }
     }
 }
 @media (min-width: 497px) {
@@ -348,7 +350,7 @@ body.block_ai_chat_chatwindow {
             .modal-dialog .modal-content {
                 min-height: 400px;
             }
-        } 
+        }
     }
 }
 body.block_ai_chat_chatwindow,
@@ -446,6 +448,31 @@ body.block_ai_chat_replacehelp {
         max-height: calc(100vh - 6rem);
         bottom: 3.5rem;
     }
+}
+
+.block_ai_chat-form_element_highlight {
+  position: relative;
+  border-radius: 0.375rem;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: -0.5rem;
+    left: -0.5rem;
+    right: -0.5rem;
+    bottom: -0.5rem;
+    border: 2px solid var(--highlight-color, var(--bs-warning));
+    border-radius: 0.375rem;
+    background: transparent;
+    box-shadow: 0 0 8px 2px var(--highlight-color, var(--bs-warning));
+    pointer-events: none;
+    z-index: 1;
+    animation: block_ai_chat-form_element_blink 1.2s ease-in-out;
+  }
+
+  &.block_ai_chat-form_element_highlight-insert {
+    --highlight-color: var(--bs-primary);
+  }
 }
 
 #add_persona,

@@ -43,15 +43,18 @@ export default class {
         await this.setView(stateManager, 'chat');
     }
 
-    async submitAiRequest(stateManager, prompt) {
+    async submitAiRequest(stateManager, prompt, additionalOptions) {
         this.setLoadingState(stateManager, true);
         const options = {
             conversationid: stateManager.state.config.currentConversationId,
+            ...additionalOptions
         };
+
         const requestOptions = JSON.stringify(options);
         const result = await callExternalFunctionReactiveUpdate('block_ai_chat_request_ai',
             {
                 contextid: stateManager.state.static.contextid,
+                mode: stateManager.state.config.mode,
                 prompt: prompt,
                 options: requestOptions
             }
@@ -222,6 +225,12 @@ export default class {
     setModalVisibility(stateManager, visible = null) {
         stateManager.setReadOnly(false);
         stateManager.state.config.modalVisible = visible === null ? !stateManager.state.config.modalVisible : visible;
+        stateManager.setReadOnly(true);
+    }
+
+    setMode(stateManager, mode) {
+        stateManager.setReadOnly(false);
+        stateManager.state.config.mode = mode;
         stateManager.setReadOnly(true);
     }
 }
