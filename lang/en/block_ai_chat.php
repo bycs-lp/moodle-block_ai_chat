@@ -26,6 +26,7 @@
 $string['addblockinstance'] = 'Add an AI Chat to this course';
 $string['addblockinstance_help'] = 'Adds an AI Chat to this course. The AI chat will be removed including all conversations if the checkbox is unchecked.';
 $string['addpersonatitle'] = 'Add new persona';
+$string['agentmode'] = 'Agent mode';
 $string['ai_chat'] = 'AI Chat';
 $string['ai_chat:addinstance'] = 'Add an AI Chat block';
 $string['ai_chat:myaddinstance'] = 'Add an AI Chat block to my moodle';

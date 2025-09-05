@@ -93,6 +93,7 @@ let maxHistoryWarnings = new Set();
 // Tenantconfig.
 let tenantConfig = {};
 let chatConfig = {};
+let agentMode = false;
 
 class DialogModal extends Modal {
     static TYPE = "block_ai_chat/dialog_modal";
@@ -140,13 +141,17 @@ export const init = async (params) => {
     badge = false;
 
     // Get configuration.
-    const aiConfig = await getAiConfig(contextid, null, ['chat']);
+    const aiConfig = await getAiConfig(contextid, null, ['chat', 'agent']);
     tenantConfig = aiConfig;
     chatConfig = aiConfig.purposes[0];
 
+    const agentString = await getString('agentmode', 'block_ai_chat');
     // Build chat dialog modal.
     modal = await DialogModal.create({
         templateContext: {
+            identifier: 'agent-toggle',
+            checked: agentMode,
+            text: agentString,
             title: strNewDialog,
             badge: badge,
             showPersona: showPersona,
@@ -170,7 +175,7 @@ export const init = async (params) => {
     // Attach listener to the ai button to call modal.
     let button = document.getElementById('ai_chat_button');
     button.addEventListener('mousedown', async () => {
-        showModal(params);
+        await showModal(params);
     });
 
     // Get strings.
@@ -193,6 +198,7 @@ export const init = async (params) => {
  * Show ai_chat modal.
  */
 async function showModal() {
+    console.log("SHOW MODAL")
     // Switch for repeated clicking.
     if (modalopen) {
         modal.hide();
@@ -217,6 +223,7 @@ async function showModal() {
     });
 
     if (firstLoad) {
+        firstLoad = false;
         // Load conversations.
         await getConversations();
 
@@ -226,6 +233,12 @@ async function showModal() {
         // Get conversationcontext message limit.
         let reply = await externalServices.getConversationcontextLimit(contextid);
         maxHistory = reply.limit;
+
+        // Add listener for agent mode toggle
+        const agentToggle = document.querySelector('[data-toggle-identifier="agent-toggle"] input');
+        agentToggle.addEventListener('change', () => {
+            agentMode = !agentMode;
+        });
 
         // Add listeners for dropdownmenus.
         // Actions.
@@ -279,7 +292,7 @@ async function showModal() {
         });
 
         // Show userquota.
-        await renderUserQuota('#block_ai_chat_userquota', ['chat']);
+        await renderUserQuota('#block_ai_chat_userquota', ['chat', 'agent']);
         // Show infobox.
         await renderInfoBox(
             'block_ai_chat', userid, '.block_ai_chat_modal_body [data-content="local_ai_manager_infobox"]', ['chat']
@@ -335,7 +348,6 @@ async function showModal() {
             await editorUtils.displayDialogue();
         });
 
-        firstLoad = false;
     }
 
     helper.focustextarea();
@@ -452,49 +464,54 @@ const enterQuestion = async (question) => {
         pageid: document.body.id
     };
 
-    // TODO if else agent mode or not
-    delete options.conversationcontext;
-    let requestresult = await manager.askLocalAiManager('agent', question, contextid, options);
-    console.log(requestresult);
-    let agentAnswer = null;
+    let requestresult;
     let suggestionContext = null;
-    try {
-        console.log(requestresult.result);
-        agentAnswer = JSON.parse(requestresult.result);
-        // If we have a parsable agent response there is no
-        requestresult.result = '';
-        console.log(agentAnswer)
-        const chatOutputIntroObject = agentAnswer.chatoutput.filter(object => object.type === 'intro')[0];
-        const chatOutputOutroObject = agentAnswer.chatoutput.filter(object => object.type === 'outro')[0];
-        suggestionContext = {
-            intro: chatOutputIntroObject.text,
-            suggestions: [],
-            outro: chatOutputOutroObject.text
-        };
-        console.log(suggestionContext)
-        agentAnswer.formelements.forEach(formElement => {
-                const htmlElement = document.getElementById(formElement.id);
-                console.log(htmlElement);
-                console.log(htmlElement.tagName)
-                console.log(formElement.new_value)
+    if (agentMode) {
+        // TODO Pass again the conversationcontext -> also apply purpose.
+        delete options.conversationcontext;
+        requestresult = await manager.askLocalAiManager('agent', question, contextid, options);
+        let agentAnswer = null;
+        try {
+            console.log(requestresult.result);
+            agentAnswer = JSON.parse(requestresult.result);
+            // If we have a parsable agent response there is no
+            requestresult.result = '';
+            console.log(agentAnswer)
+            const chatOutputIntroObject = agentAnswer.chatoutput.filter(object => object.type === 'intro')[0];
+            const chatOutputOutroObject = agentAnswer.chatoutput.filter(object => object.type === 'outro')[0];
+            suggestionContext = {
+                intro: chatOutputIntroObject.text,
+                suggestions: [],
+                outro: chatOutputOutroObject.text
+            };
+            console.log(suggestionContext)
+            agentAnswer.formelements.forEach(formElement => {
+                    const htmlElement = document.getElementById(formElement.id);
+                    console.log(htmlElement);
+                    console.log(htmlElement.tagName)
+                    console.log(formElement.new_value)
 
-                console.log(htmlElement.value)
-            console.log(formElement)
-                const extractedDomElement = options.agentoptions.formelements.filter(element => element.id === formElement.id)[0];
-                console.log(extractedDomElement)
-                suggestionContext.suggestions.push({
-                    fieldname: extractedDomElement.label,
-                    explanation: formElement.explanation,
-                    elementId: formElement.id,
-                    suggestionvalue: formElement.new_value,
-                });
-            }
-        );
+                    console.log(htmlElement.value)
+                    console.log(formElement)
+                    const extractedDomElement = options.agentoptions.formelements.filter(element => element.id === formElement.id)[0];
+                    console.log(extractedDomElement)
+                    suggestionContext.suggestions.push({
+                        fieldname: extractedDomElement.label,
+                        explanation: formElement.explanation,
+                        elementId: formElement.id,
+                        suggestionvalue: formElement.new_value,
+                    });
+                }
+            );
+            console.log(suggestionContext)
+        } catch (error) {
+            console.log(error);
+        }
         console.log(suggestionContext)
-    } catch (error) {
-        console.log(error);
+    } else {
+        requestresult = await manager.askLocalAiManager('chat', question, contextid, options);
     }
-    console.log(suggestionContext)
+
 
     // Handle errors.
     if (requestresult.code != 200) {
@@ -505,10 +522,10 @@ const enterQuestion = async (question) => {
     await showReply(requestresult.result, suggestionContext);
     // Attach copy listener.
     // TODO Not sure why this does not work, commented out for the moment
-    /*let copy = document.querySelector('.block_ai_chat_modal .awaitanswer .copy');
+    let copy = document.querySelector('.block_ai_chat_modal .awaitanswer .copy');
     copy.addEventListener('mousedown', () => {
         helper.copyToClipboard(copy);
-    });*/
+    });
 
     // Render mathjax.
     helper.renderMathjax();
@@ -528,7 +545,7 @@ const enterQuestion = async (question) => {
     // Update userquota.
     const userquota = document.getElementById('block_ai_chat_userquota');
     userquota.innerHTML = '';
-    renderUserQuota('#block_ai_chat_userquota', ['chat']);
+    renderUserQuota('#block_ai_chat_userquota', ['chat', 'agent']);
 };
 
 /**
