@@ -23,6 +23,8 @@ import {getString} from 'core/str';
 import {alert as displayAlert} from 'core/notification';
 import {showErrorToast} from 'block_ai_chat/utils';
 import Popover from 'theme_boost/bootstrap/popover';
+import {MODES} from 'block_ai_chat/constants';
+import * as DomExtractor from 'block_ai_chat/dom_extractor';
 
 
 class Chat extends BaseContent {
@@ -87,12 +89,21 @@ class Chat extends BaseContent {
         placeholder.setAttribute('data-id', element.id);
         let node = this.getElement(this.selectors.CHAT_OUTPUT);
         node.appendChild(placeholder);
-        const templateData = {
+
+        const responseIsAgentResponse = element.messageMode === 'agent';
+
+        let templateData = {
             id: element.id,
+            agentMode: responseIsAgentResponse,
             senderai: element.sender === 'ai',
-            content: element.content,
             loading: element.hasOwnProperty('loading') ? element.loading : false,
         };
+        if (responseIsAgentResponse) {
+            const agentResponse = responseIsAgentResponse ? this._getAgentAnswerTemplateContext(element.content) : {};
+            templateData = {...templateData, ...agentResponse};
+        } else {
+            templateData.content = element.content;
+        }
         const newcomponent = await this.renderComponent(placeholder, 'block_ai_chat/components/message', templateData);
         const newelement = newcomponent.getElement();
         node.replaceChild(newelement, placeholder);
@@ -109,20 +120,29 @@ class Chat extends BaseContent {
             await showErrorToast(errorString);
             return;
         }
-        this.reactive.dispatch('submitAiRequest', prompt);
+        const additionalOptions = {};
+        if (this.reactive.state.config.mode === MODES.AGENT) {
+            additionalOptions.agentoptions = {
+                formelements: DomExtractor.extractDomElements(),
+                pageid: document.body.id
+            };
+        }
+        this.reactive.dispatch('submitAiRequest', prompt, additionalOptions);
     }
 
     async _handleLoadingStateUpdated({element}) {
         const loadingSpinnerMessage = {
             'id': 'loadingspinner',
             'sender': 'ai',
-            'loading': true
+            'loading': true,
+            'agentMode': false
         };
 
         const temporaryPromptMessage = {
             'id': 'temporaryprompt',
             'sender': 'user',
             'content': this.getElement(this.selectors.INPUT_TEXTAREA).value,
+            'agentMode': false
         };
 
         if (element.loadingState) {
@@ -218,7 +238,7 @@ class Chat extends BaseContent {
         const uniqid = Math.random().toString(16).slice(2);
 
         await TinyAiUtils.init(uniqid, this.reactive.state.static.contextid, TinyAiConstants.modalModes.standalone);
-        this.addEventListener(tinyAiButton, 'click', async() => {
+        this.addEventListener(tinyAiButton, 'click', async () => {
             // We try to find selected text or images and inject it into the AI tools.
             const selectionObject = window.getSelection();
             if (selectionObject.rangeCount > 0) {
@@ -322,6 +342,33 @@ class Chat extends BaseContent {
         return '';
     }
 
+    _getAgentAnswerTemplateContext(content) {
+        const agentAnswer = JSON.parse(content);
+        const chatOutputIntroObject = agentAnswer.chatoutput.filter(object => object.type === 'intro')[0];
+        const chatOutputOutroObject = agentAnswer.chatoutput.filter(object => object.type === 'outro')[0];
+        const suggestionContext = {
+            intro: chatOutputIntroObject.text,
+            suggestions: [],
+            outro: chatOutputOutroObject.text
+        };
+        agentAnswer.formelements.forEach(async (formElement) => {
+                const htmlElement = document.getElementById(formElement.id);
+                let newValue = formElement.new_value.trim();
+                if (newValue.length === 0) {
+                    newValue = 0;
+                }
+                suggestionContext.suggestions.push({
+                    fieldname: formElement.label,
+                    explanation: formElement.explanation,
+                    elementId: formElement.id,
+                    suggestionvalue: newValue,
+                    suggestiondisplayvalue: newValue,
+                    disabledButtons: !htmlElement
+                });
+            }
+        );
+        return suggestionContext;
+    }
 }
 
 export default Chat;
