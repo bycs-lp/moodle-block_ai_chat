@@ -212,7 +212,11 @@ async function showModal() {
     body.classList.add(MODAL_OPEN);
     // Moodle core adds a overflow: "hidden" to the body when opening a modal to prevent scrolling outside the modal.
     // We however need exactly that, so we manipulate it back again.
-    body.style.overflow = 'visible';
+    // As a workaround we set this every second.
+    // TODO REMOVE THIS WORKAROUND
+    setInterval(() => {
+        body.style.overflow = 'visible';
+    }, 1000);
 
     // Add listener for input submission.
     const textarea = document.getElementById('block_ai_chat-input-id');
@@ -522,10 +526,10 @@ const enterQuestion = async (question) => {
     await showReply(requestresult.result, suggestionContext);
     // Attach copy listener.
     // TODO Not sure why this does not work, commented out for the moment
-    let copy = document.querySelector('.block_ai_chat_modal .awaitanswer .copy');
+    /*let copy = document.querySelector('.block_ai_chat_modal .awaitanswer .copy');
     copy.addEventListener('mousedown', () => {
         helper.copyToClipboard(copy);
-    });
+    });*/
 
     // Render mathjax.
     helper.renderMathjax();
