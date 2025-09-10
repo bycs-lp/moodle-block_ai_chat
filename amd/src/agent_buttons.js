@@ -77,10 +77,15 @@ const injectSuggestionIntoForm = (button) => {
         console.log('its a checkbox')
         if (parseInt(button.dataset.block_ai_chatSuggestionvalue) === 1) {
             console.log("setting the check")
-            htmlElement.checked = true;
+            // We cannot set the value, because it won't fire events. So the mform YUI won't recognize a change.
+            if (htmlElement.checked === false) {
+                htmlElement.click();
+            }
         } else {
             console.log("unchecking the checkbox")
-            htmlElement.checked = false;
+            if (htmlElement.checked === true) {
+                htmlElement.click();
+            }
         }
     } else if (relatedElement.type === 'select') {
         console.log('its a select')
