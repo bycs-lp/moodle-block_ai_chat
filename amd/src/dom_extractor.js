@@ -26,10 +26,11 @@
  * Get DOM elements inside #page-content and return as JSON.
  *
  * This function scans the page content for form elements and extracts their properties,
- * including values, labels, help text, and complex dependencies between elements.
+ * including values, labels, help text, error messages, and complex dependencies between elements.
  * It supports all major form input types and analyzes their relationships.
+ * Additionally, it extracts page context information from h2 headings with help content as additional elements.
  *
- * @returns {Promise<Object>} Promise that resolves to JSON object containing structured form element data with dependencies
+ * @returns {Array} Array containing structured form element data with dependencies and page context elements
  */
 export const extractDomElements = () => {
     const elements = [];
@@ -38,7 +39,7 @@ export const extractDomElements = () => {
     const contentDiv = document.getElementById('page-content');
     if (!contentDiv) {
         // Return empty structure if no content area is found.
-        return {};
+        return [];
     }
 
     // Comprehensive selector for all form input types including hidden fields and buttons.
@@ -114,6 +115,9 @@ export const extractDomElements = () => {
         // Extract help text/description that provides additional context for the field.
         const helptext = findHelptextForElement(node);
 
+        // Extract error text/validation messages for the field.
+        const errorText = findErrorForElement(node);
+
         // Determine if the element is currently active/enabled (1) or disabled (0).
         let active = 1;
         let isDisabled = false;
@@ -173,6 +177,11 @@ export const extractDomElements = () => {
             visible: isVisuallyVisible
         };
 
+        // Add error text if present.
+        if (errorText) {
+            elementData.error_message = errorText;
+        }
+
         // Add checked status for checkbox and radio elements.
         if (type === 'checkbox' || type === 'radio') {
             elementData.checked = node.checked || false;
@@ -207,8 +216,204 @@ export const extractDomElements = () => {
         elements.push(elementData);
     });
 
+    // Extract page context from h2 headings with help information and add as elements
+    const pageContextElements = extractPageContext(contentDiv);
+    elements.push(...pageContextElements);
+
     return elements;
 };
+
+/**
+ * Extract documentation links from the current page.
+ *
+ * This function extracts all documentation links from h2 help content and footer support links.
+ * It can be called independently from dialog.js to get page documentation context.
+ *
+ * @returns {Array} Array of documentation link objects containing url, linkText, and source information
+ */
+export const extractPageDock = () => {
+    const docLinks = [];
+
+    // Find the main content container
+    const contentDiv = document.getElementById('page-content');
+    if (!contentDiv) {
+        return docLinks;
+    }
+
+    // Extract links from h2 headings with help information
+    const headings = contentDiv.querySelectorAll('h2');
+    headings.forEach((heading) => {
+        const helpButton = heading.querySelector('a[data-bs-content]');
+
+        if (helpButton && helpButton.getAttribute('data-bs-content')) {
+            const rawHelp = helpButton.getAttribute('data-bs-content');
+            const headingText = getHeadingText(heading);
+
+            if (rawHelp) {
+                const helpLinks = extractLinksFromContent(rawHelp);
+                helpLinks.forEach(linkInfo => {
+                    docLinks.push({
+                        url: linkInfo.url,
+                        linkText: linkInfo.linkText,
+                        source: 'h2_help',
+                        context: headingText
+                    });
+                });
+            }
+        }
+    });
+
+    // Extract footer support links
+    const footerSupportLink = contentDiv.querySelector('.footer-support-link a[href*="docs.moodle.org"]');
+    if (footerSupportLink) {
+        const footerUrl = footerSupportLink.getAttribute('href');
+        const footerLinkText = (footerSupportLink.textContent || footerSupportLink.innerText || '').trim();
+
+        if (footerUrl && footerUrl.includes('docs.moodle.org')) {
+            // Check if this URL is different from already extracted URLs
+            const existingUrls = docLinks.map(link => link.url);
+
+            if (!existingUrls.includes(footerUrl)) {
+                docLinks.push({
+                    url: footerUrl,
+                    linkText: footerLinkText,
+                    source: 'footer_support',
+                    context: 'Documentation for this page'
+                });
+            }
+        }
+    }
+
+    return docLinks;
+};
+
+/**
+ * Extract heading text without help button content.
+ *
+ * @param {HTMLElement} heading - The heading element
+ * @returns {string} Clean heading text
+ */
+const getHeadingText = (heading) => {
+    const headingClone = heading.cloneNode(true);
+    const helpButtonClone = headingClone.querySelector('a[data-bs-content]');
+    if (helpButtonClone) {
+        helpButtonClone.remove();
+    }
+    return (headingClone.textContent || headingClone.innerText || '').trim();
+};
+
+/**
+ * Extract page context information from h2 headings with help content.
+ *
+ * This function searches for h2 elements that contain help buttons with Bootstrap popover
+ * data-bs-content attributes and extracts the help text as additional context elements.
+ * It uses the shared extractPageDock() method to get documentation links.
+ *
+ * @param {HTMLElement} contentDiv - The content container to search within
+ * @returns {Array} Array of page context elements in the same format as form elements
+ */
+const extractPageContext = (contentDiv) => {
+    const contextElements = [];
+
+    // Find all h2 elements that might contain help information
+    const headings = contentDiv.querySelectorAll('h2');
+
+    headings.forEach((heading) => {
+        // Look for help buttons with Bootstrap popover data within the heading
+        const helpButton = heading.querySelector('a[data-bs-content]');
+
+        if (helpButton && helpButton.getAttribute('data-bs-content')) {
+            // Extract the heading text (without the help button content)
+            const headingText = getHeadingText(heading);
+
+            // Extract help content from the popover data attribute
+            const rawHelp = helpButton.getAttribute('data-bs-content');
+            let helpText = '';
+
+            if (rawHelp) {
+                // Clean HTML content from the popover to get plain text
+                const tmpDiv = document.createElement('div');
+                tmpDiv.innerHTML = rawHelp;
+                helpText = (tmpDiv.textContent || tmpDiv.innerText || '').trim();
+            }
+
+            // Only add if we have both heading and help text
+            if (headingText && helpText) {
+                // Create element in the same format as form elements
+                const contextElement = {
+                    id: heading.id || '',
+                    name: 'page_context_' + (heading.id || 'heading_' + contextElements.length),
+                    type: 'page_context',
+                    current_value: '',
+                    label: headingText,
+                    helptext: helpText,
+                    active: 1,
+                    visible: 1
+                };
+
+                contextElements.push(contextElement);
+            }
+        }
+    });
+
+    return contextElements;
+};
+
+/**
+ * Extracts link information from HTML content, specifically looking for links inside .helpdoclink divs
+ *
+ * @param {string} htmlContent - The HTML content to search for links
+ * @returns {Array} Array of link objects containing url and linkText
+ */
+function extractLinksFromContent(htmlContent) {
+    const linkInfo = [];
+
+    if (!htmlContent) return linkInfo;
+
+    try {
+        // Create a temporary DOM element to parse the HTML
+        const tmpDiv = document.createElement('div');
+        tmpDiv.innerHTML = htmlContent;
+
+        // Look specifically for links inside elements with .helpdoclink class
+        const helpdocLinks = tmpDiv.querySelectorAll('.helpdoclink a');
+
+        helpdocLinks.forEach(link => {
+            const url = link.getAttribute('href');
+            const linkText = (link.textContent || link.innerText || '').trim();
+
+            if (url && !url.startsWith('#') && !url.startsWith('javascript:')) {
+                linkInfo.push({
+                    url: url,
+                    linkText: linkText
+                });
+            }
+        });
+
+        // If no .helpdoclink links found, fall back to any external links
+        if (linkInfo.length === 0) {
+            const allLinks = tmpDiv.querySelectorAll('a[href]');
+
+            allLinks.forEach(link => {
+                const url = link.getAttribute('href');
+                const linkText = (link.textContent || link.innerText || '').trim();
+
+                // Only include external links (not anchors or javascript)
+                if (url && !url.startsWith('#') && !url.startsWith('javascript:') &&
+                    (url.startsWith('http') || url.startsWith('https'))) {
+                    linkInfo.push({
+                        url: url,
+                        linkText: linkText
+                    });
+                }
+            });
+        }
+    } catch (e) {
+        console.warn('Error parsing HTML content for links:', e);
+    }
+
+    return linkInfo;
+}
 
 /**
  * Find label text for a given form element.
@@ -304,6 +509,68 @@ const findHelptextForElement = (element) => {
     }
 
     return helptext;
+};
+
+/**
+ * Find error text for a given form element.
+ *
+ * Searches for error messages associated with form elements, typically found in
+ * Bootstrap invalid-feedback divs or similar error containers in Moodle forms.
+ *
+ * @param {HTMLElement} element - The form element to find error text for
+ * @returns {string} The error text content, or empty string if none is found
+ */
+const findErrorForElement = (element) => {
+    let errorText = '';
+
+    // Define containers to search in hierarchical order from specific to general.
+    const searchContainers = [
+        element.parentElement,           // Direct parent first.
+        element.closest('.fitem'),       // Moodle form item container.
+        element.closest('.felement'),    // Moodle form element wrapper.
+        element.closest('.col-md-9')     // Bootstrap column containing the input.
+    ];
+
+    // Search each container for error content.
+    for (const container of searchContainers) {
+        if (container) {
+            // Look for Bootstrap invalid-feedback divs.
+            const errorDiv = container.querySelector('.invalid-feedback, .form-control-feedback.invalid-feedback');
+            if (errorDiv && errorDiv.style.display !== 'none') {
+                errorText = (errorDiv.textContent || errorDiv.innerText || '').trim();
+                if (errorText) {
+                    break;
+                }
+            }
+
+            // Also look for general error messages in .error class.
+            if (!errorText) {
+                const errorSpan = container.querySelector('.error');
+                if (errorSpan) {
+                    errorText = (errorSpan.textContent || errorSpan.innerText || '').trim();
+                    if (errorText) {
+                        break;
+                    }
+                }
+            }
+
+            // Look for ARIA error messages.
+            if (!errorText) {
+                const ariaErrorId = element.getAttribute('aria-describedby');
+                if (ariaErrorId) {
+                    const ariaErrorElement = document.getElementById(ariaErrorId);
+                    if (ariaErrorElement) {
+                        errorText = (ariaErrorElement.textContent || ariaErrorElement.innerText || '').trim();
+                        if (errorText) {
+                            break;
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    return errorText;
 };
 
 /**

@@ -357,7 +357,6 @@ async function showModal() {
     helper.focustextarea();
 }
 
-
 /**
  * Webservice Get all conversations.
  */
@@ -395,7 +394,6 @@ const showConversation = async (id = 0) => {
 };
 // Make globally accessible since it is used to show history in dropdownmenuitem.mustache.
 document.showConversation = showConversation;
-
 
 /**
  * Send input to ai connector.
@@ -465,6 +463,7 @@ const enterQuestion = async (question) => {
     // Send to local_ai_manager.
     options.agentoptions = {
         formelements: DomExtractor.extractDomElements(),
+        pagedock: DomExtractor.extractPageDock(),
         pageid: document.body.id
     };
 
@@ -515,7 +514,6 @@ const enterQuestion = async (question) => {
     } else {
         requestresult = await manager.askLocalAiManager('chat', question, contextid, options);
     }
-
 
     // Handle errors.
     if (requestresult.code != 200) {
@@ -1225,7 +1223,6 @@ const showPersonasModal = () => {
         manageInputs(true);
     });
 
-
     // Also enable admintemplate name input on error.
     personaForm.addEventListener(personaForm.events.SERVER_VALIDATION_ERROR, () => {
         manageInputs(true);
@@ -1239,7 +1236,6 @@ const showPersonasModal = () => {
         showUserinfo(false);
     });
 };
-
 
 /**
  * Show options modal.
