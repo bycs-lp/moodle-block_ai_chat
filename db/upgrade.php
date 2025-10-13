@@ -33,7 +33,6 @@ function xmldb_block_ai_chat_upgrade($oldversion) {
     $dbman = $DB->get_manager();
 
     if ($oldversion < 2025021000) {
-
         // Install persona DB tables.
         $installxmlfile = $CFG->dirroot . '/blocks/ai_chat/db/install.xml';
         if (file_exists($installxmlfile)) {

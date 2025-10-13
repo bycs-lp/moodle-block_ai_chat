@@ -14,25 +14,22 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
-namespace block_ai_chat\local;
-
+namespace block_ai_chat;
 
 /**
- * Class helper
+ * Class to retrieve MoodleQuickform from course_edit_form.
  *
- * @package    block_ai_chat
- * @copyright  2025 Tobias Garske, ISB Bayern
- * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @package   block_ai_chat
+ * @copyright 2024 Andreas Wagner
+ * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class options {
+class mock_course_edit_form extends \course_edit_form {
     /**
-     * Get current chat options for blockinstance.
-     * @param int $blockinstanceid
-     * @return array
+     * Get the protected MoodleQuickForm.
+     *
+     * @return MoodleQuickForm the form used.
      */
-    public static function get_options($blockinstanceid): array {
-        global $DB;
-
-        return $DB->get_records_select('block_ai_chat_options', 'contextid = ?', [$blockinstanceid]);
+    public function get_mform(): \MoodleQuickForm {
+        return $this->_form;
     }
 }

@@ -26,7 +26,6 @@ use local_ai_manager\local\userinfo;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class block_ai_chat extends block_base {
-
     /**
      * Initialize block
      *
@@ -73,18 +72,25 @@ class block_ai_chat extends block_base {
 
         // We retrieve the config for all the purposes we are using. This includes the purposes that tiny_ai uses, because even
         // if the chat purpose is not available, the user should still be able to use the chatbot for accessing the tiny_ai tools.
-        $aiconfig = ai_manager_utils::get_ai_config($USER, $context->id, null,
-                ['chat', 'singleprompt', 'translate', 'itt', 'imggen', 'tts']);
+        $aiconfig = ai_manager_utils::get_ai_config(
+            $USER,
+            $context->id,
+            null,
+            ['chat', 'singleprompt', 'translate', 'itt', 'imggen', 'tts']
+        );
         if ($aiconfig['availability']['available'] === ai_manager_utils::AVAILABILITY_HIDDEN) {
             return $this->content;
         }
         $atleastonepurposenothidden =
-                array_reduce($aiconfig['purposes'], fn($a, $b) => $a || $b['available'] !== ai_manager_utils::AVAILABILITY_HIDDEN,
-                        false);
+            array_reduce(
+                $aiconfig['purposes'],
+                fn($a, $b) => $a || $b['available'] !== ai_manager_utils::AVAILABILITY_HIDDEN,
+                false
+            );
         if (!$atleastonepurposenothidden) {
             return $this->content;
         }
-        $this->content = new stdClass;
+        $this->content = new stdClass();
 
         /** @var block_ai_chat\output\renderer $aioutput */
         $aioutput = $this->page->get_renderer('block_ai_chat');
@@ -159,5 +165,4 @@ class block_ai_chat extends block_base {
         }
         return true;
     }
-
 }

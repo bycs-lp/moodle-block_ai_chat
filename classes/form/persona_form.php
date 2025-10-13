@@ -73,9 +73,9 @@ class persona_form extends dynamic_form {
         // Add a "+" icon after the select template input.
         $selectgroup[] = $mform->createElement('select', 'template', '', $names);
         $addicon = '<i id="add_persona" title ="' . get_string('addpersonatitle', 'block_ai_chat')
-                . '" class="fa-regular fa-square-plus ml-2"></i>';
+            . '" class="fa-regular fa-square-plus ml-2"></i>';
         $copyicon = '<i id="copy_persona" title ="' . get_string('copypersonatitle', 'block_ai_chat')
-                . '" class="fa fa-copy ml-2"></i>';
+            . '" class="fa fa-copy ml-2"></i>';
         $selectgroup[] = $mform->createElement('html', $addicon . $copyicon);
         $mform->addGroup($selectgroup, 'selectgroup', get_string('template', 'block_ai_chat'), [' '], false);
 
@@ -150,11 +150,14 @@ class persona_form extends dynamic_form {
         $formdata = $this->get_data();
 
         // Admintemplates are saved with userid 0, so change if admin is editing admintemplate or adds new template.
-        if (is_siteadmin() && (
-                        $this->personas[$formdata->template]->userid == "0" // We edit a current system template.
-                        // New template that has been declared as system template.
-                        || (!isset($formdata->template) && intval($formdata->systemtemplate) === 1)
-                )) {
+        if (
+            is_siteadmin()
+            && (
+                $this->personas[$formdata->template]->userid == "0" // We edit a current system template.
+                // New template that has been declared as system template.
+                || (!isset($formdata->template) && intval($formdata->systemtemplate) === 1)
+            )
+        ) {
             $userid = "0";
         } else {
             $userid = $USER->id;
@@ -165,7 +168,7 @@ class persona_form extends dynamic_form {
             $params = ['contextid' => $formdata->contextid];
             $DB->delete_records('block_ai_chat_personas_selected', $params);
             return [
-                    'update' => true,
+                'update' => true,
             ];
         }
 
@@ -176,23 +179,25 @@ class persona_form extends dynamic_form {
             // Check if selected should be deleted too.
             $params = ['contextid' => $formdata->contextid, 'personasid' => $formdata->template];
             $personaselected = $DB->get_record_select(
-                    'block_ai_chat_personas_selected', 'contextid = :contextid AND personasid = :personasid', $params
+                'block_ai_chat_personas_selected',
+                'contextid = :contextid AND personasid = :personasid',
+                $params
             );
             if ($personaselected) {
                 $DB->delete_records('block_ai_chat_personas_selected', $params);
             }
             return [
-                    'update' => true,
+                'update' => true,
             ];
         }
 
         // Save, so check if admintemplate, usertemplate or new template is chosen.
         // Is admintemplate and name, prompt and userinfo unchanged?
         if (
-                $this->personas[$formdata->template]->userid == "0" &&
-                $formdata->name == $this->personas[$formdata->template]->name &&
-                $formdata->prompt == $this->personas[$formdata->template]->prompt &&
-                $formdata->userinfo == $this->personas[$formdata->template]->userinfo
+            $this->personas[$formdata->template]->userid == "0" &&
+            $formdata->name == $this->personas[$formdata->template]->name &&
+            $formdata->prompt == $this->personas[$formdata->template]->prompt &&
+            $formdata->userinfo == $this->personas[$formdata->template]->userinfo
         ) {
             // Set selected.
             $personaselectednew = $formdata->template;
@@ -227,7 +232,6 @@ class persona_form extends dynamic_form {
             $record->id = $personaselected->id;
             $record->personasid = $personaselectednew;
             $DB->update_record('block_ai_chat_personas_selected', $record);
-
         } else {
             // Insert to personas_selected.
             $record = new \stdClass();
@@ -236,7 +240,7 @@ class persona_form extends dynamic_form {
             $DB->insert_record('block_ai_chat_personas_selected', $record);
         }
         return [
-                'update' => true,
+            'update' => true,
         ];
     }
 
@@ -253,15 +257,15 @@ class persona_form extends dynamic_form {
         $personaselected = $DB->get_record_select('block_ai_chat_personas_selected', 'contextid = ?', $param);
         if ($personaselected) {
             $data = [
-                    'template' => $personaselected->personasid,
-                    'name' => $this->personas[$personaselected->personasid]->name,
-                    'prompt' => $this->personas[$personaselected->personasid]->prompt,
-                    'userinfo' => $this->personas[$personaselected->personasid]->userinfo,
+                'template' => $personaselected->personasid,
+                'name' => $this->personas[$personaselected->personasid]->name,
+                'prompt' => $this->personas[$personaselected->personasid]->prompt,
+                'userinfo' => $this->personas[$personaselected->personasid]->userinfo,
             ];
         } else {
             $data = [
                 // No persona.
-                    'template' => 0,
+                'template' => 0,
             ];
         }
 

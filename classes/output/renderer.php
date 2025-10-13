@@ -42,7 +42,7 @@ class renderer extends plugin_renderer_base {
         // Get current personaprompt.
         [$personaprompt, $personainfo] = \block_ai_chat\local\persona::get_current_persona($block->context->id);
 
-        $params = new \stdClass;
+        $params = new \stdClass();
         $params->new = get_string('newdialog', 'block_ai_chat');
         $params->history = get_string('history', 'block_ai_chat');
         $params->persona = get_string('definepersona', 'block_ai_chat');
@@ -55,20 +55,20 @@ class renderer extends plugin_renderer_base {
         $params->showoptions = has_capability('block/ai_chat:addinstance', $block->context, $USER->id);
         $params->personalink = get_config('block_ai_chat', 'personalink');
         $params->showpersona = is_siteadmin() || (has_capability('block/ai_chat:addinstance', $block->context, $USER->id)
-            && $block->instance->parentcontextid != 1);
+                && $block->instance->parentcontextid != 1);
         $params->showoptions = is_siteadmin() || (has_capability('block/ai_chat:addinstance', $block->context, $USER->id)
-            && $block->instance->parentcontextid != 1);
+                && $block->instance->parentcontextid != 1);
         $params->userid = $USER->id;
         $params->contextid = $block->context->id;
         $params->isadmin = is_siteadmin();
         $params->badge = [
-                'text' => get_string('private', 'block_ai_chat'),
-                'title' => get_string('badgeprivate', 'block_ai_chat'),
+            'text' => get_string('private', 'block_ai_chat'),
+            'title' => get_string('badgeprivate', 'block_ai_chat'),
         ];
         $this->page->requires->js_call_amd(
-                'block_ai_chat/dialog',
-                'init',
-                [$params]
+            'block_ai_chat/dialog',
+            'init',
+            [$params]
         );
 
         return parent::render_from_template('block_ai_chat/floatingbutton', $params);

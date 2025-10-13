@@ -46,7 +46,6 @@ require_once($CFG->dirroot . '/course/edit_form.php');
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class ai_chat_test extends \advanced_testcase {
-
     /**
      * Create a page with regions.
      *
@@ -58,12 +57,11 @@ final class ai_chat_test extends \advanced_testcase {
      * @throws \coding_exception
      */
     protected function get_moodle_page(
-            array $regions,
-            object $context,
-            object $course,
-            string $pagetype
+        array $regions,
+        object $context,
+        object $course,
+        string $pagetype
     ): \moodle_page {
-
         $page = new \moodle_page();
         $page->set_context($context);
         $page->set_course($course);
@@ -96,11 +94,17 @@ final class ai_chat_test extends \advanced_testcase {
 
         // Get course page and module page.
         $coursepage = $this->get_moodle_page(
-                ['side-pre'], $coursecontext, $course, 'course-view'
+            ['side-pre'],
+            $coursecontext,
+            $course,
+            'course-view'
         );
 
         $modulepage = $this->get_moodle_page(
-                ['side-pre'], $contextmodule, $course, 'mod-forum-view'
+            ['side-pre'],
+            $contextmodule,
+            $course,
+            'mod-forum-view'
         );
 
         // Block cannot be added manually on course pages.
@@ -134,10 +138,10 @@ final class ai_chat_test extends \advanced_testcase {
 
         // Replace the version of the manager in the DI container with a phpunit one.
         \core\di::set(
-                \core\hook\manager::class,
-                \core\hook\manager::phpunit_get_instance([
-                        'block_ai_chat' => $CFG->dirroot . '/blocks/ai_chat/db/hooks.php',
-                ]),
+            \core\hook\manager::class,
+            \core\hook\manager::phpunit_get_instance([
+                'block_ai_chat' => $CFG->dirroot . '/blocks/ai_chat/db/hooks.php',
+            ]),
         );
 
         // Prepare renderer.
@@ -195,16 +199,17 @@ final class ai_chat_test extends \advanced_testcase {
      */
     public function test_course_settings_form_hooks(): void {
         global $CFG, $DB, $PAGE;
+        require_once(__DIR__ . '/fixtures/mock_course_edit_form.php');
 
         $this->resetAfterTest();
         $this->setAdminUser();
 
         // Replace the version of the manager in the DI container with a phpunit one.
         \core\di::set(
-                \core\hook\manager::class,
-                \core\hook\manager::phpunit_get_instance([
-                        'block_ai_chat' => $CFG->dirroot . '/blocks/ai_chat/db/hooks.php',
-                ]),
+            \core\hook\manager::class,
+            \core\hook\manager::phpunit_get_instance([
+                'block_ai_chat' => $CFG->dirroot . '/blocks/ai_chat/db/hooks.php',
+            ]),
         );
 
         // We disable the restriction of tenants.
@@ -215,19 +220,26 @@ final class ai_chat_test extends \advanced_testcase {
 
         $PAGE->set_url('/');
         $editoroptions = [
-                'context' => $coursecontext,
+            'context' => $coursecontext,
         ];
 
         // Create an course settings edit form mock.
-        $course = file_prepare_standard_editor($course, 'summary', $editoroptions,
-                $coursecontext, 'course', 'summary', 0);
+        $course = file_prepare_standard_editor(
+            $course,
+            'summary',
+            $editoroptions,
+            $coursecontext,
+            'course',
+            'summary',
+            0
+        );
 
         // First of all define the case that the tenant is not restricted, but still not enabled. We should not see a checkbox.
         set_config('restricttenants', false, 'local_ai_manager');
         \core\di::get(\local_ai_manager\local\config_manager::class)->set_config('tenantenabled', false);
         $this->assertFalse(\core\di::get(\local_ai_manager\local\config_manager::class)->is_tenant_enabled());
         $editform = new mock_course_edit_form(null, ['course' => $course, 'category' => $category,
-                'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => '']);
+            'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => '']);
         $mform = $editform->get_mform();
         $this->assertFalse($mform->elementExists('addaichat'));
 
@@ -235,7 +247,7 @@ final class ai_chat_test extends \advanced_testcase {
         \core\di::get(\local_ai_manager\local\config_manager::class)->set_config('tenantenabled', true);
         $this->assertTrue(\core\di::get(\local_ai_manager\local\config_manager::class)->is_tenant_enabled());
         $editform = new mock_course_edit_form(null, ['course' => $course, 'category' => $category,
-                'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => '']);
+            'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => '']);
         $mform = $editform->get_mform();
         $this->assertTrue($mform->elementExists('addaichat'));
 
@@ -254,8 +266,15 @@ final class ai_chat_test extends \advanced_testcase {
 
         // Update with addaichat flag set.
         $data = (object) $mform->exportValues();
-        $data = file_postupdate_standard_editor($data, 'summary', $editoroptions,
-                $coursecontext, 'course', 'summary', 0);
+        $data = file_postupdate_standard_editor(
+            $data,
+            'summary',
+            $editoroptions,
+            $coursecontext,
+            'course',
+            'summary',
+            0
+        );
         $data->addaichat = 1;
         // Update course triggers handle_after_form_submission.
         update_course($data, $editoroptions);
@@ -271,7 +290,7 @@ final class ai_chat_test extends \advanced_testcase {
 
         // Assert that addaichat element is existing and is checked.
         $editform = new mock_course_edit_form(null, ['course' => $course, 'category' => $category,
-                'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => '']);
+            'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => '']);
         $mform = $editform->get_mform();
 
         $addaichatelement = $mform->getElement('addaichat');
@@ -293,25 +312,5 @@ final class ai_chat_test extends \advanced_testcase {
         // Assert there is no course block instance existing.
         $aiblockinstances = $DB->get_records('block_instances', ['blockname' => 'ai_chat']);
         $this->assertCount(0, $aiblockinstances);
-    }
-}
-
-/**
- * Class to retrieve MoodleQuickform from course_edit_form.
- *
- * @package   block_ai_chat
- * @copyright 2024 Andreas Wagner
- * @license   http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
- * @coversNothing
- */
-class mock_course_edit_form extends \course_edit_form {
-
-    /**
-     * Get the protected MoodleQuickForm.
-     *
-     * @return MoodleQuickForm the form used.
-     */
-    public function get_mform(): \MoodleQuickForm {
-        return $this->_form;
     }
 }

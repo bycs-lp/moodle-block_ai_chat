@@ -32,7 +32,6 @@ use function PHPUnit\Framework\throwException;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class get_all_conversations extends external_api {
-
     /**
      * Describes the parameters.
      *
@@ -69,8 +68,15 @@ class get_all_conversations extends external_api {
         // We limit to purpose 'chat' here because we do not want the requests from the integrated tiny_ai tools to be loaded
         // for displaying our conversations. This especially is a performance issue, because the field 'requestoptions' contains
         // base64 decoded images for purpose 'itt', for example, which slows down the database query extremely.
-        $response = \local_ai_manager\ai_manager_utils::get_log_entries('block_ai_chat', $contextid, $USER->id,
-                0, false, '*', ['chat']);
+        $response = \local_ai_manager\ai_manager_utils::get_log_entries(
+            'block_ai_chat',
+            $contextid,
+            $USER->id,
+            0,
+            false,
+            '*',
+            ['chat']
+        );
         // Go over all log entries and create conversation items.
         foreach ($response as $value) {
             // Ignore values without itemid.
@@ -101,7 +107,7 @@ class get_all_conversations extends external_api {
             } else {
                 $allmessages = array_merge($result[$value->itemid]['messages'], $tmpmessages);
                 $result[$value->itemid] = [
-                    'id' => $result[$value->itemid]['id'] ,
+                    'id' => $result[$value->itemid]['id'],
                     'messages' => $allmessages,
                     'timecreated' => $result[$value->itemid]['timecreated'],
                 ];
@@ -126,8 +132,8 @@ class get_all_conversations extends external_api {
                     ])
                 ),
                 'timecreated' => new external_value(PARAM_TEXT, 'Creationtimestamp'),
-            ]), 'Messages with conversationid and timestamp.'
+            ]),
+            'Messages with conversationid and timestamp.'
         );
     }
 }
-

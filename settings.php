@@ -26,27 +26,36 @@
 defined('MOODLE_INTERNAL') || die;
 
 if ($hassiteconfig) {
-
-    $ADMIN->add('blocksettings', new admin_category('block_ai_chat_settings',
-            new lang_string('pluginname', 'block_ai_chat')));
+    $ADMIN->add(
+        'blocksettings',
+        new admin_category('block_ai_chat_settings', new lang_string('pluginname', 'block_ai_chat'))
+    );
 
     if ($ADMIN->fulltree) {
-
-        $settings->add(new admin_setting_configtextarea('block_ai_chat/showonpagetypes',
+        $settings->add(
+            new admin_setting_configtextarea(
+                'block_ai_chat/showonpagetypes',
                 new lang_string('showonpagetypes', 'block_ai_chat'),
                 new lang_string('showonpagetypesdesc', 'block_ai_chat'),
                 '',
-        ));
-        $settings->add(new admin_setting_configcheckbox('block_ai_chat/replacehelp',
+            )
+        );
+        $settings->add(
+            new admin_setting_configcheckbox(
+                'block_ai_chat/replacehelp',
                 new lang_string('replacehelp', 'block_ai_chat'),
                 '',
                 0,
-        ));
-        $settings->add(new admin_setting_configtext('block_ai_chat/personalink',
-            new lang_string('personalink', 'block_ai_chat'),
-            '',
-            '',
-            PARAM_TEXT
-        ));
+            )
+        );
+        $settings->add(
+            new admin_setting_configtext(
+                'block_ai_chat/personalink',
+                new lang_string('personalink', 'block_ai_chat'),
+                '',
+                '',
+                PARAM_TEXT
+            )
+        );
     }
 }

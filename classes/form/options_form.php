@@ -28,7 +28,6 @@ use function DI\get;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class options_form extends dynamic_form {
-
     /** @var int $blockcontextid */
     protected int $blockcontextid;
 
@@ -50,7 +49,6 @@ class options_form extends dynamic_form {
         $mform->addElement('text', 'historycontextmax', get_string('historycontextmax', 'block_ai_chat'));
         $mform->setType('historycontextmax', PARAM_INT);
         $mform->setDefault('historycontextmax', 5);
-
     }
 
     /**
@@ -114,7 +112,6 @@ class options_form extends dynamic_form {
             $record->id = $historycontextmax->id;
             $record->value = $formdata->historycontextmax;
             $DB->update_record('block_ai_chat_options', $record);
-
         } else {
             // Insert to personas_selected.
             $record = new \stdClass();

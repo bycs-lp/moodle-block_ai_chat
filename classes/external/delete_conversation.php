@@ -29,7 +29,6 @@ use core_external\external_value;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class delete_conversation extends external_api {
-
     /**
      * Describes the parameters.
      *
@@ -67,7 +66,10 @@ class delete_conversation extends external_api {
         // Check userid and USER-id ?
         // Delete conversation.
         $response = \local_ai_manager\ai_manager_utils::mark_log_entries_as_deleted(
-            'block_ai_chat', $contextid, $USER->id, $conversationid
+            'block_ai_chat',
+            $contextid,
+            $USER->id,
+            $conversationid
         );
         // Maybe response missing?
 
@@ -85,4 +87,3 @@ class delete_conversation extends external_api {
         ]);
     }
 }
-

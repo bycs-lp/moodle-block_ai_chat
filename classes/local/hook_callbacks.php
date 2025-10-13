@@ -40,8 +40,12 @@ class hook_callbacks {
         if ($configmanager->is_tenant_enabled()) {
             $mform = $hook->mform;
             ai_manager_utils::add_ai_tools_category_to_mform($mform);
-            $mform->addElement('checkbox', 'addaichat', get_string('pluginname', 'block_ai_chat'),
-                    get_string('addblockinstance', 'block_ai_chat'));
+            $mform->addElement(
+                'checkbox',
+                'addaichat',
+                get_string('pluginname', 'block_ai_chat'),
+                get_string('addblockinstance', 'block_ai_chat')
+            );
             $mform->addHelpButton('addaichat', 'addblockinstance', 'block_ai_chat');
             $mform->setDefault('addaichat', 0);
         }
@@ -64,7 +68,7 @@ class hook_callbacks {
         if (!empty($data->addaichat) && $data->addaichat == '1') {
             if (!$blockinstance) {
                 // Add block instance.
-                $newinstance = new \stdClass;
+                $newinstance = new \stdClass();
                 $newinstance->blockname = 'ai_chat';
                 $newinstance->parentcontextid = \context_course::instance($courseid)->id;
                 // We want to make the block usable for single activity courses as well, so display in subcontexts.
@@ -121,14 +125,15 @@ class hook_callbacks {
             return;
         }
         $systemcontext = context_system::instance();
-        $blockinstancerecord = $DB->get_record('block_instances',
-                ['blockname' => 'ai_chat', 'parentcontextid' => $systemcontext->id, 'pagetypepattern' => '']);
+        $blockinstancerecord = $DB->get_record(
+            'block_instances',
+            ['blockname' => 'ai_chat', 'parentcontextid' => $systemcontext->id, 'pagetypepattern' => '']
+        );
 
         if (!$blockinstancerecord) {
-
             $defaultregion = $PAGE->blocks->get_default_region();
             // Add a special system-wide block instance.
-            $blockinstancerecord = new stdClass;
+            $blockinstancerecord = new stdClass();
             $blockinstancerecord->blockname = 'ai_chat';
             $blockinstancerecord->parentcontextid = $systemcontext->id;
             $blockinstancerecord->showinsubcontexts = false;
@@ -172,8 +177,11 @@ class hook_callbacks {
      */
     public static function handle_purpose_usage(\local_ai_manager\hook\purpose_usage $hook): void {
         $hook->set_component_displayname('block_ai_chat', get_string('pluginname_userfaced', 'block_ai_chat'));
-        $hook->add_purpose_usage_description('chat', 'block_ai_chat',
-                get_string('purposeplacedescription_mainwindow', 'block_ai_chat'));
+        $hook->add_purpose_usage_description(
+            'chat',
+            'block_ai_chat',
+            get_string('purposeplacedescription_mainwindow', 'block_ai_chat')
+        );
         foreach (\tiny_ai\local\utils::get_purpose_placedescriptions() as $description) {
             $altereddescription = get_string('toolsofaibutton', 'block_ai_chat', $description['placedescription']);
             $hook->add_purpose_usage_description($description['purpose'], 'block_ai_chat', $altereddescription);
