@@ -1,0 +1,12 @@
+name: Moodle Plugin Release
+
+on:
+  release:
+    types: [ published ]
+
+jobs:
+  call-moodle-release-workflow:
+    uses: bycs-lp/moodle-workflows/.github/workflows/moodle-release.yml@main
+    with:
+      plugin-name: 'block_ai_chat'
+    secrets: inherit
