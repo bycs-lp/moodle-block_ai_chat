@@ -53,6 +53,7 @@ body:not(.block_ai_chat_replacehelp).hasstickyfooter #ai_chat_button {
            align-items: center;
            width: calc(100% - 1.7rem);
            font-size: 1rem;
+           overflow: visible;
            .block_ai_chat_title {
                 text-overflow: ellipsis;
                 white-space: nowrap;
