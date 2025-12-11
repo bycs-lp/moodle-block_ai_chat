@@ -24,7 +24,7 @@ import {makeRequest} from 'local_ai_manager/make_request';
  * @param {array} options
  * @returns {string}
  */
-export const askLocalAiManager = async(purpose, prompt, contextid, options = []) => {
+export const askLocalAiManager = async (purpose, prompt, contextid, options = []) => {
     let result = {};
     try {
         result = await makeRequest(purpose, prompt, 'block_ai_chat', contextid, options);

@@ -16,8 +16,10 @@
 import Modal from 'core/modal';
 import * as externalServices from 'block_ai_chat/webservices';
 import Templates from 'core/templates';
-import {alert as displayAlert, exception as displayException, deleteCancelPromise,
-    confirm as confirmModal} from 'core/notification';
+import {
+    alert as displayAlert, exception as displayException, deleteCancelPromise,
+    confirm as confirmModal
+} from 'core/notification';
 import SaveCancelModal from 'core/modal_save_cancel';
 import ModalEvents from 'core/modal_events';
 import ModalForm from 'core_form/modalform';
@@ -33,6 +35,8 @@ import {escapeHTML, hash, scrollToBottom} from './helper';
 import * as TinyAiUtils from 'tiny_ai/utils';
 import TinyAiEditorUtils from 'tiny_ai/editor_utils';
 import {constants as TinyAiConstants} from 'tiny_ai/constants';
+import * as DomExtractor from 'block_ai_chat/dom_extractor';
+import {extractDomElements} from "block_ai_chat/dom_extractor";
 
 // Declare variables.
 const VIEW_CHATWINDOW = 'block_ai_chat_chatwindow';
@@ -89,6 +93,7 @@ let maxHistoryWarnings = new Set();
 // Tenantconfig.
 let tenantConfig = {};
 let chatConfig = {};
+let agentMode = false;
 
 class DialogModal extends Modal {
     static TYPE = "block_ai_chat/dialog_modal";
@@ -115,7 +120,7 @@ class DialogModal extends Modal {
     }
 }
 
-export const init = async(params) => {
+export const init = async (params) => {
     // Read params.
     userid = params.userid;
     contextid = params.contextid;
@@ -136,13 +141,17 @@ export const init = async(params) => {
     badge = false;
 
     // Get configuration.
-    const aiConfig = await getAiConfig(contextid, null, ['chat']);
+    const aiConfig = await getAiConfig(contextid, null, ['chat', 'agent']);
     tenantConfig = aiConfig;
     chatConfig = aiConfig.purposes[0];
 
+    const agentString = await getString('agentmode', 'block_ai_chat');
     // Build chat dialog modal.
     modal = await DialogModal.create({
         templateContext: {
+            identifier: 'agent-toggle',
+            checked: agentMode,
+            text: agentString,
             title: strNewDialog,
             badge: badge,
             showPersona: showPersona,
@@ -151,7 +160,7 @@ export const init = async(params) => {
     });
 
     // Add class for styling when modal is displayed.
-    modal.getRoot().on('modal:shown', function(e) {
+    modal.getRoot().on('modal:shown', function (e) {
         e.target.classList.add("block_ai_chat_modal");
     });
 
@@ -165,8 +174,8 @@ export const init = async(params) => {
 
     // Attach listener to the ai button to call modal.
     let button = document.getElementById('ai_chat_button');
-    button.addEventListener('mousedown', async() => {
-        showModal(params);
+    button.addEventListener('mousedown', async () => {
+        await showModal(params);
     });
 
     // Get strings.
@@ -189,6 +198,7 @@ export const init = async(params) => {
  * Show ai_chat modal.
  */
 async function showModal() {
+    console.log("SHOW MODAL")
     // Switch for repeated clicking.
     if (modalopen) {
         modal.hide();
@@ -200,6 +210,13 @@ async function showModal() {
     modalopen = true;
     const body = document.querySelector('body');
     body.classList.add(MODAL_OPEN);
+    // Moodle core adds a overflow: "hidden" to the body when opening a modal to prevent scrolling outside the modal.
+    // We however need exactly that, so we manipulate it back again.
+    // As a workaround we set this every second.
+    // TODO REMOVE THIS WORKAROUND
+    setInterval(() => {
+        body.style.overflow = 'visible';
+    }, 1000);
 
     // Add listener for input submission.
     const textarea = document.getElementById('block_ai_chat-input-id');
@@ -210,6 +227,7 @@ async function showModal() {
     });
 
     if (firstLoad) {
+        firstLoad = false;
         // Load conversations.
         await getConversations();
 
@@ -219,6 +237,12 @@ async function showModal() {
         // Get conversationcontext message limit.
         let reply = await externalServices.getConversationcontextLimit(contextid);
         maxHistory = reply.limit;
+
+        // Add listener for agent mode toggle
+        const agentToggle = document.querySelector('[data-toggle-identifier="agent-toggle"] input');
+        agentToggle.addEventListener('change', () => {
+            agentMode = !agentMode;
+        });
 
         // Add listeners for dropdownmenus.
         // Actions.
@@ -236,7 +260,7 @@ async function showModal() {
         });
         const btnDefinePersona = document.getElementById('block_ai_chat_define_persona');
         if (btnDefinePersona) {
-            btnDefinePersona.addEventListener('click', async() => {
+            btnDefinePersona.addEventListener('click', async () => {
                 if (isAdmin) {
                     await confirmModal(
                         getString('notice', 'block_ai_chat'),
@@ -272,7 +296,7 @@ async function showModal() {
         });
 
         // Show userquota.
-        await renderUserQuota('#block_ai_chat_userquota', ['chat']);
+        await renderUserQuota('#block_ai_chat_userquota', ['chat', 'agent']);
         // Show infobox.
         await renderInfoBox(
             'block_ai_chat', userid, '.block_ai_chat_modal_body [data-content="local_ai_manager_infobox"]', ['chat']
@@ -298,7 +322,7 @@ async function showModal() {
         const uniqid = Math.random().toString(16).slice(2);
 
         await TinyAiUtils.init(uniqid, contextid, TinyAiConstants.modalModes.standalone);
-        aiUtilsButton.addEventListener('click', async() => {
+        aiUtilsButton.addEventListener('click', async () => {
             // We try to find selected text or images and inject it into the AI tools.
             const selectionObject = window.getSelection();
             if (selectionObject.rangeCount > 0) {
@@ -328,17 +352,15 @@ async function showModal() {
             await editorUtils.displayDialogue();
         });
 
-        firstLoad = false;
     }
 
     helper.focustextarea();
 }
 
-
 /**
  * Webservice Get all conversations.
  */
-const getConversations = async() => {
+const getConversations = async () => {
     try {
         allConversations = await externalServices.getAllConversations(userid, contextid);
     } catch (error) {
@@ -350,7 +372,7 @@ const getConversations = async() => {
  * Function to set conversation.
  * @param {*} id
  */
-const showConversation = async(id = 0) => {
+const showConversation = async (id = 0) => {
     // Dissallow changing conversations when question running.
     if (aiAtWork) {
         return;
@@ -373,12 +395,11 @@ const showConversation = async(id = 0) => {
 // Make globally accessible since it is used to show history in dropdownmenuitem.mustache.
 document.showConversation = showConversation;
 
-
 /**
  * Send input to ai connector.
  * @param {*} question
  */
-const enterQuestion = async(question) => {
+const enterQuestion = async (question) => {
 
     // Deny changing dialogs until answer present?
     if (question == '') {
@@ -420,7 +441,6 @@ const enterQuestion = async(question) => {
     }
     // Options, with conversation history.
     const options = {
-        'component': 'block_ai_chat',
         'conversationcontext': convHistory
     };
 
@@ -441,21 +461,73 @@ const enterQuestion = async(question) => {
     options.itemid = conversation.id;
 
     // Send to local_ai_manager.
-    let requestresult = await manager.askLocalAiManager('chat', question, contextid, options);
+    options.agentoptions = {
+        formelements: DomExtractor.extractDomElements(),
+        pagedock: DomExtractor.extractPageDock(),
+        pageid: document.body.id
+    };
+
+    let requestresult;
+    let suggestionContext = null;
+    if (agentMode) {
+        // TODO Pass again the conversationcontext -> also apply purpose.
+        delete options.conversationcontext;
+        requestresult = await manager.askLocalAiManager('agent', question, contextid, options);
+        let agentAnswer = null;
+        try {
+            console.log(requestresult.result);
+            agentAnswer = JSON.parse(requestresult.result);
+            // If we have a parsable agent response there is no
+            requestresult.result = '';
+            console.log(agentAnswer)
+            const chatOutputIntroObject = agentAnswer.chatoutput.filter(object => object.type === 'intro')[0];
+            const chatOutputOutroObject = agentAnswer.chatoutput.filter(object => object.type === 'outro')[0];
+            suggestionContext = {
+                intro: chatOutputIntroObject.text,
+                suggestions: [],
+                outro: chatOutputOutroObject.text
+            };
+            console.log(suggestionContext)
+            agentAnswer.formelements.forEach(formElement => {
+                    const htmlElement = document.getElementById(formElement.id);
+                    console.log(htmlElement);
+                    console.log(htmlElement.tagName)
+                    console.log(formElement.new_value)
+
+                    console.log(htmlElement.value)
+                    console.log(formElement)
+                    const extractedDomElement = options.agentoptions.formelements.filter(element => element.id === formElement.id)[0];
+                    console.log(extractedDomElement)
+                    suggestionContext.suggestions.push({
+                        fieldname: extractedDomElement.label,
+                        explanation: formElement.explanation,
+                        elementId: formElement.id,
+                        suggestionvalue: formElement.new_value,
+                    });
+                }
+            );
+            console.log(suggestionContext)
+        } catch (error) {
+            console.log(error);
+        }
+        console.log(suggestionContext)
+    } else {
+        requestresult = await manager.askLocalAiManager('chat', question, contextid, options);
+    }
 
     // Handle errors.
     if (requestresult.code != 200) {
         requestresult = await errorHandling(requestresult, question, contextid, options);
     }
 
+    // Write back answer.
+    await showReply(requestresult.result, suggestionContext);
     // Attach copy listener.
-    let copy = document.querySelector('.block_ai_chat_modal .awaitanswer .copy');
+    // TODO Not sure why this does not work, commented out for the moment
+    /*let copy = document.querySelector('.block_ai_chat_modal .awaitanswer .copy');
     copy.addEventListener('mousedown', () => {
         helper.copyToClipboard(copy);
-    });
-
-    // Write back answer.
-    await showReply(requestresult.result);
+    });*/
 
     // Render mathjax.
     helper.renderMathjax();
@@ -475,19 +547,28 @@ const enterQuestion = async(question) => {
     // Update userquota.
     const userquota = document.getElementById('block_ai_chat_userquota');
     userquota.innerHTML = '';
-    renderUserQuota('#block_ai_chat_userquota', ['chat']);
+    renderUserQuota('#block_ai_chat_userquota', ['chat', 'agent']);
 };
 
 /**
  * Render reply.
  * @param {string} text
  */
-const showReply = async(text) => {
+const showReply = async (text, agentSuggestionsContext) => {
     // Get textblock.
     let fields = document.querySelectorAll('.block_ai_chat_modal .awaitanswer .text');
     const field = fields[fields.length - 1];
     // Render the reply.
-    const {html, js} = await Templates.renderForPromise('block_ai_chat/reply', {text});
+    console.log(agentSuggestionsContext);
+    let context = {text};
+    if (agentSuggestionsContext !== null) {
+        context = {
+            text,
+            ...agentSuggestionsContext
+        };
+    }
+    console.log(context)
+    const {html, js} = await Templates.renderForPromise('block_ai_chat/reply', context);
     Templates.replaceNodeContents(field, html, js);
     field.classList.remove('small');
 
@@ -503,7 +584,7 @@ const showReply = async(text) => {
     }
 };
 
-const showMessages = async() => {
+const showMessages = async () => {
     for (const item of conversation.messages) {
         await showMessage(item.message, item.sender);
     }
@@ -515,7 +596,7 @@ const showMessages = async() => {
  * @param {*} sender User or Ai
  * @param {*} answer Is answer in history
  */
-const showMessage = async(text, sender = '', answer = true) => {
+const showMessage = async (text, sender = '', answer = true) => {
     // Skip if sender is system.
     if (sender === 'system') {
         return;
@@ -549,7 +630,7 @@ const showMessage = async(text, sender = '', answer = true) => {
  * Create new / Reset dialog.
  * @param {bool} deleted
  */
-const newDialog = async(deleted = false) => {
+const newDialog = async (deleted = false) => {
     if (aiAtWork) {
         return;
     }
@@ -574,7 +655,7 @@ const deleteCurrentDialog = () => {
     deleteCancelPromise(
         getString('delete', 'block_ai_chat'),
         getString('deletewarning', 'block_ai_chat'),
-    ).then(async() => {
+    ).then(async () => {
         if (conversation.id !== 0) {
             try {
                 const deleted = await externalServices.deleteConversation(contextid, userid, conversation.id);
@@ -595,7 +676,7 @@ const deleteCurrentDialog = () => {
 /**
  * Show conversation history.
  */
-const showHistory = async() => {
+const showHistory = async () => {
     // Add current convo local representation, if not already there.
     if (allConversations.find(x => x.id === conversation.id) === undefined) {
         allConversations.push(conversation);
@@ -605,7 +686,7 @@ const showHistory = async() => {
     clearMessages(true);
     setModalHeader(title);
     const btnBacklink = document.getElementById('block_ai_chat_backlink');
-    btnBacklink.addEventListener('click', async() => {
+    btnBacklink.addEventListener('click', async () => {
         if (conversation.id !== 0) {
             await showConversation(conversation.id);
         } else {
@@ -825,7 +906,7 @@ const clickSubmitButton = () => {
  * @param {*} options
  * @returns {object}
  */
-const errorHandling = async(requestresult, question, contextid, options) => {
+const errorHandling = async (requestresult, question, contextid, options) => {
 
     // If code 409, conversationid is already taken, try get new a one.
     if (requestresult.code == 409) {
@@ -864,7 +945,7 @@ const errorHandling = async(requestresult, question, contextid, options) => {
  * @param {array} messages
  * @returns {array}
  */
-const checkMessageHistoryLengthLimit = async(messages) => {
+const checkMessageHistoryLengthLimit = async (messages) => {
     const length = messages.length;
     if (length > maxHistory) {
         // Cut history.
@@ -899,7 +980,7 @@ const checkOutsideClick = (event) => {
  * Set different viewmodes and save in local storage.
  * @param {string} mode
  */
-const setView = async(mode = '') => {
+const setView = async (mode = '') => {
     const key = await hash('chatmode' + userid);
     // Check for saved viewmode.
     let savedmode = LocalStorage.get(key);
@@ -925,7 +1006,7 @@ const setView = async(mode = '') => {
  * Is user allowed new queries.
  * @returns {message}
  */
-const userAllowed = async() => {
+const userAllowed = async () => {
     if (tenantConfig.availability.available === 'disabled') {
         return tenantConfig.availability.errormessage;
     }
@@ -1085,7 +1166,7 @@ const showPersonasModal = () => {
             // Make sure it is set 1 on deletion and to 0 on actual saving process.
             const actionbuttons = document.querySelectorAll('[data-action="save"]');
             actionbuttons.forEach((button) => {
-                button.addEventListener('click', async(e) => {
+                button.addEventListener('click', async (e) => {
                     const deleteinput = document.querySelector('input[name="delete"]');
                     if (e.target.dataset.custom == 'delete') {
                         deleteinput.value = '1';
@@ -1142,21 +1223,19 @@ const showPersonasModal = () => {
         manageInputs(true);
     });
 
-
     // Also enable admintemplate name input on error.
     personaForm.addEventListener(personaForm.events.SERVER_VALIDATION_ERROR, () => {
         manageInputs(true);
     });
 
     // Reload persona and rewrite info on submission.
-    personaForm.addEventListener(personaForm.events.FORM_SUBMITTED, async() => {
+    personaForm.addEventListener(personaForm.events.FORM_SUBMITTED, async () => {
         let reply = await externalServices.reloadPersona(contextid);
         personaPrompt = reply.prompt;
         personaInfo = reply.info;
         showUserinfo(false);
     });
 };
-
 
 /**
  * Show options modal.
@@ -1179,7 +1258,7 @@ const showOptionsModal = () => {
     optionsForm.show();
 
     // Reload options on submission.
-    optionsForm.addEventListener(optionsForm.events.FORM_SUBMITTED, async() => {
+    optionsForm.addEventListener(optionsForm.events.FORM_SUBMITTED, async () => {
         let reply = await externalServices.getConversationcontextLimit(contextid);
         maxHistory = reply.limit;
     });
@@ -1238,7 +1317,7 @@ const manageInputs = (switchon, templateids = [], selectValue = 42) => {
     }
 };
 
-const showUserinfo = async(first) => {
+const showUserinfo = async (first) => {
     // If persona is updated, delete current infobox.
     if (!first) {
         const toDelete = document.querySelector('.local_ai_manager-infobox.alert.alert-info');
