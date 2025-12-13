@@ -29,3 +29,8 @@
     aria-haspopup="dialog" aria-expanded="false" aria-label="{{arialabel}}">
     <img src="{{config.wwwroot}}/blocks/ai_chat/pix/ai-icon.svg" alt="" class="ai_chat_icon">
 </button>
+{{#js}}
+    require(['block_ai_chat/modal_init'], function(ModalInit) {
+        ModalInit.init({{contextid}});
+    });
+{{/js}}

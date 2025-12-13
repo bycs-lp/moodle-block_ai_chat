@@ -56,7 +56,6 @@ class block_ai_chat extends block_base {
     #[\Override]
     public function get_content(): stdClass {
         global $USER;
-
         if ($this->content !== null) {
             return $this->content;
         }

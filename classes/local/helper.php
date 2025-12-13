@@ -19,7 +19,7 @@ namespace block_ai_chat\local;
 use moodle_page;
 
 /**
- * Class helper
+ * Helper class.
  *
  * @package    block_ai_chat
  * @copyright  2024 Tobias Garske, ISB Bayern
@@ -35,7 +35,6 @@ class helper {
     public static function has_block_in_course_context(int $courseid): object|bool {
         global $DB;
 
-        // Check if tenant is enabled for the school.
         $sql = "SELECT bi.*
                   FROM {block_instances} bi
                   JOIN {context} ctx ON bi.parentcontextid = ctx.id

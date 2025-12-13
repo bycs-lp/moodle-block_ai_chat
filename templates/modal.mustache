@@ -1,0 +1,58 @@
+{{!
+This file is part of Moodle - http://moodle.org/
+
+Moodle is free software: you can redistribute it and/or modify
+it under the terms of the GNU General Public License as published by
+the Free Software Foundation, either version 3 of the License, or
+(at your option) any later version.
+
+Moodle is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License
+along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template block_ai_chat/modal
+
+    Template for iconpicker.
+
+    Classes required for JS:
+    * none
+
+    Data attributes required for JS:
+    * none
+
+    Context variables required for this template:
+    * none
+
+    Example context (json):
+    {
+        "history": {
+            "message":"content",
+            "sender":"user"
+        }
+    }
+}}
+
+
+{{< core/modal }}
+    {{$classes}}block_ai_chat_reactive_main_component{{/classes}}
+    {{$headerclasses}}d-flex align-items-start{{/headerclasses}}
+    {{$header}}
+        <div data-block_ai_chat-element="titleareaplaceholder">
+            {{! Will be replaced by the title component template components/title.mustache anyway. }}
+            {{! However, it is needed to render the modal, because it will complain about a missing title region otherwise. }}
+            <h5 id="{{uniqid}}-modal-title" class="modal-title text-truncate" data-region="title"></h5>
+        </div>
+    {{/header}}
+    {{$body}}
+        <div class="block_ai_chat_modal_body" data-block_ai_chat-component="contentarea">
+            {{! Content components will be loaded from inside ai_chat_main_component. }}
+        </div>
+    {{/body}}
+    {{$footer}}
+    {{/footer}}
+{{/ core/modal }}

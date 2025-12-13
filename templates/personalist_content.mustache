@@ -1,0 +1,45 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template block_ai_chat/personalist_content
+
+    Content of the persona list component. Used for easily being able to re-render if necessary.
+
+    Example context (json):
+    {
+    }
+}}
+<div data-block_ai_chat-component="personalist-content" class="block_ai_chat-personalist-content">
+    {{#generalpersonas}}
+        {{> block_ai_chat/components/personalistitem }}
+    {{/generalpersonas}}
+    <div class="p-1 mt-2"><em>{{#str}}templatepersonas, block_ai_chat{{/str}}</em></div>
+    {{#templatepersonas}}
+        {{> block_ai_chat/components/personalistitem }}
+    {{/templatepersonas}}
+    <div class="p-1 mt-2"><em>{{#str}}userpersonas, block_ai_chat{{/str}}</em></div>
+    {{#userpersonas}}
+        {{> block_ai_chat/components/personalistitem }}
+    {{/userpersonas}}
+</div>
+<div class="d-flex flex-row justify-content-center mt-3">
+    <button class="btn btn-secondary" data-block_ai_chat-element="addnewpersonabutton">{{#str}}addpersonatitle, block_ai_chat{{/str}}</button>
+</div>
+<div class="d-flex flex-row justify-content-center mt-3 gap-2">
+    <button class="btn btn-secondary" data-block_ai_chat-element="backtochatbutton">{{#str}}backtochat, block_ai_chat{{/str}}</button>
+    <button class="btn btn-primary" data-block_ai_chat-element="selectpersonabutton">{{#str}}selectpersona, block_ai_chat{{/str}}</button>
+</div>
