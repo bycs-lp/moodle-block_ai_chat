@@ -43,8 +43,13 @@
             </div>
         {{/loading}}
         {{^loading}}
-            <div data-block_ai_chat-element="messagecontent" class="text">
-                {{{content}}}
+            <div data-block_ai_chat-element="messagecontent" class="text text-break overflow-x-auto">
+                {{^agentMode}}
+                    {{{content}}}
+                {{/agentMode}}
+                {{#agentMode}}
+                    {{> block_ai_chat/agent_suggestions}}
+                {{/agentMode}}
             </div>
         {{/loading}}
     </div>
