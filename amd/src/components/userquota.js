@@ -56,7 +56,7 @@ class UserQuota extends BaseComponent {
     async _rerenderUserQuota({element}) {
         if (!element.loadingState) {
             // Only refetch information if loading has finished.
-            await renderUserQuota(this.getElement(), ['chat']);
+            await renderUserQuota(this.getElement(), ['chat', 'agent']);
         }
     }
 }

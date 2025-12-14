@@ -191,6 +191,9 @@ class Main extends BaseComponent {
         const titleAreaComponent = await this.renderComponent(titleAreaPlaceholder, 'block_ai_chat/components/titlearea', {
             showPersona: this.reactive.state.static.showPersona,
             showOptions: this.reactive.state.static.showOptions,
+            showAgentMode: this.reactive.state.static.renderMode === RENDER_MODE.MODAL
+                ? this.reactive.state.static.showAgentMode
+                : false,
             showViews: this.reactive.state.static.renderMode === RENDER_MODE.MODAL
         });
         this.getElement(this.selectors.TITLEAREA_PLACEHOLDER).replaceWith(titleAreaComponent.getElement());

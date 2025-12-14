@@ -23,3 +23,8 @@ export const RENDER_MODE = {
     EMBEDDED: 'embedded',
     MODAL: 'modal'
 };
+
+export const MODES = {
+    CHAT: 'chat',
+    AGENT: 'agent'
+};

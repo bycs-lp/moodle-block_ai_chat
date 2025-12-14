@@ -1,0 +1,54 @@
+{
+  "static": {
+    "contextid": 21,
+    "currentUser": 40
+  },
+  "config": {
+    "currentPersona": 25,
+    "conversationLimit": 5,
+    "windowMode": "docked",
+    "mode": "agent"
+  },
+  "messages": [
+    {
+      "id": 1,
+      "role": "user",
+      "content": "Hello, how are you?",
+      "conversationid": 12
+    },
+    {
+      "id": 2,
+      "role": "ai",
+      "content": "I'm doing well, thank you! How can I assist you today?",
+      "conversationid": 12
+    },
+    {
+      "id": 3,
+      "role": "user",
+      "content": "Can you tell me a joke?",
+      "conversationid": 15
+    },
+    {
+      "id": 4,
+      "role": "ai",
+      "content": "Sure! Why don't scientists trust atoms? Because they make up everything!",
+      "conversationid": 15
+    }
+  ],
+  "personas": [
+    {
+      "id": 13,
+      "name": "Friendly Bot",
+      "prompt": "You are a friendly and helpful AI assistant.",
+      "userinfo": "Very friendly chatbot",
+      "userid": 0
+    },
+    {
+      "id": 14,
+      "name": "Bad person",
+      "prompt": "You are a very bad person insulting your conversation partner all the time.",
+      "userinfo": "Really bad person",
+      "userid": 40
+    }
+  ]
+}
