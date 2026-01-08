@@ -22,7 +22,6 @@ import {getAiConfig} from 'local_ai_manager/config';
 import {getString} from 'core/str';
 import {alert as displayAlert} from 'core/notification';
 import {showErrorToast} from 'block_ai_chat/utils';
-import Popover from 'theme_boost/bootstrap/popover';
 import {MODES} from 'block_ai_chat/constants';
 import * as DomExtractor from 'block_ai_chat/dom_extractor';
 
@@ -76,9 +75,6 @@ class Chat extends BaseContent {
         return [
             ...super.getWatchers(),
             {watch: `messages:created`, handler: this._addMessageToChatArea},
-            {watch: `messages:created`, handler: this._updateHistoryMarker},
-            {watch: `messages:deleted`, handler: this._updateHistoryMarker},
-            {watch: `config.conversationContextLimit:updated`, handler: this._updateHistoryMarker},
             {watch: `personas${this.reactive.state.config.currentPersona}:deleted`, handler: this._removeCurrentPersona},
             {watch: `config.loadingState:updated`, handler: this._handleLoadingStateUpdated},
         ];
@@ -163,60 +159,11 @@ class Chat extends BaseContent {
         this.reactive.dispatch('selectCurrentPersona', 0);
     }
 
-    async _updateHistoryMarker() {
-        setTimeout(async() => {
-            // Remove existing marker
-            const existingMarker = this.getElement().querySelector(this.selectors.HISTORY_MARKER);
-            if (existingMarker) {
-                existingMarker.remove();
-            }
-
-            const chatOutput = this.getElement(this.selectors.CHAT_OUTPUT);
-            if (!chatOutput) {
-                return;
-            }
-
-            const messages = Array.from(chatOutput.querySelectorAll('[data-block_ai_chat-component="message"]'));
-            const contextLimit = this.reactive.state.config.conversationContextLimit;
-
-            if (messages.length <= contextLimit) {
-                return;
-            }
-
-            // Marker position: after message at index (length - 2 * contextLimit - 1).
-            // History length of 4 messages actually means 4 user messages and 4 AI messages = 8 messages total.
-            const markerPosition = messages.length - 2 * contextLimit - 1;
-            const messageBeforeContext = messages[markerPosition];
-
-            if (messageBeforeContext) {
-                const marker = document.createElement('div');
-                marker.setAttribute('data-block_ai_chat-element', 'historymarker');
-                marker.className = 'block_ai_chat-history-marker';
-
-                // Fetch the string for the popover content
-                const historyLengthInfo = await getString('historylengthinfo', 'block_ai_chat');
-                // TODO Refactor to template.
-                marker.innerHTML = `
-                    <hr class="block_ai_chat-history-line">
-                    <span class="badge rounded-pill text-primary bg-secondary cursor-pointer" role="button" tabindex="0"
-                        data-bs-container="body" data-bs-toggle="popover" data-bs-placement="top"
-                        data-bs-content="${historyLengthInfo}" data-bs-trigger="focus"
-                        aria-label="${historyLengthInfo}">${contextLimit}</span>
-                `;
-
-                messageBeforeContext.after(marker);
-
-                // Initialize the popover
-                const badgeElement = marker.querySelector('.badge');
-                if (badgeElement) {
-                    new Popover(badgeElement);
-                }
-            }
-        }, 100);
-    }
-
     async _renderContent() {
-        const {html, js} = await Templates.renderForPromise('block_ai_chat/chat_content', {});
+        const {html, js} = await Templates.renderForPromise(
+            'block_ai_chat/chat_content',
+            {conversationContextLimit: this.reactive.state.config.conversationContextLimit}
+        );
         Templates.replaceNodeContents(this.getElement(), html, js);
         await this._setupAfterContentRendering();
         const availabilityErrorMessage = await this.isAiChatAvailable();
@@ -278,7 +225,6 @@ class Chat extends BaseContent {
         this.addEventListener(inputTextarea, 'keydown', this._handleKeyDownOnInputTextarea);
 
         this._scrollToBottom();
-        await this._updateHistoryMarker();
         this._enableTextAreaAutoResize();
         this._focusInputTextarea();
     }
