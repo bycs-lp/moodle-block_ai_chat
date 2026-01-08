@@ -42,7 +42,7 @@ class HeaderActions extends BaseComponent {
     }
 
     async stateReady(state) {
-        this._modeUpdated({element: state.config});
+        await this._modeUpdated({element: state.config});
         this._refreshPersona({element: state.config});
 
         this.addEventListener(
@@ -203,7 +203,8 @@ class HeaderActions extends BaseComponent {
         // We have a convenience method to locate elements inside the component.
         const newPersonaId = parseInt(element.currentPersona);
         const personaBanner = this.getElement(this.selectors.PERSONA_BANNER);
-        if (newPersonaId === 0) {
+        const currentMode = this.reactive.state.config.mode;
+        if (newPersonaId === 0 || currentMode === MODES.AGENT) {
             personaBanner.classList.add('d-none');
         } else {
             personaBanner.classList.remove('d-none');
@@ -284,12 +285,8 @@ class HeaderActions extends BaseComponent {
         }
 
         modeSwitch.innerText = element.mode === MODES.AGENT ? modeAgentString : modeChatString;
-        const personaBanner = this.getElement(this.selectors.PERSONA_BANNER);
-        if (element.mode === MODES.AGENT) {
-            personaBanner.classList.add('d-none');
-        } else {
-            personaBanner.classList.remove('d-none');
-        }
+        // We need to check if we need to show or hide the persona banner.
+        this._refreshPersona({element: this.reactive.state.config});
     }
 
     _clickModeSwitchListener() {
