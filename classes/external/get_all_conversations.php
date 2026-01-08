@@ -75,7 +75,7 @@ class get_all_conversations extends external_api {
             0,
             false,
             '*',
-            ['chat'],
+            ['chat', 'agent'],
         );
         // Go over all log entries and create conversation items.
         foreach ($records as $record) {
@@ -91,10 +91,17 @@ class get_all_conversations extends external_api {
                 $result[$record->itemid] = [
                     'conversationid' => $record->itemid,
                     'timecreated' => $record->timecreated,
-                    'title' => format_text($record->prompttext),
+                    'title' => format_string($record->prompttext),
                 ];
             }
         }
+
+        if (!empty($result)) {
+            uasort($result, function ($a, $b) {
+                return $b['timecreated'] <=> $a['timecreated'];
+            });
+        }
+
         return ['code' => 200, 'content' => $result];
     }
 

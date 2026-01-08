@@ -15,8 +15,7 @@
 
 import {BaseComponent} from 'core/reactive';
 import {getString} from 'core/str';
-// Bad practice to import from an external plugin, but we have the dependency anyway.
-import * as TinyAiUtils from 'tiny_ai/utils';
+import {stripHtmlTags} from 'block_ai_chat/utils';
 
 /**
  * Component representing a message in the ai_chat.
@@ -45,8 +44,11 @@ class Title extends BaseComponent {
     async stateReady(state) {
         this.getElement().innerText = '';
         this.newDialogString = await getString('newdialog', 'block_ai_chat');
+        // Probably not necessary, because messages are loaded after the title component is ready,
+        // so the watcher on messages:created will overwrite this default.
+        // We keep it to make sure to have a title in case this changes.
         const title = state.messages.size > 0
-            ? TinyAiUtils.stripHtmlTags(state.messages.values().next().value.content)
+            ? stripHtmlTags(state.messages.values().next().value.content)
             : this.newDialogString;
         this.getElement().innerText = title;
     }
@@ -75,7 +77,7 @@ class Title extends BaseComponent {
         if (this.reactive.state.messages.values().next().value.id !== element.id) {
             return;
         }
-        this.getElement().innerText = element.content;
+        this.getElement().innerText = stripHtmlTags(element.content);
     }
 
     async _updateTitle({element}) {

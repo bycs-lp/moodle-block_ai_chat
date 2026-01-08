@@ -167,8 +167,8 @@ class persona_form extends dynamic_form {
             'personaid' => $this->_ajaxformdata['personaid'],
             'userid' => $this->_ajaxformdata['userid'],
             'name' => $this->_ajaxformdata['name'],
-            'prompt' => format_text($this->_ajaxformdata['prompt'], FORMAT_MOODLE, ['para' => false, 'filter' => false]),
-            'userinfo' => format_text($this->_ajaxformdata['userinfo'], FORMAT_MOODLE, ['para' => false, 'filter' => false]),
+            'prompt' => clean_text($this->_ajaxformdata['prompt']),
+            'userinfo' => clean_text($this->_ajaxformdata['userinfo']),
             'type' => $this->_ajaxformdata['type'],
         ];
 

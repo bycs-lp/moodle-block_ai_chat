@@ -26,6 +26,8 @@
 <div data-block_ai_chat-element="outputwrapper" class="block_ai_chat-output-wrapper">
     <div class="gradient-overlay"></div>
     <div data-block_ai_chat-element="chatoutput" class="block_ai_chat-output">
+        {{> block_ai_chat/components/history_marker }}
+        {{! Chat messages will be appended here dynamically. }}
     </div>
 </div>
 <div class="block_ai_chat-input-wrapper">
