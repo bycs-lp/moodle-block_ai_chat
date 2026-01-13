@@ -50,6 +50,7 @@ $string['deletewarning'] = 'Are you sure you want to delete this conversation? T
 $string['disabled'] = 'disabled';
 $string['dockright'] = 'Dock on the right';
 $string['duplicatepersonaname'] = '{$a} - copy';
+$string['editpersonatitle'] = 'Edit persona';
 $string['enabled'] = 'enabled';
 $string['error_managepersonanotallowed'] = 'You do not have the permission to manage this persona.';
 $string['error_viewpersonanotallowed'] = 'You do not have the permission to view this persona.';
