@@ -61,12 +61,17 @@ body:not(.block_ai_chat_replacehelp).hasstickyfooter #ai_chat_button {
   width: 100%;
   border-bottom: none;
 }
-.block_ai_chat_modal .modal-header .modal-title {
+.block_ai_chat_modal .modal-header .block_ai_chat-titlearea {
+  width: 95%;
+}
+.block_ai_chat_modal .modal-header .block_ai_chat-titlearea .modal-title {
   display: flex;
+  flex: 1;
   justify-content: space-between;
   align-items: center;
-  width: 40%;
   font-size: 1rem;
+  padding-right: 1rem;
+  overflow: hidden;
 }
 .block_ai_chat_modal .modal-header .block_ai_chat-stateheader {
   max-width: 200px;

@@ -39,10 +39,13 @@ class Title extends BaseComponent {
 
     create() {
         this.name = 'title';
+        this.selectors = {
+            TITLE: `[data-block_ai_chat-element='titleheading']`,
+        };
     }
 
     async stateReady(state) {
-        this.getElement().innerText = '';
+        this.getElement(this.selectors.TITLE).innerText = '';
         this.newDialogString = await getString('newdialog', 'block_ai_chat');
         // Probably not necessary, because messages are loaded after the title component is ready,
         // so the watcher on messages:created will overwrite this default.
@@ -50,7 +53,7 @@ class Title extends BaseComponent {
         const title = state.messages.size > 0
             ? stripHtmlTags(state.messages.values().next().value.content)
             : this.newDialogString;
-        this.getElement().innerText = title;
+        this.getElement(this.selectors.TITLE).innerText = title;
     }
 
     /**
@@ -71,22 +74,22 @@ class Title extends BaseComponent {
             return;
         }
         if (this.reactive.state.messages.size === 0) {
-            this.getElement().innerText = this.newDialogString;
+            this.getElement(this.selectors.TITLE).innerText = this.newDialogString;
             return;
         }
         if (this.reactive.state.messages.values().next().value.id !== element.id) {
             return;
         }
-        this.getElement().innerText = stripHtmlTags(element.content);
+        this.getElement(this.selectors.TITLE).innerText = stripHtmlTags(element.content);
     }
 
     async _updateTitle({element}) {
         if (element.view === 'history') {
             const historyString = await getString('history', 'block_ai_chat');
-            this.getElement().innerText = historyString;
+            this.getElement(this.selectors.TITLE).innerText = historyString;
         } else if (element.view === 'personalist') {
             const personalistString = await getString('managepersona', 'block_ai_chat');
-            this.getElement().innerText = personalistString;
+            this.getElement(this.selectors.TITLE).innerText = personalistString;
         }
     }
 }
