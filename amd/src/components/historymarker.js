@@ -15,6 +15,7 @@
 
 import Popover from 'theme_boost/bootstrap/popover';
 import {BaseComponent} from 'core/reactive';
+import {debounce} from 'core/utils';
 
 
 class HistoryMarker extends BaseComponent {
@@ -45,6 +46,7 @@ class HistoryMarker extends BaseComponent {
             MESSAGE: `[data-block_ai_chat-component='message']`,
             HISTORY_MARKER_CONTENT: `[data-block_ai_chat-element='historymarkercontent']`,
         };
+        this._debouncedUpdatePositionAndVisibility = debounce(this._updatePositionAndVisibility.bind(this), 250);
     }
 
     /**
@@ -59,13 +61,13 @@ class HistoryMarker extends BaseComponent {
         if (historyMarkerContent) {
             new Popover(historyMarkerContent);
         }
-        this._updatePositionAndVisibility();
+        this._debouncedUpdatePositionAndVisibility();
     }
 
     getWatchers() {
         return [
             {watch: `messages:created`, handler: this._updatePositionAndVisibility},
-            {watch: `messages:deleted`, handler: this._updatePositionAndVisibility},
+            {watch: `messages:deleted`, handler: this._debouncedUpdatePositionAndVisibility},
             {watch: `config.conversationContextLimit:updated`, handler: this._updatePositionAndVisibility},
         ];
     }
@@ -76,7 +78,10 @@ class HistoryMarker extends BaseComponent {
         const messages = this.reactive.state.messages;
         const contextLimit = this.reactive.state.config.conversationContextLimit;
 
-        if (messages.size <= contextLimit) {
+        // Context limit of n means we fetch the latest n records from the database, each containing a prompt
+        // and a prompt response. In the frontend however each prompt and promptcompletion is a separate message.
+        // So we need at least 2 * n messages to show the marker.
+        if (messages.size <= 2 * contextLimit) {
             this._hide();
             return;
         }
@@ -88,27 +93,16 @@ class HistoryMarker extends BaseComponent {
         // History length of 4 messages actually means 4 user messages and 4 AI messages = 8 messages total.
         const markerPosition = messages.size - 2 * contextLimit - 1;
         const messageId = Array.from(messages.values())[markerPosition].id;
-
-        this.checkAndPositionMarker(chatOutputContainer, messageId);
-    }
-
-    checkAndPositionMarker(chatOutputContainer, messageId, attempts = 0) {
         const messageBeforeContext = chatOutputContainer.querySelector(
             this.selectors.MESSAGE + `[data-block_ai_chat-messageid="${messageId}"]`
         );
 
-        if (messageBeforeContext) {
-            this._show();
-            messageBeforeContext.after(this.getElement());
+        if (!messageBeforeContext) {
             return;
         }
 
-        attempts++;
-        if (attempts < 5) {
-            setTimeout(() => {
-                this.checkAndPositionMarker(chatOutputContainer, messageId, attempts);
-            }, 500);
-        }
+        this._show();
+        messageBeforeContext.after(this.getElement());
     }
 
     _hide() {
