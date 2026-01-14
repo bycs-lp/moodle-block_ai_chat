@@ -144,7 +144,10 @@ class Chat extends BaseContent {
         if (element.loadingState) {
             await this._addMessageToChatArea({element: temporaryPromptMessage});
             await this._addMessageToChatArea({element: loadingSpinnerMessage});
-            this.getElement(this.selectors.INPUT_TEXTAREA).value = '';
+            const inputTextarea = this.getElement(this.selectors.INPUT_TEXTAREA);
+            inputTextarea.value = '';
+            // Very hacky, but we need to fire this event manually to trigger the auto-resize.
+            inputTextarea.dispatchEvent(new Event('input'));
         }
     }
 
@@ -247,7 +250,7 @@ class Chat extends BaseContent {
 
     _enableTextAreaAutoResize() {
         const inputTextarea = this.getElement(this.selectors.INPUT_TEXTAREA);
-        this.addEventListener(inputTextarea, 'keydown', () => {
+        this.addEventListener(inputTextarea, 'input', () => {
             // Handle autogrow/-shrink.
             // Reset the height to auto to get the correct scrollHeight.
             inputTextarea.style.height = 'auto';
