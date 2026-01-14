@@ -25,6 +25,17 @@
 import * as DomExtractor from 'block_ai_chat/dom_extractor';
 
 export const init = () => {
+    // I hate to do this, but currently there is no other way to ensure this also works on platforms that have
+    // local_mbseasyforms installed.
+    const mbseasyformsUncollapseButton = document.querySelector('.mbseasytoggle a');
+    if (mbseasyformsUncollapseButton) {
+        mbseasyformsUncollapseButton.click();
+    }
+    // Expand all sections by "clicking" on the collapsed headings.
+    document.querySelectorAll('.mform fieldset.fitem.collapsible a.collapsed').forEach(collapsedHeading => {
+        collapsedHeading.click();
+    });
+
     document.querySelectorAll('[data-block_ai_chat-action="accept_suggestion"]').forEach(button => {
         button.addEventListener('click', () => {
             button.disabled = true;
@@ -92,13 +103,14 @@ const injectSuggestionIntoForm = (button) => {
 };
 
 const targetFieldInView = (button, action) => {
-    const expandAllLink = document.querySelector('.mform .collapsible-actions .collapseexpand.collapsed');
-    if (expandAllLink) {
-        expandAllLink.click();
-    }
-
     requestAnimationFrame(() => {
-        const htmlElement = document.getElementById(button.dataset.block_ai_chatForElement);
+        // We need to use the fitem container for example for editor fields, because tiny will hide the actual textarea.
+        let htmlElement = document.getElementById('fitem_' + button.dataset.block_ai_chatForElement);
+
+        // If there is no fitem element, we try to get the actual element.
+        if (!htmlElement) {
+            htmlElement = document.getElementById(button.dataset.block_ai_chatForElement);
+        }
 
         if (!htmlElement) {
             return;
@@ -121,7 +133,7 @@ const targetFieldInView = (button, action) => {
 };
 
 const highlightElement = (element, action) => {
-    let parent = element.parentElement;
+    let parent = element;
     while (parent.tagName !== 'DIV' || !parent.classList.contains('fitem')) {
         parent = parent.parentElement;
     }
