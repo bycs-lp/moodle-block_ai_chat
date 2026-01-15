@@ -44,16 +44,20 @@ class Title extends BaseComponent {
         };
     }
 
-    async stateReady(state) {
+    async stateReady() {
         this.getElement(this.selectors.TITLE).innerText = '';
         this.newDialogString = await getString('newdialog', 'block_ai_chat');
         // Probably not necessary, because messages are loaded after the title component is ready,
         // so the watcher on messages:created will overwrite this default.
         // We keep it to make sure to have a title in case this changes.
-        const title = state.messages.size > 0
-            ? stripHtmlTags(state.messages.values().next().value.content)
-            : this.newDialogString;
+        const title = this._getChatTitle();
         this.getElement(this.selectors.TITLE).innerText = title;
+    }
+
+    _getChatTitle() {
+        return this.reactive.state.messages.size > 0
+            ? stripHtmlTags(this.reactive.state.messages.values().next().value.content)
+            : this.newDialogString;
     }
 
     /**
@@ -90,8 +94,11 @@ class Title extends BaseComponent {
         } else if (element.view === 'personalist') {
             const personalistString = await getString('managepersona', 'block_ai_chat');
             this.getElement(this.selectors.TITLE).innerText = personalistString;
+        } else if (element.view === 'chat') {
+            this.getElement(this.selectors.TITLE).innerText = this._getChatTitle();
         }
     }
 }
+
 
 export default Title;
