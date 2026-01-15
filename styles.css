@@ -352,6 +352,11 @@ body.block_ai_chat_openfull .block_ai_chat_modal:not(.embedded) .modal-dialog {
 body.block_ai_chat_openfull .block_ai_chat_modal:not(.embedded) .modal-dialog .modal-content {
   min-height: calc(100vh - 3.5rem);
 }
+@media (max-width: 576px) {
+  body.block_ai_chat_openfull .block_ai_chat_modal:not(.embedded) .modal-dialog .modal-content {
+    min-height: calc(100vh - 8rem);
+  }
+}
 body.block_ai_chat_openfull .block_ai_chat_modal:not(.embedded) .block_ai_chat_modal_body {
   max-width: 1080px;
   margin: 0 auto;

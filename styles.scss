@@ -429,6 +429,9 @@ body.block_ai_chat_openfull {
 
             .modal-content {
                 min-height: calc(100vh - 3.5rem);
+                @media (max-width: 576px) {
+                    min-height: calc(100vh - 8rem);
+                }
             }
         }
 
