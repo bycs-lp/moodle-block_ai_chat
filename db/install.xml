@@ -43,5 +43,34 @@
         <KEY NAME="contextid" TYPE="foreign" FIELDS="contextid" REFTABLE="context" REFFIELDS="id"/>
       </KEYS>
     </TABLE>
+    <TABLE NAME="block_ai_chat_aicontext" COMMENT="Table storing context that can be sent along with user specific prompts to an external LLM">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="name" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="Name for the additional context"/>
+        <FIELD NAME="description" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="Optional description that can be provided to describe what the context is for and why it is used"/>
+        <FIELD NAME="content" TYPE="text" NOTNULL="false" SEQUENCE="false" COMMENT="The context as text which should be sent along user prompts to an external AI system"/>
+        <FIELD NAME="enabled" TYPE="int" LENGTH="1" NOTNULL="false" SEQUENCE="false" COMMENT="If the context is enabled"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+        <FIELD NAME="timemodified" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+    </TABLE>
+    <TABLE NAME="block_ai_chat_aicontext_usage" COMMENT="Defines on which page ids the AI context should be sent along to the external AI system">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="pagetype" TYPE="char" LENGTH="255" NOTNULL="false" SEQUENCE="false" COMMENT="The id of the page"/>
+        <FIELD NAME="aicontextid" TYPE="int" LENGTH="10" NOTNULL="false" SEQUENCE="false" COMMENT="Foreign reference to the block_ai_chat_context table"/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+        <KEY NAME="aicontextid" TYPE="foreign" FIELDS="aicontextid" REFTABLE="block_ai_chat_aicontext" REFFIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="pagetype-aicontextid" UNIQUE="true" FIELDS="pagetype, aicontextid" COMMENT="Unique index for avoiding that there is a duplicate entry"/>
+      </INDEXES>
+    </TABLE>
   </TABLES>
 </XMLDB>

@@ -113,8 +113,9 @@ class PersonaListItem extends BaseComponent {
         this.remove();
     }
 
-    _renderPersonaEditForm() {
+    async _renderPersonaEditForm() {
         const selectedPersona = this.reactive.state.personas.get(this.id);
+        const title = await getString('editpersonatitle', 'block_ai_chat');
         const personaForm = new ModalForm({
             formClass: 'block_ai_chat\\form\\persona_form',
             moduleName: 'core/modal_save_cancel',
@@ -128,7 +129,7 @@ class PersonaListItem extends BaseComponent {
                 type: selectedPersona.type
             },
             modalConfig: {
-                title: "PERSONA BEARBEITEN",
+                title
             },
             returnFocus: this.getElement()
         });
