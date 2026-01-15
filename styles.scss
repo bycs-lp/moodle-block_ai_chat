@@ -101,16 +101,12 @@ body:not(.block_ai_chat_replacehelp).hasstickyfooter #ai_chat_button {
             z-index: 1;
             min-height: 2rem;
 
-            .local_ai_manager-ai-warning {
+            .block_ai_chat-ai-warning {
                 color: #6c757d;
                 background-color: inherit;
                 font-size: .6rem;
                 padding: 0;
                 margin: 0;
-            }
-
-            .local_ai_manager-infobox {
-                margin-top: .5rem;
             }
         }
 
