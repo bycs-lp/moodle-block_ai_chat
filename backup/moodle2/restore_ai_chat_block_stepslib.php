@@ -26,7 +26,7 @@ class restore_ai_chat_block_structure_step extends restore_structure_step {
     /**
      * Define structure.
      */
-    protected function define_structure() {
+    protected function define_structure(): array {
         $paths = [];
         $paths[] = new restore_path_element('aichat', '/block/aichat');
         $paths[] = new restore_path_element('persona', '/block/aichat/personas/persona');
@@ -41,14 +41,15 @@ class restore_ai_chat_block_structure_step extends restore_structure_step {
      *
      * @param array $data
      */
-    protected function process_aichat($data) {
+    protected function process_aichat(array $data): void {
     }
+
     /**
      * Process a persona element.
      *
      * @param array $data
      */
-    protected function process_persona($data) {
+    protected function process_persona(array $data): void {
         global $DB, $USER;
         $persona = $DB->get_record('block_ai_chat_personas', ['id' => $data['id']]);
         if ($persona) {
@@ -64,10 +65,11 @@ class restore_ai_chat_block_structure_step extends restore_structure_step {
                 return;
             }
         }
-        $data = (object)$data;
+        $data = (object) $data;
         $userinfo = $this->get_setting_value('users');
         $oldid = $data->id;
-        $data->contextid = $this->get_mappingid('context', $data->contextid);
+        $data->contextid = $this->get_mappingid('context', property_exists($data, 'contextid') ? $data->contextid : 0);
+        $data->type = \block_ai_chat\local\persona::TYPE_USER;
 
         // If no userinfo, map to current user.
         if (!$userinfo) {
@@ -82,9 +84,9 @@ class restore_ai_chat_block_structure_step extends restore_structure_step {
      *
      * @param array $data
      */
-    protected function process_persona_selected($data) {
+    protected function process_persona_selected(array $data): void {
         global $DB;
-        $data = (object)$data;
+        $data = (object) $data;
         $data->contextid = $this->get_mappingid('context', $data->contextid);
         $data->personasid = $this->get_mappingid('block_ai_chat_personas', $data->personasid);
         $DB->insert_record('block_ai_chat_personas_selected', $data);
@@ -95,9 +97,9 @@ class restore_ai_chat_block_structure_step extends restore_structure_step {
      *
      * @param array $data
      */
-    protected function process_chat_option($data) {
+    protected function process_chat_option(array $data): void {
         global $DB;
-        $data = (object)$data;
+        $data = (object) $data;
         $data->contextid = $this->get_mappingid('context', $data->contextid);
         $DB->insert_record('block_ai_chat_options', $data);
     }
