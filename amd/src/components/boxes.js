@@ -41,6 +41,9 @@ class Boxes extends BaseComponent {
             INFOBOX: `[data-block_ai_chat-element='ai_manager-infobox']`,
             WARNINGBOX: `[data-block_ai_chat-element='ai_manager-warningbox']`,
         };
+        this.hideTimeout = null;
+        this.HIDE_DELAY_MS = 8000;
+        this.HIDE_CLASS = 'block_ai_chat-scroll-hide';
     }
 
     getWatchers() {
@@ -51,6 +54,7 @@ class Boxes extends BaseComponent {
 
     async stateReady() {
         await this._renderBoxes();
+        this._showOrHideBoxes();
     }
 
     async _renderBoxes() {
@@ -65,12 +69,22 @@ class Boxes extends BaseComponent {
     }
 
     _showOrHideBoxes() {
+        // Clear any existing timeout.
+        if (this.hideTimeout) {
+            clearTimeout(this.hideTimeout);
+            this.hideTimeout = null;
+        }
+
         if (this.reactive.state.config.view === 'chat') {
-            this.getElement(this.selectors.INFOBOX).classList.remove('d-none');
-            this.getElement(this.selectors.WARNINGBOX).classList.remove('d-none');
+            // Reset visibility and remove hide animation class.
+            this.element.classList.remove('d-none', this.HIDE_CLASS);
+
+            // Start timer to auto-hide after 4 seconds.
+            this.hideTimeout = setTimeout(() => {
+                this.element.classList.add(this.HIDE_CLASS);
+            }, this.HIDE_DELAY_MS);
         } else {
-            this.getElement(this.selectors.INFOBOX).classList.add('d-none');
-            this.getElement(this.selectors.WARNINGBOX).classList.add('d-none');
+            this.element.classList.add('d-none');
         }
     }
 }
