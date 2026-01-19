@@ -99,6 +99,7 @@ body:not(.block_ai_chat_replacehelp).hasstickyfooter #ai_chat_button {
     .modal-header {
         width: 100%;
         border-bottom: none;
+        padding-bottom: .35rem;
 
         .block_ai_chat-titlearea {
             width: 95%;
@@ -316,7 +317,6 @@ body:not(.block_ai_chat_replacehelp).hasstickyfooter #ai_chat_button {
     }
 
     .gradient-overlay {
-        content: '';
         position: sticky;
         top: 0;
         left: 0;
@@ -607,6 +607,7 @@ body.block_ai_chat_replacehelp {
     display: flex;
     align-items: center;
     margin-top: 1rem;
+    margin-bottom: 1rem;
     gap: 0.5rem;
 
     .block_ai_chat-history-line {
