@@ -15,7 +15,7 @@
 
 import Popover from 'theme_boost/bootstrap/popover';
 import {BaseComponent} from 'core/reactive';
-import {debounce} from 'core/utils';
+import {eventTypes} from 'block_ai_chat/events';
 
 
 class HistoryMarker extends BaseComponent {
@@ -46,7 +46,6 @@ class HistoryMarker extends BaseComponent {
             MESSAGE: `[data-block_ai_chat-component='message']`,
             HISTORY_MARKER_CONTENT: `[data-block_ai_chat-element='historymarkercontent']`,
         };
-        this._debouncedUpdatePositionAndVisibility = debounce(this._updatePositionAndVisibility.bind(this), 250);
     }
 
     /**
@@ -61,14 +60,21 @@ class HistoryMarker extends BaseComponent {
         if (historyMarkerContent) {
             new Popover(historyMarkerContent);
         }
-        this._debouncedUpdatePositionAndVisibility();
+
+        // Listen for messageRendered events from chat.js - triggered after DOM is ready.
+        const chatOutputContainer = this.getElement().parentElement;
+        this.addEventListener(chatOutputContainer, eventTypes.messageRendered, () => this._updatePositionAndVisibility());
+
+        // Initial check in case messages are already rendered.
+        this._updatePositionAndVisibility();
     }
 
     getWatchers() {
         return [
-            {watch: `messages:created`, handler: this._updatePositionAndVisibility},
-            {watch: `messages:deleted`, handler: this._debouncedUpdatePositionAndVisibility},
-            {watch: `config.conversationContextLimit:updated`, handler: this._updatePositionAndVisibility},
+            // These fire when state changes; the event listener handles DOM readiness.
+            {watch: `messages:created`, handler: () => this._updatePositionAndVisibility()},
+            {watch: `messages:deleted`, handler: () => this._updatePositionAndVisibility()},
+            {watch: `config.conversationContextLimit:updated`, handler: () => this._updatePositionAndVisibility()},
         ];
     }
 
@@ -93,11 +99,19 @@ class HistoryMarker extends BaseComponent {
         // History length of 4 messages actually means 4 user messages and 4 AI messages = 8 messages total.
         const markerPosition = messages.size - 2 * contextLimit - 1;
         const messageId = Array.from(messages.values())[markerPosition].id;
+
         const messageBeforeContext = chatOutputContainer.querySelector(
             this.selectors.MESSAGE + `[data-block_ai_chat-messageid="${messageId}"]`
         );
 
         if (!messageBeforeContext) {
+            // DOM element not found yet - event listener will call us again when it's ready.
+            return;
+        }
+
+        // Check if the message element is a direct child of the chat output container.
+        // If not, it's still inside a placeholder div - event listener will call us again after replaceChild.
+        if (messageBeforeContext.parentElement !== chatOutputContainer) {
             return;
         }
 

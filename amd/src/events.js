@@ -39,6 +39,14 @@ export const eventTypes = {
      * @property {Array} nodes The list of parent nodes which were updated
      */
     blockAiChatStateUpdated: 'block_ai_chat/stateUpdated',
+    /**
+     * Event triggered when a message has been rendered to the DOM.
+     *
+     * @event messageRendered
+     * @type {CustomEvent}
+     * @property {object} detail The message details
+     */
+    messageRendered: 'block_ai_chat/messageRendered',
 };
 
 /**
@@ -52,4 +60,17 @@ export const eventTypes = {
  */
 export const notifyBlockAiChatStateUpdated = (detail, container) => {
     return dispatchEvent(eventTypes.blockAiChatStateUpdated, detail, container);
+};
+
+/**
+ * Trigger an event to indicate that a message has been rendered to the DOM.
+ *
+ * @method notifyMessageRendered
+ * @param {object} detail the message details
+ * @param {HTMLElement} container the custom event target (document if none provided)
+ * @returns {CustomEvent}
+ * @fires messageRendered
+ */
+export const notifyMessageRendered = (detail, container) => {
+    return dispatchEvent(eventTypes.messageRendered, detail, container);
 };

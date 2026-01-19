@@ -24,6 +24,7 @@ import {alert as displayAlert} from 'core/notification';
 import {showErrorToast} from 'block_ai_chat/utils';
 import {MODES} from 'block_ai_chat/constants';
 import * as DomExtractor from 'block_ai_chat/dom_extractor';
+import {notifyMessageRendered} from 'block_ai_chat/events';
 
 
 class Chat extends BaseContent {
@@ -103,6 +104,7 @@ class Chat extends BaseContent {
         const newcomponent = await this.renderComponent(placeholder, 'block_ai_chat/components/message', templateData);
         const newelement = newcomponent.getElement();
         node.replaceChild(newelement, placeholder);
+        notifyMessageRendered({messageId: element.id}, node);
         this._scrollToBottom();
         this._focusInputTextarea();
     }
