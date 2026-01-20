@@ -478,6 +478,7 @@ class manager {
                     'content' => htmlspecialchars($logentry->prompttext),
                     'sender' => 'user',
                     'messageMode' => 'chat',
+                    'rendered' => false,
                 ]),
             ],
             [
@@ -490,6 +491,7 @@ class manager {
                     'content' => $purpose->format_output($logentry->promptcompletion),
                     'sender' => 'ai',
                     'messageMode' => $logentry->purpose === 'agent' ? 'agent' : 'chat',
+                    'rendered' => false,
                 ]),
             ],
         ];

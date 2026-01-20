@@ -103,6 +103,7 @@ class Chat extends BaseContent {
         const newcomponent = await this.renderComponent(placeholder, 'block_ai_chat/components/message', templateData);
         const newelement = newcomponent.getElement();
         node.replaceChild(newelement, placeholder);
+        this.reactive.dispatch('setMessageRendered', element.id, true);
         this._scrollToBottom();
         this._focusInputTextarea();
     }
@@ -302,7 +303,7 @@ class Chat extends BaseContent {
         };
         agentAnswer.formelements.forEach(async(formElement) => {
                 const htmlElement = document.getElementById(formElement.id);
-                let newValue = formElement.newValue.trim();
+                let newValue = formElement.newValue ? formElement.newValue.trim() : '';
                 if (newValue.length === 0) {
                     newValue = 0;
                 }

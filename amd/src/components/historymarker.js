@@ -15,7 +15,6 @@
 
 import Popover from 'theme_boost/bootstrap/popover';
 import {BaseComponent} from 'core/reactive';
-import {debounce} from 'core/utils';
 
 
 class HistoryMarker extends BaseComponent {
@@ -46,7 +45,6 @@ class HistoryMarker extends BaseComponent {
             MESSAGE: `[data-block_ai_chat-component='message']`,
             HISTORY_MARKER_CONTENT: `[data-block_ai_chat-element='historymarkercontent']`,
         };
-        this._debouncedUpdatePositionAndVisibility = debounce(this._updatePositionAndVisibility.bind(this), 250);
     }
 
     /**
@@ -61,13 +59,13 @@ class HistoryMarker extends BaseComponent {
         if (historyMarkerContent) {
             new Popover(historyMarkerContent);
         }
-        this._debouncedUpdatePositionAndVisibility();
+        this._updatePositionAndVisibility();
     }
 
     getWatchers() {
         return [
-            {watch: `messages:created`, handler: this._updatePositionAndVisibility},
-            {watch: `messages:deleted`, handler: this._debouncedUpdatePositionAndVisibility},
+            {watch: `messages.rendered:updated`, handler: this._updatePositionAndVisibility},
+            {watch: `messages:deleted`, handler: this._updatePositionAndVisibility},
             {watch: `config.conversationContextLimit:updated`, handler: this._updatePositionAndVisibility},
         ];
     }
@@ -98,6 +96,13 @@ class HistoryMarker extends BaseComponent {
         );
 
         if (!messageBeforeContext) {
+            // DOM element not found yet - event listener will call us again when it's ready.
+            return;
+        }
+
+        // Check if the message element is a direct child of the chat output container.
+        // If not, it's still inside a placeholder div - event listener will call us again after replaceChild.
+        if (messageBeforeContext.parentElement !== chatOutputContainer) {
             return;
         }
 

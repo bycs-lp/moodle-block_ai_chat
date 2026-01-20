@@ -233,4 +233,21 @@ export default class {
         stateManager.state.config.mode = mode;
         stateManager.setReadOnly(true);
     }
+
+    /**
+     * When inserting a message, we need to set its rendered state after it has been added to the DOM.
+     * This is being done by this mutation which needs to be called from the component after rendering.
+     *
+     * @param {Object} stateManager the state manager
+     * @param {int} messageid the id of the message that has been rendered
+     */
+    setMessageRendered(stateManager, messageid) {
+        stateManager.setReadOnly(false);
+        const message = stateManager.state.messages.get(messageid);
+        if (message) {
+            message.rendered = true;
+            stateManager.state.messages.set(messageid, message);
+        }
+        stateManager.setReadOnly(true);
+    }
 }
