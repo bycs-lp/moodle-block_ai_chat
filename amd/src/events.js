@@ -47,6 +47,13 @@ export const eventTypes = {
      * @property {object} detail The message details
      */
     messageRendered: 'block_ai_chat/messageRendered',
+    /**
+     * Event triggered when the chat content has been fully rendered.
+     *
+     * @event chatContentRendered
+     * @type {CustomEvent}
+     */
+    chatContentRendered: 'block_ai_chat/chatContentRendered',
 };
 
 /**
@@ -73,4 +80,16 @@ export const notifyBlockAiChatStateUpdated = (detail, container) => {
  */
 export const notifyMessageRendered = (detail, container) => {
     return dispatchEvent(eventTypes.messageRendered, detail, container);
+};
+
+/**
+ * Trigger an event to indicate that the chat content has been rendered.
+ *
+ * @method notifyChatContentRendered
+ * @param {HTMLElement} container the custom event target (document if none provided)
+ * @returns {CustomEvent}
+ * @fires chatContentRendered
+ */
+export const notifyChatContentRendered = (container) => {
+    return dispatchEvent(eventTypes.chatContentRendered, {}, container);
 };

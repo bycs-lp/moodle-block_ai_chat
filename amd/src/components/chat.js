@@ -24,7 +24,7 @@ import {alert as displayAlert} from 'core/notification';
 import {showErrorToast} from 'block_ai_chat/utils';
 import {MODES} from 'block_ai_chat/constants';
 import * as DomExtractor from 'block_ai_chat/dom_extractor';
-import {notifyMessageRendered} from 'block_ai_chat/events';
+import {notifyMessageRendered, notifyChatContentRendered} from 'block_ai_chat/events';
 
 
 class Chat extends BaseContent {
@@ -171,6 +171,13 @@ class Chat extends BaseContent {
         );
         Templates.replaceNodeContents(this.getElement(), html, js);
         await this._setupAfterContentRendering();
+
+        // Notify that chat content has been rendered.
+        const modal = this.element.closest('.block_ai_chat_reactive_main_component');
+        if (modal) {
+            notifyChatContentRendered(modal);
+        }
+
         const availabilityErrorMessage = await this.isAiChatAvailable();
         if (availabilityErrorMessage !== '') {
             const notice = await getString('notice', 'block_ai_chat');
