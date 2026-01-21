@@ -91,10 +91,7 @@ class Title extends BaseComponent {
             const personalistString = await getString('managepersona', 'block_ai_chat');
             this.getElement(this.selectors.TITLE).innerText = personalistString;
         } else if (element.view === 'chat') {
-            this.getElement(this.selectors.TITLE).innerText =
-                this.reactive.state.messages.size > 0
-                    ? stripHtmlTags(this.reactive.state.messages.values().next().value.content)
-                    : this.newDialogString;
+            this._updateTitleChat({element});
         }
     }
 }
