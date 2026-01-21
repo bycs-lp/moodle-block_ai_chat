@@ -24,7 +24,7 @@ import {alert as displayAlert} from 'core/notification';
 import {showErrorToast} from 'block_ai_chat/utils';
 import {MODES} from 'block_ai_chat/constants';
 import * as DomExtractor from 'block_ai_chat/dom_extractor';
-
+import {debounce} from 'core/utils';
 
 class Chat extends BaseContent {
     /**
@@ -59,6 +59,8 @@ class Chat extends BaseContent {
             CHAT_OUTPUT: `[data-block_ai_chat-element='chatoutput']`,
             HISTORY_MARKER: `[data-block_ai_chat-element='historymarker']`,
         };
+        this._debouncedScrollToBottom = debounce(this._scrollToBottom.bind(this), 250);
+        this._debouncedFocusInputTextarea = debounce(this._focusInputTextarea.bind(this), 250);
     }
 
     /**
@@ -104,8 +106,8 @@ class Chat extends BaseContent {
         const newelement = newcomponent.getElement();
         node.replaceChild(newelement, placeholder);
         this.reactive.dispatch('setMessageRendered', element.id, true);
-        this._scrollToBottom();
-        this._focusInputTextarea();
+        this._debouncedScrollToBottom();
+        this._debouncedFocusInputTextarea();
     }
 
 
@@ -228,9 +230,9 @@ class Chat extends BaseContent {
         this.addEventListener(sendRequestButton, 'click', this._submitAiRequestListener);
         this.addEventListener(inputTextarea, 'keydown', this._handleKeyDownOnInputTextarea);
 
-        this._scrollToBottom();
         this._enableTextAreaAutoResize();
-        this._focusInputTextarea();
+        this._debouncedScrollToBottom();
+        this._debouncedFocusInputTextarea();
     }
 
     getViewName() {
