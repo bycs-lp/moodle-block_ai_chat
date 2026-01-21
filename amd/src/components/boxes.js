@@ -54,6 +54,7 @@ class Boxes extends BaseComponent {
         return [
             {watch: `config.view:updated`, handler: this._showOrHideBoxes},
             {watch: `messages.rendered:updated`, handler: this._debouncedCollapseBoxes},
+            {watch: `messages:deleted`, handler: this._debouncedCollapseBoxes},
         ];
     }
 
