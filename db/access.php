@@ -51,7 +51,9 @@ $capabilities = [
     ],
     'block/ai_chat:view' => [
         'captype' => 'read',
-        'contextlevel' => CONTEXT_BLOCK,
+        // We intentionally choose CONTEXT_MODULE, because this capability will also be used by
+        // mod_aichat in the module context.
+        'contextlevel' => CONTEXT_MODULE,
         'archetypes' => [
             'editingteacher' => CAP_ALLOW,
             'manager' => CAP_PREVENT,
@@ -61,7 +63,9 @@ $capabilities = [
     ],
     'block/ai_chat:edit' => [
         'captype' => 'write',
-        'contextlevel' => CONTEXT_BLOCK,
+        // We intentionally choose CONTEXT_MODULE, because this capability will also be used by
+        // mod_aichat in the module context.
+        'contextlevel' => CONTEXT_MODULE,
         'archetypes' => [
             'editingteacher' => CAP_ALLOW,
             'manager' => CAP_ALLOW,
