@@ -66,7 +66,8 @@ final class backup_restore_test extends \advanced_testcase {
 
         $this->setAdminUser();
         $user = $this->getDataGenerator()->create_user();
-        [$course, $block, $persona] = $this->create_course_with_block_and_persona($user);
+        $this->setUser($user);
+        [$course, , $persona] = $this->create_course_with_block_and_persona($user);
         $personacountbeforerestore = $DB->count_records('block_ai_chat_personas');
 
         // Backup the course.
@@ -77,7 +78,7 @@ final class backup_restore_test extends \advanced_testcase {
         $this->getDataGenerator()->enrol_user($user->id, $newcourse->id, 'editingteacher');
         $newcourseid = $this->perform_restore($backupid, $user->id, $newcourse->id);
 
-        // Check that no new persona was created.
+        // Check that no new persona was created. This should be independent of whether user data was included.
         $this->assertEquals($personacountbeforerestore, $DB->count_records('block_ai_chat_personas'));
 
         // Check that the block in the new course uses the same persona.
@@ -96,6 +97,7 @@ final class backup_restore_test extends \advanced_testcase {
 
         $this->setAdminUser();
         $user = $this->getDataGenerator()->create_user();
+        $this->setUser($user);
         [$course, , $persona] = $this->create_course_with_block_and_persona($user);
 
         // Backup with user data.
@@ -153,6 +155,7 @@ final class backup_restore_test extends \advanced_testcase {
      *
      * @dataProvider restore_always_creates_private_persona_provider
      * @param string $usertype The type of user performing the restore
+     * @param int $personatype The type of persona being backed up
      */
     public function test_restore_always_creates_private_persona(string $usertype, int $personatype): void {
         global $DB, $CFG;
@@ -200,6 +203,9 @@ final class backup_restore_test extends \advanced_testcase {
 
     /**
      * Helper to create course, block and persona.
+     * @param \stdClass $user
+     * @param array $options
+     * @return array [$course, $block, $persona]
      */
     private function create_course_with_block_and_persona($user, $options = []): array {
         global $DB;
@@ -224,6 +230,9 @@ final class backup_restore_test extends \advanced_testcase {
 
     /**
      * Helper to perform backup.
+     * @param \stdClass $course
+     * @param bool $withuserdata
+     * @return stored_file
      */
     private function perform_backup(\stdClass $course, bool $withuserdata): stored_file {
         $bc = new \backup_controller(
@@ -247,6 +256,10 @@ final class backup_restore_test extends \advanced_testcase {
 
     /**
      * Helper to perform restore.
+     * @param stored_file $file
+     * @param int $userid
+     * @param int $targetcourseid
+     * @return int New course id
      */
     private function perform_restore($file, $userid, $targetcourseid): int {
         // We need a unique directory for restore.
@@ -272,6 +285,8 @@ final class backup_restore_test extends \advanced_testcase {
 
     /**
      * Helper to get block context id in a course.
+     * @param int $courseid
+     * @return int context id
      */
     protected function get_block_contextid_in_course($courseid): int {
         global $DB;

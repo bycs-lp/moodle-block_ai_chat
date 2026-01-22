@@ -14,6 +14,8 @@
 // You should have received a copy of the GNU General Public License
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
+use block_ai_chat\local\persona;
+
 /**
  * Restore steps for block_ai_chat.
  *
@@ -50,31 +52,47 @@ class restore_ai_chat_block_structure_step extends restore_structure_step {
      * @param array $data
      */
     protected function process_persona(array $data): void {
-        global $DB, $USER;
-        $persona = $DB->get_record('block_ai_chat_personas', ['id' => $data['id']]);
-        if ($persona) {
-            // Compare persona to saved one, if same, skip inserting duplicate.
-            if (
-                $persona->name === $data['name'] &&
-                $persona->prompt === $data['prompt'] &&
-                $persona->type === $data['type'] &&
-                $persona->userinfo === $data['userinfo'] &&
-                $persona->contextid === $this->task->get_contextid()
-            ) {
-                $this->set_mapping('block_ai_chat_personas', $data['id'], $persona->id);
-                return;
-            }
-        }
-        $data = (object) $data;
+        global $DB;
+
         $userinfo = $this->get_setting_value('users');
-        $oldid = $data->id;
-        $data->contextid = $this->get_mappingid('context', property_exists($data, 'contextid') ? $data->contextid : 0);
-        $data->type = \block_ai_chat\local\persona::TYPE_USER;
 
         // If no userinfo, map to current user.
         if (!$userinfo) {
-            $data->userid = $USER->id;
+            $data['userid'] = $this->task->get_userid();
+        } else {
+            $data['userid'] = $this->get_mappingid('user', $data['userid']);
         }
+
+        $search = [
+            'name' => $data['name'],
+            'prompt' => $data['prompt'],
+            'type' => $data['type'],
+            'userinfo' => $data['userinfo'],
+        ];
+
+        $where = 'name = :name AND type = :type';
+
+        if ($data['type'] != persona::TYPE_TEMPLATE) {
+            // For user-specific personas, add userid to search.
+            $search['userid'] = $data['userid'];
+            $where .= ' AND userid = :userid';
+        }
+
+        $where .= ' AND ' . $DB->sql_compare_text('prompt') . ' = ' . $DB->sql_compare_text(':prompt');
+        $where .= ' AND ' . $DB->sql_compare_text('userinfo') . ' = ' . $DB->sql_compare_text(':userinfo');
+
+        $persona = $DB->get_record_select('block_ai_chat_personas', $where, $search, 'id', IGNORE_MULTIPLE | IGNORE_MISSING);
+        if ($persona) {
+            // Persona already exists, map to existing record.
+            $this->set_mapping('block_ai_chat_personas', $data['id'], $persona->id);
+            return;
+        }
+        $data = (object)$data;
+        // Restored personas are always of type user.
+        $data->type = persona::TYPE_USER;
+        $oldid = $data->id;
+        $data->userid = $this->task->get_userid();
+
         $newid = $DB->insert_record('block_ai_chat_personas', $data);
         $this->set_mapping('block_ai_chat_personas', $oldid, $newid);
     }
