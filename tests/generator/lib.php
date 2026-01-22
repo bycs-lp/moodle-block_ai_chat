@@ -54,4 +54,24 @@ class block_ai_chat_generator extends testing_block_generator {
 
         return $personadata;
     }
+
+    /**
+     * Create a test option for a block instance.
+     *
+     * @param array $record Option data with required keys: name, value, contextid
+     * @return stdClass The created option record
+     */
+    public function create_option(array $record): stdClass {
+        global $DB;
+
+        // Validate required fields.
+        if (empty($record['name']) || !isset($record['value']) || empty($record['contextid'])) {
+            throw new coding_exception('name, value and contextid are required for create_option');
+        }
+
+        $optiondata = (object) $record;
+        $optiondata->id = $DB->insert_record('block_ai_chat_options', $optiondata);
+
+        return $optiondata;
+    }
 }

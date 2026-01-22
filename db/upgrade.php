@@ -30,6 +30,7 @@
  */
 function xmldb_block_ai_chat_upgrade($oldversion) {
     global $CFG, $DB;
+    require_once($CFG->libdir . '/blocks/ai_chat/db/upgradelib.php');
 
     $dbman = $DB->get_manager();
 
@@ -93,6 +94,11 @@ function xmldb_block_ai_chat_upgrade($oldversion) {
         }
 
         upgrade_block_savepoint(true, 2025121301, 'ai_chat');
+    }
+
+    if ($oldversion < 2026012200) {
+        block_ai_chat_cleanup_left_over_data();
+        upgrade_block_savepoint(true, 2026012200, 'ai_chat');
     }
 
     return true;
