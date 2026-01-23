@@ -92,6 +92,37 @@ final class block_ai_chat_test extends \advanced_testcase {
         $this->assertTrue($DB->record_exists('block_ai_chat_options', ['contextid' => $block2context->id]));
         $this->assertEquals(2, $DB->count_records('block_ai_chat_options'));
 
+        // Create log entries for both blocks using the local_ai_manager generator.
+        /** @var \local_ai_manager_generator $aimanagergenerator */
+        $aimanagergenerator = $this->getDataGenerator()->get_plugin_generator('local_ai_manager');
+
+        $logentry1 = $aimanagergenerator->create_request_log_entry([
+            'component' => 'block_ai_chat',
+            'contextid' => $block1context->id,
+            'value' => 100,
+            'deleted' => 0,
+        ]);
+
+        $logentry2 = $aimanagergenerator->create_request_log_entry([
+            'component' => 'block_ai_chat',
+            'contextid' => $block2context->id,
+            'value' => 200,
+            'deleted' => 0,
+        ]);
+
+        // Verify both log entries exist and are not deleted before deletion using ai_manager_utils.
+        $logentriesblock1 = \local_ai_manager\ai_manager_utils::get_log_entries('block_ai_chat', $block1context->id);
+        $this->assertCount(1, $logentriesblock1);
+        $logentry1retrieved = reset($logentriesblock1);
+        $this->assertEquals($logentry1->id, $logentry1retrieved->id);
+        $this->assertEquals(0, $logentry1retrieved->deleted);
+
+        $logentriesblock2 = \local_ai_manager\ai_manager_utils::get_log_entries('block_ai_chat', $block2context->id);
+        $this->assertCount(1, $logentriesblock2);
+        $logentry2retrieved = reset($logentriesblock2);
+        $this->assertEquals($logentry2->id, $logentry2retrieved->id);
+        $this->assertEquals(0, $logentry2retrieved->deleted);
+
         // Delete block 1.
         blocks_delete_instance($DB->get_record('block_instances', ['id' => $block1record->id]));
 
@@ -112,5 +143,19 @@ final class block_ai_chat_test extends \advanced_testcase {
         // Verify the remaining option has the correct value.
         $remainingoption = $DB->get_record('block_ai_chat_options', ['contextid' => $block2context->id]);
         $this->assertEquals('10', $remainingoption->value);
+
+        // Verify that the log entry for block 1 is marked as deleted using ai_manager_utils.
+        $logentriesblock1afterdelete = \local_ai_manager\ai_manager_utils::get_log_entries('block_ai_chat', $block1context->id);
+        $this->assertCount(1, $logentriesblock1afterdelete);
+        $logentry1afterdelete = reset($logentriesblock1afterdelete);
+        $this->assertEquals($logentry1->id, $logentry1afterdelete->id);
+        $this->assertEquals(1, $logentry1afterdelete->deleted);
+
+        // Verify that the log entry for block 2 is still not deleted using ai_manager_utils.
+        $logentriesblock2afterdelete = \local_ai_manager\ai_manager_utils::get_log_entries('block_ai_chat', $block2context->id);
+        $this->assertCount(1, $logentriesblock2afterdelete);
+        $logentry2afterdelete = reset($logentriesblock2afterdelete);
+        $this->assertEquals($logentry2->id, $logentry2afterdelete->id);
+        $this->assertEquals(0, $logentry2afterdelete->deleted);
     }
 }

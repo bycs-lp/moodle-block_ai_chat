@@ -170,6 +170,7 @@ class block_ai_chat extends block_base {
         global $DB;
         $DB->delete_records('block_ai_chat_personas_selected', ['contextid' => $this->context->id]);
         $DB->delete_records('block_ai_chat_options', ['contextid' => $this->context->id]);
+        ai_manager_utils::mark_log_entries_as_deleted('block_ai_chat', $this->context->id);
         return true;
     }
 }
