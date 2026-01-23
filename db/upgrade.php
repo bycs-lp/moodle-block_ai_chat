@@ -30,7 +30,7 @@
  */
 function xmldb_block_ai_chat_upgrade($oldversion) {
     global $CFG, $DB;
-    require_once($CFG->libdir . '/blocks/ai_chat/db/upgradelib.php');
+    require_once($CFG->dirroot . '/blocks/ai_chat/db/upgradelib.php');
 
     $dbman = $DB->get_manager();
 
