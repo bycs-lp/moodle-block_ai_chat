@@ -286,15 +286,11 @@ class HeaderActions extends BaseComponent {
 
         modeSwitch.innerText = element.mode === MODES.AGENT ? modeAgentString : modeChatString;
         if (element.mode === MODES.AGENT) {
+            modeSwitch.classList.remove('bg-dark');
             modeSwitch.classList.add('bg-primary');
-            modeSwitch.classList.add('text-secondary');
-            modeSwitch.classList.remove('bg-secondary');
-            modeSwitch.classList.remove('text-primary');
         } else {
             modeSwitch.classList.remove('bg-primary');
-            modeSwitch.classList.remove('text-secondary');
-            modeSwitch.classList.add('bg-secondary');
-            modeSwitch.classList.add('text-primary');
+            modeSwitch.classList.add('bg-dark');
         }
         // We need to check if we need to show or hide the persona banner.
         this._refreshPersona({element: this.reactive.state.config});
