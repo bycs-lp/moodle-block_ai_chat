@@ -36,16 +36,21 @@ use moodle_exception;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 class manager {
-    /** @var context the current context. */
+    /** @var context the current context */
     private context $context;
 
+    /** @var string the component name of the plugin using the AI chat */
+    private string $component;
+
     /**
-     * Class contructor.
+     * Class constructor.
      *
-     * @param int $contextid The context id of the AI chat instance.
+     * @param int $contextid The context id of the AI chat instance
+     * @param string $component The component name of the plugin using the AI chat
      */
-    public function __construct(int $contextid) {
+    public function __construct(int $contextid, string $component) {
         $this->context = \context_helper::instance_by_id($contextid);
+        $this->component = $component;
     }
 
     /**
@@ -57,7 +62,7 @@ class manager {
      */
     public function delete_conversation(int $userid, int $conversationid): array {
         $deletedids = \local_ai_manager\ai_manager_utils::mark_log_entries_as_deleted(
-            'block_ai_chat',
+            $this->component,
             $this->context->id,
             $userid,
             $conversationid
@@ -271,7 +276,7 @@ class manager {
         // for displaying our conversations. This especially is a performance issue, because the field 'requestoptions' contains
         // base64 decoded images for purpose 'itt', for example, which slows down the database query extremely.
         $logentries = \local_ai_manager\ai_manager_utils::get_log_entries(
-            'block_ai_chat',
+            $this->component,
             $this->context->id,
             $userid,
             $conversationid,
@@ -298,7 +303,7 @@ class manager {
      */
     public function get_latest_conversationid(int $userid): int {
         $logentries = ai_manager_utils::get_log_entries(
-            'block_ai_chat',
+            $this->component,
             $this->context->id,
             $userid,
             0,
@@ -445,7 +450,7 @@ class manager {
         }
 
         $aimanager = new \local_ai_manager\manager($mode);
-        $requestresult = $aimanager->perform_request($prompt, 'block_ai_chat', $this->context->id, $options);
+        $requestresult = $aimanager->perform_request($prompt, $this->component, $this->context->id, $options);
         if ($requestresult->get_code() !== 200) {
             return [
                 'code' => $requestresult->get_code(),
@@ -507,7 +512,7 @@ class manager {
      */
     public function retrieve_conversationcontext(int $itemid, int $userid, int $conversationlimit): array {
         $logentries = ai_manager_utils::get_log_entries(
-            'block_ai_chat',
+            $this->component,
             $this->context->id,
             $userid,
             $itemid,
@@ -617,6 +622,7 @@ class manager {
         return [
             'static' => [
                 'contextid' => $this->context->id,
+                'component' => $this->component,
                 'userid' => $USER->id,
                 'showPersona' => $haseditcapability,
                 'showOptions' => $haseditcapability,
@@ -662,6 +668,7 @@ class manager {
         return new external_single_structure([
             'static' => new external_single_structure([
                 'contextid' => new external_value(PARAM_INT, 'Context ID'),
+                'component' => new external_value(PARAM_COMPONENT, 'Component name of the plugin using block_ai_chat'),
                 'userid' => new external_value(PARAM_INT, 'User ID'),
                 'showPersona' => new external_value(PARAM_BOOL, 'Configuring personas allowed'),
                 'showOptions' => new external_value(PARAM_BOOL, 'Configuring options allowed'),

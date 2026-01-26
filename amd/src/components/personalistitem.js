@@ -121,6 +121,7 @@ class PersonaListItem extends BaseComponent {
             moduleName: 'core/modal_save_cancel',
             args: {
                 contextid: this.reactive.state.static.contextid,
+                component: this.reactive.state.static.component,
                 personaid: this.id,
                 name: selectedPersona.name,
                 prompt: selectedPersona.prompt,

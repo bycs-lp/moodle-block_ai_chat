@@ -41,6 +41,7 @@ class duplicate_persona extends external_api {
         return new external_function_parameters(
             [
                 'contextid' => new external_value(PARAM_INT, 'The block_ai_chat context id'),
+                'component' => new external_value(PARAM_COMPONENT, 'The component name calling the AI'),
                 'personaid' => new external_value(PARAM_INT, 'The id of the persona to duplicate'),
             ]
         );
@@ -50,18 +51,21 @@ class duplicate_persona extends external_api {
      * Duplicate an existing persona.
      *
      * @param int $contextid The context id
+     * @param string $component the component name of the plugin using block_ai_chat
      * @param int $personaid The id of the persona to duplicate
      * @return array response array including status code and content array containing reactive state updates
      */
-    public static function execute(int $contextid, int $personaid): array {
+    public static function execute(int $contextid, string $component, int $personaid): array {
         global $USER;
         [
             'contextid' => $contextid,
+            'component' => $component,
             'personaid' => $personaid,
         ] = external_api::validate_parameters(
             self::execute_parameters(),
             [
                 'contextid' => $contextid,
+                'component' => $component,
                 'personaid' => $personaid,
             ]
         );
@@ -71,7 +75,7 @@ class duplicate_persona extends external_api {
 
         require_capability('block/ai_chat:view', $context);
 
-        $manager = new manager($contextid);
+        $manager = new manager($contextid, $component);
         $manager->require_view_persona($personaid, $USER->id);
         return $manager->duplicate_persona($personaid);
     }

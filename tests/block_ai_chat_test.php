@@ -63,11 +63,11 @@ final class block_ai_chat_test extends \advanced_testcase {
         $persona2 = $blockgenerator->create_persona(['name' => 'Test Persona 2']);
 
         // Link persona 1 to block 1.
-        $manager1 = new manager($block1context->id);
+        $manager1 = new manager($block1context->id, 'block_ai_chat');
         $manager1->select_persona($persona1->id);
 
         // Link persona 2 to block 2.
-        $manager2 = new manager($block2context->id);
+        $manager2 = new manager($block2context->id, 'block_ai_chat');
         $manager2->select_persona($persona2->id);
 
         // Create options for both blocks.

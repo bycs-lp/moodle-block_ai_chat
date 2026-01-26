@@ -160,6 +160,7 @@ class HeaderActions extends BaseComponent {
             moduleName: "core/modal_save_cancel",
             args: {
                 contextid: this.reactive.state.static.contextid,
+                component: this.reactive.state.static.component
             },
             modalConfig: {
                 title: optionsFormModalTitle,

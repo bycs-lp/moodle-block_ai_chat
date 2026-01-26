@@ -37,7 +37,8 @@ class get_personas extends external_api {
      */
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
-            'contextid' => new external_value(PARAM_INT, 'Block contextid.', VALUE_REQUIRED),
+            'contextid' => new external_value(PARAM_INT, 'Block contextid.'),
+            'component' => new external_value(PARAM_COMPONENT, 'The component name calling the AI'),
         ]);
     }
 

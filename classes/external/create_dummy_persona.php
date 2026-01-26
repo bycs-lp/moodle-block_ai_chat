@@ -41,6 +41,7 @@ class create_dummy_persona extends external_api {
         return new external_function_parameters(
             [
                 'contextid' => new external_value(PARAM_INT, 'The block_ai_chat context id'),
+                'component' => new external_value(PARAM_COMPONENT, 'The component name calling the AI'),
             ]
         );
     }
@@ -49,15 +50,18 @@ class create_dummy_persona extends external_api {
      * Creates a dummy persona for the current user.
      *
      * @param int $contextid The context id of the AI chat
+     * @param string $component the component name of the plugin using block_ai_chat
      * @return array response array including status code and content array containing reactive state updates
      */
-    public static function execute(int $contextid): array {
+    public static function execute(int $contextid, string $component): array {
         [
-            'contextid' => $contextid
+            'contextid' => $contextid,
+            'component' => $component,
         ] = external_api::validate_parameters(
             self::execute_parameters(),
             [
                 'contextid' => $contextid,
+                'component' => $component,
             ]
         );
 
@@ -69,7 +73,7 @@ class create_dummy_persona extends external_api {
         // we keep it just in case.
         require_capability('block/ai_chat:view', $context);
 
-        $manager = new manager($contextid);
+        $manager = new manager($contextid, $component);
         return $manager->create_dummy_persona();
     }
 

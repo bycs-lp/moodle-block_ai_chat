@@ -42,9 +42,10 @@ import {RENDER_MODE} from 'block_ai_chat/constants';
  * @param {number} contextid The context id
  * @param {string} mainElementSelector Selector for the main element. Needs to be unique on the page.
  * @param {object|null} modal The modal instance or null for embedded mode.
+ * @param {string} component the component name of the plugin from which the AI chat is being used, for example mod_aichat
  * @returns {Promise<MainComponent|undefined>} The initialized main component or undefined on error.
  */
-export const init = async(contextid, mainElementSelector, modal = null) => {
+export const init = async(contextid, mainElementSelector, modal = null, component = 'block_ai_chat') => {
     // Just one modal per page is allowed/supported.
     // Multiple embedded instances per page however are allowed/supported.
 
@@ -68,6 +69,7 @@ export const init = async(contextid, mainElementSelector, modal = null) => {
             methodname: 'block_ai_chat_get_initial_state',
             args: {
                 contextid,
+                component
             }
         }])[0];
     } catch (error) {

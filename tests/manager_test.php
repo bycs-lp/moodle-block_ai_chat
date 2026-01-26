@@ -43,7 +43,7 @@ final class manager_test extends \advanced_testcase {
         $block = $this->getDataGenerator()->create_block('ai_chat', ['parentcontextid' => $coursecontext->id]);
         $blockcontext = \context_block::instance($block->id);
 
-        $manager = new manager($blockcontext->id);
+        $manager = new manager($blockcontext->id, 'block_ai_chat');
         $generator = $this->getDataGenerator()->get_plugin_generator('block_ai_chat');
 
         $persona = $generator->create_persona([
@@ -99,7 +99,7 @@ final class manager_test extends \advanced_testcase {
         $block = $this->getDataGenerator()->create_block('ai_chat', ['parentcontextid' => $coursecontext->id]);
         $blockcontext = \context_block::instance($block->id);
 
-        $manager = new manager($blockcontext->id);
+        $manager = new manager($blockcontext->id, 'block_ai_chat');
         $generator = $this->getDataGenerator()->get_plugin_generator('block_ai_chat');
 
         $userwithoutcap = $this->getDataGenerator()->create_user();
@@ -214,7 +214,7 @@ final class manager_test extends \advanced_testcase {
         $block = $this->getDataGenerator()->create_block('ai_chat', ['parentcontextid' => $context->id]);
         $blockcontext = \context_block::instance($block->id);
 
-        $manager = new manager($blockcontext->id);
+        $manager = new manager($blockcontext->id, 'block_ai_chat');
         $generator = $this->getDataGenerator()->get_plugin_generator('block_ai_chat');
 
         $generator->create_persona([
@@ -291,7 +291,7 @@ final class manager_test extends \advanced_testcase {
         $block = $this->getDataGenerator()->create_block('ai_chat', ['parentcontextid' => $context->id]);
         $blockcontext = \context_block::instance($block->id);
 
-        $manager = new manager($blockcontext->id);
+        $manager = new manager($blockcontext->id, 'block_ai_chat');
         $generator = $this->getDataGenerator()->get_plugin_generator('block_ai_chat');
 
         // Test 1: Non-existent persona - should not throw exception.
@@ -390,7 +390,7 @@ final class manager_test extends \advanced_testcase {
         $block = $this->getDataGenerator()->create_block('ai_chat', ['parentcontextid' => $context->id]);
         $blockcontext = \context_block::instance($block->id);
 
-        $manager = new manager($blockcontext->id);
+        $manager = new manager($blockcontext->id, 'block_ai_chat');
         $generator = $this->getDataGenerator()->get_plugin_generator('block_ai_chat');
 
         // Test 1: Non-existent persona - should not throw exception.

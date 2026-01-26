@@ -29,6 +29,7 @@ export default class {
         let ajaxresult = await callExternalFunctionReactiveUpdate('block_ai_chat_select_persona',
             {
                 contextid: stateManager.state.static.contextid,
+                component: stateManager.state.static.component,
                 personaid,
             }
         );
@@ -54,6 +55,7 @@ export default class {
         const result = await callExternalFunctionReactiveUpdate('block_ai_chat_request_ai',
             {
                 contextid: stateManager.state.static.contextid,
+                component: stateManager.state.static.component,
                 mode: stateManager.state.config.mode,
                 prompt: prompt,
                 options: requestOptions
@@ -134,6 +136,7 @@ export default class {
             'block_ai_chat_get_messages',
             {
                 contextid: stateManager.state.static.contextid,
+                component: stateManager.state.static.component,
                 conversationid: stateManager.state.config.currentConversationId
             }
         );
@@ -154,6 +157,7 @@ export default class {
             'block_ai_chat_create_dummy_persona',
             {
                 contextid: stateManager.state.static.contextid,
+                component: stateManager.state.static.component
             }
         );
         if (ajaxresult === null) {
@@ -167,6 +171,7 @@ export default class {
             'block_ai_chat_duplicate_persona',
             {
                 contextid: stateManager.state.static.contextid,
+                component: stateManager.state.static.component,
                 personaid
             }
         );
@@ -181,6 +186,7 @@ export default class {
             'block_ai_chat_delete_persona',
             {
                 contextid: stateManager.state.static.contextid,
+                component: stateManager.state.static.component,
                 personaid,
             }
         );
@@ -205,6 +211,7 @@ export default class {
             'block_ai_chat_delete_conversation',
             {
                 contextid: stateManager.state.static.contextid,
+                component: stateManager.state.static.component,
                 conversationid: stateManager.state.config.currentConversationId
             }
         );

@@ -38,6 +38,7 @@ class get_all_conversations extends external_api {
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
             'contextid' => new external_value(PARAM_INT, 'Block contextid.', VALUE_REQUIRED),
+            'component' => new external_value(PARAM_COMPONENT, 'The component name calling the AI', VALUE_REQUIRED),
         ]);
     }
 
@@ -45,16 +46,19 @@ class get_all_conversations extends external_api {
      * Retrieve all conversations for the current user in the given context.
      *
      * @param int $contextid the context id
+     * @param string $component the component name of the plugin using block_ai_chat
      * @return array response array including status code and content array containing the conversation list
      */
-    public static function execute(int $contextid): array {
+    public static function execute(int $contextid, string $component): array {
         global $USER;
         [
-            'contextid' => $contextid
+            'contextid' => $contextid,
+            'component' => $component,
         ] = self::validate_parameters(
             self::execute_parameters(),
             [
                 'contextid' => $contextid,
+                'component' => $component,
             ]
         );
         self::validate_context(\core\context_helper::instance_by_id($contextid));
@@ -69,7 +73,7 @@ class get_all_conversations extends external_api {
         // for displaying our conversations. This especially is a performance issue, because the field 'requestoptions' contains
         // base64 decoded images for purpose 'itt', for example, which slows down the database query extremely.
         $records = \local_ai_manager\ai_manager_utils::get_log_entries(
-            'block_ai_chat',
+            $component,
             $contextid,
             $USER->id,
             0,

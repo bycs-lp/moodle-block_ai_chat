@@ -53,7 +53,7 @@ final class upgradelib_test extends \advanced_testcase {
         ]);
         $blockcontext = \context_block::instance($blockinstance->id);
         $persona = $generator->create_persona();
-        $manager = new manager($blockcontext->id);
+        $manager = new manager($blockcontext->id, 'block_ai_chat');
         $manager->select_persona($persona->id);
 
         // Create a valid record in block_ai_chat_options.
