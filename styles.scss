@@ -564,7 +564,8 @@ body.block_ai_chat_replacehelp {
     }
 
     .block_ai_chat-output-wrapper {
-        overflow: unset;
+        max-height: 66vh;
+        overflow-y: scroll;
     }
 
     &.modal-dialog[tabindex="0"].focus .modal-content,

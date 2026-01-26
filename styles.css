@@ -460,7 +460,8 @@ body.block_ai_chat_replacehelp.block_ai_chat_chatwindow .block_ai_chat_modal:not
   border-bottom: 1px solid #dee2e6;
 }
 .block_ai_chat_modal .modal-dialog-embedded .block_ai_chat-output-wrapper {
-  overflow: unset;
+  max-height: 66vh;
+  overflow-y: scroll;
 }
 .block_ai_chat_modal .modal-dialog-embedded.modal-dialog[tabindex="0"].focus .modal-content, .block_ai_chat_modal .modal-dialog-embedded.modal-dialog[tabindex="0"]:focus .modal-content {
   box-shadow: none;
