@@ -7,7 +7,7 @@ Features are different viewmodes and a chat history.
 
 ## Requirements
 
-https://github.com/mebis-lp/moodle-local_ai_manager needs to be installed.
+https://github.com/mebis-lp/moodle-local_ai_manager and https://github.com/bycs-lp/moodle-tiny_ai need to be installed.
 
 ## Installing via uploaded ZIP file ##
 
