@@ -26,7 +26,11 @@ import * as ReactiveInit from 'block_ai_chat/reactive_init';
  * @param {int} contextid the context id of the used context
  */
 export const init = async(contextid) => {
-    document.querySelector('#ai_chat_button').addEventListener('click', async() => {
+    const chatButton = document.querySelector('#ai_chat_button');
+    if (!chatButton) {
+        return;
+    }
+    chatButton.addEventListener('click', async() => {
             const modal = await Modal.create({
                 template: 'block_ai_chat/modal',
                 show: false,
