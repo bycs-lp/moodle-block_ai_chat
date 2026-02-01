@@ -22,10 +22,8 @@ use core_external\external_single_structure;
 use core_external\external_multiple_structure;
 use core_external\external_value;
 
-use function PHPUnit\Framework\throwException;
-
 /**
- * Class get_all_conversations, to retrieve all visible conversations.
+ * External function for retrieving a list with all conversations.
  *
  * @package    block_ai_chat
  * @copyright  2024 Tobias Garske, ISB Bayern
@@ -39,28 +37,34 @@ class get_all_conversations extends external_api {
      */
     public static function execute_parameters(): external_function_parameters {
         return new external_function_parameters([
-            'userid' => new external_value(PARAM_INT, 'Id of user.', VALUE_REQUIRED),
             'contextid' => new external_value(PARAM_INT, 'Block contextid.', VALUE_REQUIRED),
+            'component' => new external_value(PARAM_COMPONENT, 'The component name calling the AI', VALUE_REQUIRED),
         ]);
     }
 
     /**
-     * Execute the service.
+     * Retrieve all conversations for the current user in the given context.
      *
-     * @param int $userid
-     * @param int $contextid
-     * @return array
-     * @throws invalid_parameter_exception
-     * @throws dml_exception
+     * @param int $contextid the context id
+     * @param string $component the component name of the plugin using block_ai_chat
+     * @return array response array including status code and content array containing the conversation list
      */
-    public static function execute(int $userid, int $contextid): array {
-        global $DB, $USER;
-        self::validate_parameters(self::execute_parameters(), [
-            'userid' => $userid,
+    public static function execute(int $contextid, string $component): array {
+        global $USER;
+        [
             'contextid' => $contextid,
-        ]);
+            'component' => $component,
+        ] = self::validate_parameters(
+            self::execute_parameters(),
+            [
+                'contextid' => $contextid,
+                'component' => $component,
+            ]
+        );
         self::validate_context(\core\context_helper::instance_by_id($contextid));
-        // Make sure the user has the proper capability.
+        // We are making sure that only the owner of the conversations can retrieve them, so
+        // we do not need further capabilities.
+        require_capability('block/ai_chat:view', \context::instance_by_id($contextid));
         require_capability('local/ai_manager:use', \context::instance_by_id($contextid));
 
         // Read from local_ai_manager and get all own conversations.
@@ -68,72 +72,64 @@ class get_all_conversations extends external_api {
         // We limit to purpose 'chat' here because we do not want the requests from the integrated tiny_ai tools to be loaded
         // for displaying our conversations. This especially is a performance issue, because the field 'requestoptions' contains
         // base64 decoded images for purpose 'itt', for example, which slows down the database query extremely.
-        $response = \local_ai_manager\ai_manager_utils::get_log_entries(
-            'block_ai_chat',
+        $records = \local_ai_manager\ai_manager_utils::get_log_entries(
+            $component,
             $contextid,
             $USER->id,
             0,
             false,
             '*',
-            ['chat']
+            ['chat', 'agent'],
         );
         // Go over all log entries and create conversation items.
-        foreach ($response as $value) {
+        foreach ($records as $record) {
             // Ignore values without itemid.
-            if (empty($value->itemid)) {
+            if (empty($record->itemid)) {
                 continue;
             }
-            $connectorfactory = \core\di::get(\local_ai_manager\local\connector_factory::class);
-            $chatpurpose = $connectorfactory->get_purpose_by_purpose_string('chat');
-            $tmpmessages = [
-                [
-                    'message' => htmlspecialchars($value->prompttext),
-                    'sender' => 'user',
-                ],
-                [
-                    'message' => $chatpurpose->format_output($value->promptcompletion),
-                    'sender' => 'ai',
-                ],
-            ];
-            if (empty($result[$value->itemid])) {
-                // Add systemprompt for first prompt.
-                // requestoptions are itemid forcenew, convcontext with message and sender system.
-                $allmessages = array_merge(json_decode($value->requestoptions, true)['conversationcontext'], $tmpmessages);
-                $result[$value->itemid] = [
-                    'id' => $value->itemid,
-                    'messages' => $allmessages,
-                    'timecreated' => $value->timecreated,
-                ];
+            if (array_key_exists($record->itemid, $result)) {
+                $currentconversationentry = $result[$record->itemid];
+                $currentconversationentry['timecreated'] = max($currentconversationentry['timecreated'], $record->timecreated);
+                $result[$record->itemid] = $currentconversationentry;
             } else {
-                $allmessages = array_merge($result[$value->itemid]['messages'], $tmpmessages);
-                $result[$value->itemid] = [
-                    'id' => $result[$value->itemid]['id'],
-                    'messages' => $allmessages,
-                    'timecreated' => $result[$value->itemid]['timecreated'],
+                $result[$record->itemid] = [
+                    'conversationid' => $record->itemid,
+                    'timecreated' => $record->timecreated,
+                    'title' => format_string($record->prompttext),
                 ];
             }
         }
-        return $result;
+
+        if (!empty($result)) {
+            uasort($result, function ($a, $b) {
+                return $b['timecreated'] <=> $a['timecreated'];
+            });
+        }
+
+        return ['code' => 200, 'content' => $result];
     }
 
     /**
-     * Describes the return structure of the service.
+     * Returns the structure for retrieving the conversations.
      *
-     * @return external_multiple_structure
+     * @return external_single_structure external function response structure containing the list of conversations
      */
-    public static function execute_returns(): external_multiple_structure {
-        return new external_multiple_structure(
-            new external_single_structure([
-                'id' => new external_value(PARAM_INT, 'ID of conversation'),
-                'messages' => new external_multiple_structure(
-                    new external_single_structure([
-                        'message' => new external_value(PARAM_RAW, 'Text of conversation'),
-                        'sender' => new external_value(PARAM_TEXT, 'Sent by user or ai'),
-                    ])
-                ),
-                'timecreated' => new external_value(PARAM_TEXT, 'Creationtimestamp'),
-            ]),
-            'Messages with conversationid and timestamp.'
+    public static function execute_returns(): external_single_structure {
+        return new external_single_structure(
+            [
+                'code' => new external_value(PARAM_INT, 'The response code'),
+                'message' => new external_value(PARAM_TEXT, 'The response message', VALUE_DEFAULT, ''),
+                'debuginfo' => new external_value(PARAM_TEXT, 'Debug information', VALUE_DEFAULT, ''),
+                'content' =>
+                    new external_multiple_structure(
+                        new external_single_structure([
+                            'conversationid' => new external_value(PARAM_INT, 'ID of conversation'),
+                            'title' => new external_value(PARAM_RAW, 'Title of conversation'),
+                            'timecreated' => new external_value(PARAM_TEXT, 'Creationtimestamp'),
+                        ]),
+                        'List of conversations'
+                    ),
+            ],
         );
     }
 }

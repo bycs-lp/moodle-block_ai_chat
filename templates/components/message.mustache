@@ -1,0 +1,61 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template block_ai_chat/message
+
+    Button to call ai_chat modal
+
+    Example context (json):
+    {
+        "message":"content",
+        "sender":""
+    }
+}}
+{{! Show message from user or ai }}
+
+<div class="message {{^senderai}}agent{{/senderai}}{{#senderai}}ai{{/senderai}}"{{!
+  }} data-block_ai_chat-component="message" data-block_ai_chat-messageid="{{id}}">
+    <div class="content filter_mathjaxloader_equation{{#loading}} awaitanswer{{/loading}}">
+        <img src="{{globals.config.wwwroot}}/blocks/ai_chat/pix/ai-icon.svg" alt="" class="ai_chat_icon mr-2">
+        <a data-block_ai_chat-element="copybutton" class="copy"
+            {{!We use data-action and data-clipboard-target to make core/copy_to_clipboard work out of the box.}}
+           data-action="copytoclipboard" data-clipboard-target="[data-block_ai_chat-messageid='{{id}}'] [data-block_ai_chat-element='messagecontent']"{{!
+        }}><i class="fa fa-copy"></i>
+        </a>
+        {{#loading}}
+            <div class="text small">
+                <div class="spinner-border text-secondary" role="status"></div>
+                <span class="ml-2">{{#str}} awaitanswer, block_ai_chat {{/str}}</span>
+            </div>
+        {{/loading}}
+        {{^loading}}
+            <div data-block_ai_chat-element="messagecontent" class="text text-break overflow-x-auto">
+                {{^agentMode}}
+                    {{{content}}}
+                {{/agentMode}}
+                {{#agentMode}}
+                    {{> block_ai_chat/agent_suggestions}}
+                {{/agentMode}}
+            </div>
+        {{/loading}}
+    </div>
+</div>
+{{#js}}
+    require(['block_ai_chat/components/message'], function(component) {
+    component.init('[data-block_ai_chat-component="message"][data-block_ai_chat-messageid="{{id}}"]');
+    });
+{{/js}}

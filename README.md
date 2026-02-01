@@ -1,13 +1,15 @@
 # block_ai_chat - Chat Frontend for local_ai_manager
 
-This plugin provides a Frontend to converse with defined Ai´s from local_ai_manager.
-Features are different viewmodes and a chat history.
+This plugin provides a frontend to converse with defined Ai´s from local_ai_manager.
+Features are different viewmodes, definition and management of personas and a chat history.
+
+In the latest version the chat also provides an agent mode which assists filling out moodle forms.
 
 # Settings
 
 ## Requirements
 
-https://github.com/mebis-lp/moodle-local_ai_manager and https://github.com/bycs-lp/moodle-tiny_ai need to be installed.
+https://github.com/bycs-lp/moodle-local_ai_manager and https://github.com/bycs-lp/moodle-tiny_ai need to be installed.
 
 ## Installing via uploaded ZIP file ##
 
@@ -31,6 +33,20 @@ Alternatively, you can run
     $ php admin/cli/upgrade.php
 
 to complete the installation from the command line.
+
+## Special thanks ##
+
+The *agent mode* has been initially started at the MoodleMOOT DACH 2025 in Lübeck. "Project 6: Moodle AI agent" won the third price in the dev camp!
+
+Special thanks to all our team members! The ones who want to be named are (in random order :-)): 
+- Peter Mayer
+- Philipp Memmel
+- Andreas Wagner
+- Heikki Wilenius
+- Alexander Karemaker
+- Marcus Green
+
+and Tobias Garske for reviewing and testing the complex frontend rework by Philipp Memmel as well as the final implementation of the agent mode in its final form.
 
 ## License ##
 

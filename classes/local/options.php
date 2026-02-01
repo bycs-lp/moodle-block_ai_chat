@@ -26,13 +26,14 @@ namespace block_ai_chat\local;
  */
 class options {
     /**
-     * Get current chat options for blockinstance.
-     * @param int $blockinstanceid
+     * Get current chat options for a context.
+     *
+     * @param int $contextid
      * @return array
      */
-    public static function get_options($blockinstanceid): array {
+    public static function get_options(int $contextid): array {
         global $DB;
 
-        return $DB->get_records_select('block_ai_chat_options', 'contextid = ?', [$blockinstanceid]);
+        return $DB->get_records('block_ai_chat_options', ['contextid' => $contextid]);
     }
 }

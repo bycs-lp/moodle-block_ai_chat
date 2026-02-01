@@ -56,7 +56,6 @@ class block_ai_chat extends block_base {
     #[\Override]
     public function get_content(): stdClass {
         global $USER;
-
         if ($this->content !== null) {
             return $this->content;
         }
@@ -143,7 +142,7 @@ class block_ai_chat extends block_base {
     }
 
     /**
-     *  Do any additional initialization you may need at the time a new block instance is created
+     * Do any additional initialization you may need at the time a new block instance is created
      *
      * @return boolean
      * /
@@ -163,6 +162,15 @@ class block_ai_chat extends block_base {
         if ($this->context->get_parent_context()->contextlevel === CONTEXT_COURSE) {
             $DB->update_record('block_instances', ['id' => $this->instance->id, 'pagetypepattern' => '*']);
         }
+        return true;
+    }
+
+    #[\Override]
+    public function instance_delete() {
+        global $DB;
+        $DB->delete_records('block_ai_chat_personas_selected', ['contextid' => $this->context->id]);
+        $DB->delete_records('block_ai_chat_options', ['contextid' => $this->context->id]);
+        ai_manager_utils::mark_log_entries_as_deleted('block_ai_chat', $this->context->id);
         return true;
     }
 }
