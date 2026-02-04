@@ -19,6 +19,7 @@ import {hash} from 'block_ai_chat/utils';
 import LocalStorage from 'core/localstorage';
 import ModalEvents from 'core/modal_events';
 import {RENDER_MODE} from 'block_ai_chat/constants';
+import * as FocusLock from 'core/local/aria/focuslock';
 
 class Main extends BaseComponent {
 
@@ -140,6 +141,8 @@ class Main extends BaseComponent {
         }
         if (element.modalVisible) {
             await this.modal.show();
+            // Disable focus trapping so that you can edit form elements while having the chatbot open.
+            FocusLock.untrapFocus();
             document.body.classList.add('block_ai_chat_open');
         } else {
             await this.modal.hide();
