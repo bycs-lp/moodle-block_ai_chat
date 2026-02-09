@@ -80,7 +80,9 @@ class Title extends BaseComponent {
         if (this.reactive.state.messages.values().next().value.id !== element.id) {
             return;
         }
-        this.getElement(this.selectors.TITLE).innerText = stripHtmlTags(element.content);
+        // We need innerHTML here so HTML characters are interpreted properly.
+        // We need to strip tags however.
+        this.getElement(this.selectors.TITLE).innerHTML = stripHtmlTags(element.content);
     }
 
     async _updateTitle({element}) {
