@@ -618,6 +618,13 @@ class manager {
         $currentpersonaid = persona::get_current_persona_id($this->context->id);
         $aiconfig = ai_manager_utils::get_ai_config($USER, $this->context->id, null, ['agent']);
         $agentavailable = $aiconfig['purposes'][0]['available'] === ai_manager_utils::AVAILABILITY_AVAILABLE;
+        $agentunavailablepagetypes = array_filter(
+            array_map(
+                'trim',
+                explode(PHP_EOL, trim(get_config('block_ai_chat', 'agentmodeunavailablepagetypes')))
+            ),
+            fn($entry) => !empty($entry)
+        );
 
         return [
             'static' => [
@@ -627,6 +634,7 @@ class manager {
                 'showPersona' => $haseditcapability,
                 'showOptions' => $haseditcapability,
                 'showAgentMode' => has_capability('block/ai_chat:useagentmode', $this->context) && $agentavailable,
+                'agentModeUnavailablePagetypes' => $agentunavailablepagetypes,
                 'canEditSystemPersonas' => has_capability('block/ai_chat:managepersonatemplates', $this->context),
                 'isAdmin' => is_siteadmin(),
                 // Will be shown in the persona info modal, if it is present.
@@ -673,6 +681,13 @@ class manager {
                 'showPersona' => new external_value(PARAM_BOOL, 'Configuring personas allowed'),
                 'showOptions' => new external_value(PARAM_BOOL, 'Configuring options allowed'),
                 'showAgentMode' => new external_value(PARAM_BOOL, 'Agent mode allowed'),
+                'agentModeUnavailablePagetypes' => new external_multiple_structure(
+                    new external_value(
+                        PARAM_RAW,
+                        'Pagetype where agent mode is not available'
+                    ),
+                    'List of pagetypes where agent mode is not available'
+                ),
                 'canEditSystemPersonas' => new external_value(PARAM_BOOL, 'If user is allowed to edit system personas'),
                 'isAdmin' => new external_value(PARAM_BOOL, 'If the user is site administrator'),
                 'personalink' => new external_value(PARAM_RAW, 'External link with information about personas'),
