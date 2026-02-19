@@ -41,6 +41,14 @@ if ($hassiteconfig) {
             )
         );
         $settings->add(
+            new admin_setting_configtextarea(
+                'block_ai_chat/agentmodeunavailablepagetypes',
+                new lang_string('agentmodeunavailablepagetypes', 'block_ai_chat'),
+                new lang_string('agentmodeunavailablepagetypesdesc', 'block_ai_chat'),
+                "page-mod-hvp-mod\n page-mod-assign-mod"
+            )
+        );
+        $settings->add(
             new admin_setting_configcheckbox(
                 'block_ai_chat/replacehelp',
                 new lang_string('replacehelp', 'block_ai_chat'),

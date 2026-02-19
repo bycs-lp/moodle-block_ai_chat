@@ -1,6 +1,6 @@
 import {BaseComponent} from 'core/reactive';
 import {getString} from 'core/str';
-import {confirm as confirmModal} from 'core/notification';
+import {confirm as confirmModal, alert as alertModal} from 'core/notification';
 import ModalForm from 'core_form/modalform';
 import ModalCancel from 'core/modal_cancel';
 import {MODES} from 'block_ai_chat/constants';
@@ -297,7 +297,16 @@ class HeaderActions extends BaseComponent {
         this._refreshPersona({element: this.reactive.state.config});
     }
 
-    _clickModeSwitchListener() {
+    async _clickModeSwitchListener() {
+        if (
+            this.reactive.state.config.mode === MODES.CHAT
+            && this.reactive.state.static.agentModeUnavailablePagetypes.includes(document.body.id)
+        ) {
+            const title = await getString('agentmodeunavailableonpagetitle', 'block_ai_chat');
+            const message = await getString('agentmodeunavailableonpagemessage', 'block_ai_chat');
+            await alertModal(title, message);
+            return;
+        }
         const currentMode = this.reactive.state.config.mode;
         const newMode = currentMode === MODES.AGENT ? MODES.CHAT : MODES.AGENT;
         this.reactive.dispatch('setMode', newMode);
