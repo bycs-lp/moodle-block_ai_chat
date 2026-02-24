@@ -45,7 +45,7 @@ if ($hassiteconfig) {
                 'block_ai_chat/agentmodeunavailablepagetypes',
                 new lang_string('agentmodeunavailablepagetypes', 'block_ai_chat'),
                 new lang_string('agentmodeunavailablepagetypesdesc', 'block_ai_chat'),
-                "page-mod-hvp-mod\n page-mod-assign-mod"
+                "page-mod-hvp-mod"
             )
         );
         $settings->add(
