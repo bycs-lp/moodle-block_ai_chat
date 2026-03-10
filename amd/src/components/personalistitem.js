@@ -114,7 +114,6 @@ class PersonaListItem extends BaseComponent {
     }
 
     async _renderPersonaEditForm() {
-        const selectedPersona = this.reactive.state.personas.get(this.id);
         const title = await getString('editpersonatitle', 'block_ai_chat');
         const personaForm = new ModalForm({
             formClass: 'block_ai_chat\\form\\persona_form',
@@ -123,11 +122,6 @@ class PersonaListItem extends BaseComponent {
                 contextid: this.reactive.state.static.contextid,
                 component: this.reactive.state.static.component,
                 personaid: this.id,
-                name: selectedPersona.name,
-                prompt: selectedPersona.prompt,
-                userinfo: selectedPersona.userinfo,
-                userid: selectedPersona.userid,
-                type: selectedPersona.type
             },
             modalConfig: {
                 title

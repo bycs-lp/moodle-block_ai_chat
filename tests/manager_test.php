@@ -58,8 +58,8 @@ final class manager_test extends \advanced_testcase {
             'id' => $persona->id,
             'userid' => $USER->id,
             'name' => 'Updated Persona',
-            'prompt' => '<script>alert("prompt")</script> Updated prompt',
-            'userinfo' => '<script>alert("info")</script> Updated info',
+            'prompt' => '<script>alert("prompt")</script>Updated prompt',
+            'userinfo' => '<script>alert("info")</script>Updated info',
             'type' => persona::TYPE_TEMPLATE,
         ];
 
@@ -76,13 +76,14 @@ final class manager_test extends \advanced_testcase {
         $this->assertSame($data->name, $returnedpersona->name);
         $this->assertSame($data->userid, $returnedpersona->userid);
         $this->assertSame(persona::TYPE_TEMPLATE, (int) $returnedpersona->type);
-        $this->assertStringNotContainsString('<script>', $returnedpersona->prompt);
+        // Persona prompt will not be cleaned when saving. It will only be sanitized on output.
+        $this->assertEquals($data->prompt, $returnedpersona->prompt);
         $this->assertStringNotContainsString('<script>', $returnedpersona->userinfo);
 
         $dbpersona = $DB->get_record('block_ai_chat_personas', ['id' => $persona->id], '*', MUST_EXIST);
         $this->assertSame($data->name, $dbpersona->name);
         $this->assertSame($data->prompt, $dbpersona->prompt);
-        $this->assertSame($data->userinfo, $dbpersona->userinfo);
+        $this->assertSame(html_to_text($data->userinfo), $dbpersona->userinfo);
         $this->assertSame(persona::TYPE_TEMPLATE, (int) $dbpersona->type);
     }
 

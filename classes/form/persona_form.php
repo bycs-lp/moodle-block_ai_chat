@@ -66,11 +66,21 @@ class persona_form extends dynamic_form {
         $mform->addElement('text', 'name', get_string('name', 'block_ai_chat'));
         $mform->setType('name', PARAM_TEXT);
 
-        $mform->addElement('textarea', 'prompt', get_string('prompt', 'block_ai_chat'));
+        $editoroptions = [
+            'maxfiles' => 0,
+            'maxbytes' => 0,
+            'trusttext' => false,
+            'subdirs' => false,
+            'context' => $this->get_context_for_dynamic_submission(),
+            'enable_filemanagement' => false,
+            'return_types' => 0,
+        ];
+        $mform->addElement('editor', 'prompt', get_string('prompt', 'block_ai_chat'), null, $editoroptions);
         $mform->setType('prompt', PARAM_RAW);
+        $mform->addHelpButton('prompt', 'personaprompt', 'block_ai_chat');
 
         $mform->addElement('textarea', 'userinfo', get_string('userinfo', 'block_ai_chat'));
-        $mform->setType('userinfo', PARAM_RAW);
+        $mform->setType('userinfo', PARAM_TEXT);
 
         if (has_capability('block/ai_chat:managepersonatemplates', $this->get_context_for_dynamic_submission())) {
             $mform->addElement(
@@ -160,7 +170,7 @@ class persona_form extends dynamic_form {
         $personadata->userid = $formdata->userid;
         $personadata->name = $formdata->name;
         // The attributes prompt and userinfo are raw params, need to be sanitized on output.
-        $personadata->prompt = $formdata->prompt;
+        $personadata->prompt = $formdata->prompt['text'];
         $personadata->userinfo = $formdata->userinfo;
         $personadata->type = isset($formdata->type) ? $formdata->type : null;
 
@@ -172,16 +182,20 @@ class persona_form extends dynamic_form {
      * Load in existing data as form defaults
      */
     public function set_data_for_dynamic_submission(): void {
-        $this->get_context_for_dynamic_submission();
+        global $DB;
+
+        // The persona information sent along with the ajax call contains cleaned HTML,
+        // so we retrieve the raw and fresh data from the database.
+        $personarecord = $DB->get_record('block_ai_chat_personas', ['id' => $this->_ajaxformdata['personaid']]);
 
         $data = [
             'personaid' => $this->_ajaxformdata['personaid'],
-            'userid' => $this->_ajaxformdata['userid'],
-            'name' => $this->_ajaxformdata['name'],
-            'prompt' => clean_text($this->_ajaxformdata['prompt']),
-            'userinfo' => clean_text($this->_ajaxformdata['userinfo']),
-            'type' => $this->_ajaxformdata['type'],
+            'userid' => $personarecord->userid,
+            'name' => $personarecord->name,
+            'userinfo' => $personarecord->userinfo,
+            'type' => $personarecord->type,
         ];
+        $data['prompt'] = ['text' => $personarecord->prompt, 'format' => FORMAT_HTML];
 
         $this->set_data($data);
     }
