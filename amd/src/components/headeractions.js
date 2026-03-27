@@ -37,7 +37,7 @@ class HeaderActions extends BaseComponent {
             MODE_SWITCH: `[data-block_ai_chat-element='modeswitch']`,
             PERSONA_BANNER: `[data-block_ai_chat-element='personabanner']`,
             PERSONA_INFO_MODAL_MANAGE_PERSONA_BUTTON: `[data-block_ai_chat-element='personainfomodalpersonalistbutton']`,
-            MFORM: `form.mform`,
+            MFORM: `#page form.mform`,
         };
     }
 
