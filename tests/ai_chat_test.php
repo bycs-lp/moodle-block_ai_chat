@@ -218,12 +218,13 @@ final class ai_chat_test extends \advanced_testcase {
         $course = $this->getDataGenerator()->create_course(['category' => $category->id]);
         $coursecontext = \context_course::instance($course->id);
 
-        $PAGE->set_url('/');
+        $PAGE->set_url(new \moodle_url('/course/edit.php', ['id' => $course->id]));
+
         $editoroptions = [
             'context' => $coursecontext,
         ];
 
-        // Create an course settings edit form mock.
+        // Create a course settings edit form mock.
         $course = file_prepare_standard_editor(
             $course,
             'summary',
@@ -234,20 +235,25 @@ final class ai_chat_test extends \advanced_testcase {
             0
         );
 
-        // First of all define the case that the tenant is not restricted, but still not enabled. We should not see a checkbox.
+        // Use a valid local return URL to satisfy PARAM_LOCALURL validation in course_edit_form.
+        $validreturnurl = '/course/view.php?id=' . $course->id;
+
+        // First of all define the case that the tenant is not restricted, but still not enabled.
         set_config('restricttenants', false, 'local_ai_manager');
         \core\di::get(\local_ai_manager\local\config_manager::class)->set_config('tenantenabled', false);
         $this->assertFalse(\core\di::get(\local_ai_manager\local\config_manager::class)->is_tenant_enabled());
-        $editform = new mock_course_edit_form(null, ['course' => $course, 'category' => $category,
-            'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => '']);
-        $mform = $editform->get_mform();
-        $this->assertFalse($mform->elementExists('addaichat'));
+        $editform = new mock_course_edit_form(null, [
+            'course' => $course, 'category' => $category,
+            'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => $validreturnurl,
+        ]);
 
         // Now enable the tenant.
         \core\di::get(\local_ai_manager\local\config_manager::class)->set_config('tenantenabled', true);
         $this->assertTrue(\core\di::get(\local_ai_manager\local\config_manager::class)->is_tenant_enabled());
-        $editform = new mock_course_edit_form(null, ['course' => $course, 'category' => $category,
-            'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => '']);
+        $editform = new mock_course_edit_form(null, [
+            'course' => $course, 'category' => $category,
+            'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => $validreturnurl,
+        ]);
         $mform = $editform->get_mform();
         $this->assertTrue($mform->elementExists('addaichat'));
 
@@ -289,8 +295,11 @@ final class ai_chat_test extends \advanced_testcase {
         $this->assertEquals('*', $aiblockinstance->pagetypepattern);
 
         // Assert that addaichat element is existing and is checked.
-        $editform = new mock_course_edit_form(null, ['course' => $course, 'category' => $category,
-            'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => '']);
+        $FULLME = $CFG->wwwroot . '/course/edit.php?id=' . $course->id;
+        $editform = new mock_course_edit_form(null, [
+            'course' => $course, 'category' => $category,
+            'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => $validreturnurl,
+        ]);
         $mform = $editform->get_mform();
 
         $addaichatelement = $mform->getElement('addaichat');

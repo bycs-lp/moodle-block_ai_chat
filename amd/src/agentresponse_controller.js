@@ -74,11 +74,15 @@ const injectSuggestionIntoForm = (button) => {
     const relatedElement = formElements.filter(formElement => formElement.id === button.dataset.block_ai_chatForElement)[0];
 
     if (relatedElement.type === 'textarea') {
-        htmlElement.value = button.dataset.block_ai_chatSuggestionvalue;
-        const tiny = window.tinymce.get(relatedElement.id);
+        // The display value is already clean HTML from the backend (markdown_to_html + format_text).
+        // The browser automatically decodes HTML entities from data-attributes.
+        const htmlContent = button.dataset.block_ai_chatSuggestiondisplayvalue
+            || button.dataset.block_ai_chatSuggestionvalue;
+        const tiny = window.tinymce?.get(relatedElement.id);
         if (tiny) {
-            tiny.setContent(button.dataset.block_ai_chatSuggestionvalue);
+            tiny.setContent(htmlContent);
         }
+        htmlElement.value = htmlContent;
     } else if (relatedElement.type === 'checkbox') {
         if (parseInt(button.dataset.block_ai_chatSuggestionvalue) === 1) {
             // We cannot set the value, because it won't fire events. So the mform YUI won't recognize a change.
