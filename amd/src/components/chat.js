@@ -59,7 +59,7 @@ class Chat extends BaseContent {
             CHAT_OUTPUT: `[data-block_ai_chat-element='chatoutput']`,
             HISTORY_MARKER: `[data-block_ai_chat-element='historymarker']`,
         };
-        this._debouncedScrollToBottom = debounce(this._scrollToBottom.bind(this), 250);
+        this._debouncedScrollToBottom = debounce((messageElement) => this._scrollToBottom(messageElement), 250);
         this._debouncedFocusInputTextarea = debounce(this._focusInputTextarea.bind(this), 250);
     }
 
@@ -106,7 +106,13 @@ class Chat extends BaseContent {
         const newelement = newcomponent.getElement();
         node.replaceChild(newelement, placeholder);
         this.reactive.dispatch('setMessageRendered', element.id, true);
-        this._debouncedScrollToBottom();
+
+        // For AI responses, pass the element to enable smart scrolling for long responses.
+        if (element.sender === 'ai' && !element.loading) {
+            this._debouncedScrollToBottom(newelement);
+        } else {
+            this._debouncedScrollToBottom(null);
+        }
         this._debouncedFocusInputTextarea();
     }
 
@@ -239,9 +245,37 @@ class Chat extends BaseContent {
         return 'chat';
     }
 
-    _scrollToBottom() {
+    /**
+     * Scrolls the chat output to show the latest message optimally.
+     *
+     * For long responses that don't fit in the container, scrolls so that
+     * the start of the response is aligned with the top of the container.
+     * For short responses, scrolls to the bottom as usual.
+     *
+     * @param {HTMLElement|null} messageElement The message element to scroll to, or null to scroll to bottom
+     * @private
+     */
+    _scrollToBottom(messageElement = null) {
         const chatOutputWrapper = this.getElement(this.selectors.OUTPUT_WRAPPER);
-        chatOutputWrapper.scrollTop = chatOutputWrapper.scrollHeight;
+
+        if (!messageElement) {
+            // No specific message, scroll to absolute bottom.
+            chatOutputWrapper.scrollTop = chatOutputWrapper.scrollHeight;
+            return;
+        }
+
+        const containerHeight = chatOutputWrapper.clientHeight;
+        const messageOffsetTop = messageElement.offsetTop;
+        const messageHeight = messageElement.offsetHeight;
+
+        // Check if the message is taller than the container (long response).
+        if (messageHeight > containerHeight) {
+            // Scroll so the start of the message aligns with the top of the container.
+            chatOutputWrapper.scrollTop = messageOffsetTop;
+        } else {
+            // Short message - scroll to bottom to show the complete message.
+            chatOutputWrapper.scrollTop = chatOutputWrapper.scrollHeight;
+        }
     }
 
     _focusInputTextarea() {
