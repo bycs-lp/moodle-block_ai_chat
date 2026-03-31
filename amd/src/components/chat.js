@@ -248,14 +248,13 @@ class Chat extends BaseContent {
      * of the user's prompt visible for orientation.
      * For short responses, scrolls to the bottom as usual.
      *
-     * @param {HTMLElement|null} messageElement The message element to scroll to, or null to scroll to bottom
-     * @private
+     * @param {HTMLElement} messageElement The message element to scroll to
      */
-    _scrollToBottom(messageElement = null) {
+    _scrollToBottom(messageElement) {
         const chatOutputWrapper = this.getElement(this.selectors.OUTPUT_WRAPPER);
 
-        if (!messageElement) {
-            // No specific message, scroll to absolute bottom.
+        // Guard: Check if the passed element is a valid message component.
+        if (!messageElement || messageElement.dataset.block_ai_chatComponent !== 'message') {
             chatOutputWrapper.scrollTop = chatOutputWrapper.scrollHeight;
             return;
         }
@@ -265,15 +264,14 @@ class Chat extends BaseContent {
 
         // Check if the message is taller than the container (long response).
         if (messageHeight > containerHeight) {
-            // Get the previous sibling (user's prompt message) if it exists.
-            const previousMessage = messageElement.previousElementSibling;
-
             // Default line height for calculating visible prompt lines.
             const defaultLineHeight = 24;
             // Number of prompt lines to keep visible for user orientation.
             const visiblePromptLines = 2;
             const promptVisibleHeight = defaultLineHeight * visiblePromptLines;
 
+            // Get the previous sibling (user's prompt message) if it exists.
+            const previousMessage = messageElement.previousElementSibling;
             if (previousMessage) {
                 // Scroll so that the last two lines of the prompt and the start of the response are visible.
                 const scrollPosition = messageElement.offsetTop - promptVisibleHeight;
