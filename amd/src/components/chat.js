@@ -264,15 +264,15 @@ class Chat extends BaseContent {
 
         // Check if the message is taller than the container (long response).
         if (messageHeight > containerHeight) {
-            // Default line height for calculating visible prompt lines.
-            const defaultLineHeight = 24;
-            // Number of prompt lines to keep visible for user orientation.
-            const visiblePromptLines = 2;
-            const promptVisibleHeight = defaultLineHeight * visiblePromptLines;
-
             // Get the previous sibling (user's prompt message) if it exists.
             const previousMessage = messageElement.previousElementSibling;
             if (previousMessage) {
+                // Read the actual line height from the previous message's computed styles.
+                const lineHeight = parseFloat(window.getComputedStyle(previousMessage).lineHeight) || 24;
+                // Number of prompt lines to keep visible for user orientation.
+                const visiblePromptLines = 2;
+                const promptVisibleHeight = lineHeight * visiblePromptLines;
+
                 // Scroll so that the last two lines of the prompt and the start of the response are visible.
                 const scrollPosition = messageElement.offsetTop - promptVisibleHeight;
                 chatOutputWrapper.scrollTop = Math.max(0, scrollPosition);
