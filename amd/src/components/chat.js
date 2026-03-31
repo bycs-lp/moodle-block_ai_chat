@@ -59,8 +59,8 @@ class Chat extends BaseContent {
             CHAT_OUTPUT: `[data-block_ai_chat-element='chatoutput']`,
             HISTORY_MARKER: `[data-block_ai_chat-element='historymarker']`,
         };
-        this._debouncedScrollToBottom = debounce((messageElement) => this._scrollToBottom(messageElement), 250);
-        this._debouncedFocusInputTextarea = debounce(this._focusInputTextarea.bind(this), 250);
+        this._debouncedScrollToBottom = debounce((messageElement) => this._scrollToBottom(messageElement), 350);
+        this._debouncedFocusInputTextarea = debounce(() => this._focusInputTextarea(), 350);
     }
 
     /**
