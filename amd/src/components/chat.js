@@ -107,15 +107,10 @@ class Chat extends BaseContent {
         node.replaceChild(newelement, placeholder);
         this.reactive.dispatch('setMessageRendered', element.id, true);
 
-        // For AI responses, pass the element to enable smart scrolling for long responses.
-        if (element.sender === 'ai' && !element.loading) {
-            this._debouncedScrollToBottom(newelement);
-        } else {
-            this._debouncedScrollToBottom(null);
-        }
+        // Pass the element to enable smart scrolling for long responses.
+        this._debouncedScrollToBottom(newelement);
         this._debouncedFocusInputTextarea();
     }
-
 
     async _submitAiRequestListener() {
         const textarea = this.getElement(this.selectors.INPUT_TEXTAREA);
@@ -249,7 +244,8 @@ class Chat extends BaseContent {
      * Scrolls the chat output to show the latest message optimally.
      *
      * For long responses that don't fit in the container, scrolls so that
-     * the start of the response is aligned with the top of the container.
+     * the start of the response is visible while keeping the last two lines
+     * of the user's prompt visible for orientation.
      * For short responses, scrolls to the bottom as usual.
      *
      * @param {HTMLElement|null} messageElement The message element to scroll to, or null to scroll to bottom
@@ -265,13 +261,27 @@ class Chat extends BaseContent {
         }
 
         const containerHeight = chatOutputWrapper.clientHeight;
-        const messageOffsetTop = messageElement.offsetTop;
         const messageHeight = messageElement.offsetHeight;
 
         // Check if the message is taller than the container (long response).
         if (messageHeight > containerHeight) {
-            // Scroll so the start of the message aligns with the top of the container.
-            chatOutputWrapper.scrollTop = messageOffsetTop;
+            // Get the previous sibling (user's prompt message) if it exists.
+            const previousMessage = messageElement.previousElementSibling;
+
+            // Default line height for calculating visible prompt lines.
+            const defaultLineHeight = 24;
+            // Number of prompt lines to keep visible for user orientation.
+            const visiblePromptLines = 2;
+            const promptVisibleHeight = defaultLineHeight * visiblePromptLines;
+
+            if (previousMessage) {
+                // Scroll so that the last two lines of the prompt and the start of the response are visible.
+                const scrollPosition = messageElement.offsetTop - promptVisibleHeight;
+                chatOutputWrapper.scrollTop = Math.max(0, scrollPosition);
+            } else {
+                // No previous message, scroll to the start of this message.
+                chatOutputWrapper.scrollTop = messageElement.offsetTop;
+            }
         } else {
             // Short message - scroll to bottom to show the complete message.
             chatOutputWrapper.scrollTop = chatOutputWrapper.scrollHeight;
