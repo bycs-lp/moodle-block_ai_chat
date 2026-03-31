@@ -59,8 +59,8 @@ class Chat extends BaseContent {
             CHAT_OUTPUT: `[data-block_ai_chat-element='chatoutput']`,
             HISTORY_MARKER: `[data-block_ai_chat-element='historymarker']`,
         };
-        this._debouncedScrollToBottom = debounce(this._scrollToBottom.bind(this), 250);
-        this._debouncedFocusInputTextarea = debounce(this._focusInputTextarea.bind(this), 250);
+        this._debouncedScrollToBottom = debounce((messageElement) => this._scrollToBottom(messageElement), 350);
+        this._debouncedFocusInputTextarea = debounce(() => this._focusInputTextarea(), 350);
     }
 
     /**
@@ -106,10 +106,11 @@ class Chat extends BaseContent {
         const newelement = newcomponent.getElement();
         node.replaceChild(newelement, placeholder);
         this.reactive.dispatch('setMessageRendered', element.id, true);
-        this._debouncedScrollToBottom();
+
+        // Pass the element to enable smart scrolling for long responses.
+        this._debouncedScrollToBottom(newelement);
         this._debouncedFocusInputTextarea();
     }
-
 
     async _submitAiRequestListener() {
         const textarea = this.getElement(this.selectors.INPUT_TEXTAREA);
@@ -239,9 +240,50 @@ class Chat extends BaseContent {
         return 'chat';
     }
 
-    _scrollToBottom() {
+    /**
+     * Scrolls the chat output to show the latest message optimally.
+     *
+     * For long responses that don't fit in the container, scrolls so that
+     * the start of the response is visible while keeping the last two lines
+     * of the user's prompt visible for orientation.
+     * For short responses, scrolls to the bottom as usual.
+     *
+     * @param {HTMLElement} messageElement The message element to scroll to
+     */
+    _scrollToBottom(messageElement) {
         const chatOutputWrapper = this.getElement(this.selectors.OUTPUT_WRAPPER);
-        chatOutputWrapper.scrollTop = chatOutputWrapper.scrollHeight;
+
+        // Guard: Check if the passed element is a valid message component.
+        if (!messageElement || messageElement.dataset.block_ai_chatComponent !== 'message') {
+            chatOutputWrapper.scrollTop = chatOutputWrapper.scrollHeight;
+            return;
+        }
+
+        const containerHeight = chatOutputWrapper.clientHeight;
+        const messageHeight = messageElement.offsetHeight;
+
+        // Check if the message is taller than the container (long response).
+        if (messageHeight > containerHeight) {
+            // Get the previous sibling (user's prompt message) if it exists.
+            const previousMessage = messageElement.previousElementSibling;
+            if (previousMessage) {
+                // Read the actual line height from the previous message's computed styles.
+                const lineHeight = parseFloat(window.getComputedStyle(previousMessage).lineHeight) || 24;
+                // Number of prompt lines to keep visible for user orientation.
+                const visiblePromptLines = 2;
+                const promptVisibleHeight = lineHeight * visiblePromptLines;
+
+                // Scroll so that the last two lines of the prompt and the start of the response are visible.
+                const scrollPosition = messageElement.offsetTop - promptVisibleHeight;
+                chatOutputWrapper.scrollTop = Math.max(0, scrollPosition);
+            } else {
+                // No previous message, scroll to the start of this message.
+                chatOutputWrapper.scrollTop = messageElement.offsetTop;
+            }
+        } else {
+            // Short message - scroll to bottom to show the complete message.
+            chatOutputWrapper.scrollTop = chatOutputWrapper.scrollHeight;
+        }
     }
 
     _focusInputTextarea() {
