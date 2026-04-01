@@ -65,6 +65,7 @@ $string['errorname'] = 'Name can\'t be empty';
 $string['errornotallowedtochangetype'] = 'You are not allowed to change the type of the persona';
 $string['errorpersonanotfound'] = 'Persona with the specified ID not found in the database.';
 $string['errorprompt'] = 'Prompt can\'t be empty';
+$string['errorpromptdataurl'] = 'The prompt may contain only formatted text. Multimedia content is not allowed.';
 $string['erroruserinfo'] = 'Userinfo can\'t be empty';
 $string['errorwithcode'] = 'An error occurred with code {$a}';
 $string['exception_aicontextidmissing'] = 'Cannot find an AI context record with the given id';

@@ -144,6 +144,10 @@ class persona_form extends dynamic_form {
         if (empty(trim(strip_tags($data['prompt']['text'])))) {
             $errors['prompt'] = get_string('errorprompt', 'block_ai_chat');
         }
+        $hasDataUrl = (bool) preg_match('/(src|href)\s*=\s*["\']?\s*data\s*:/i', $data['prompt']['text']);
+        if ($hasDataUrl) {
+            $errors['prompt'] = get_string('errorpromptdataurl', 'block_ai_chat');
+        }
         if (empty($data['userinfo'])) {
             $errors['userinfo'] = get_string('erroruserinfo', 'block_ai_chat');
         }
