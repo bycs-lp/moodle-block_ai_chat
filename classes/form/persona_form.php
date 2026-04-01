@@ -56,7 +56,7 @@ class persona_form extends dynamic_form {
         $mform->setType('personaid', PARAM_INT);
 
         $mform->addElement('hidden', 'userid');
-        $mform->setType('userinfo', PARAM_INT);
+        $mform->setType('userid', PARAM_INT);
 
         if (intval($this->_ajaxformdata['type']) === persona::TYPE_TEMPLATE) {
             $warninghtml = $OUTPUT->render_from_template('block_ai_chat/templateedit_warning', []);
