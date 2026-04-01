@@ -41,7 +41,7 @@ class persona_form extends dynamic_form {
      * Form definition.
      */
     public function definition() {
-        global $OUTPUT;
+        global $DB, $OUTPUT;
         $mform =& $this->_form;
 
         $mform->addElement('hidden', 'contextid');
@@ -58,7 +58,8 @@ class persona_form extends dynamic_form {
         $mform->addElement('hidden', 'userid');
         $mform->setType('userid', PARAM_INT);
 
-        if (intval($this->_ajaxformdata['type']) === persona::TYPE_TEMPLATE) {
+        $personarecord = $DB->get_record('block_ai_chat_personas', ['id' => $this->_ajaxformdata['personaid']]);
+        if (!empty($personarecord) && intval($personarecord->type) === persona::TYPE_TEMPLATE) {
             $warninghtml = $OUTPUT->render_from_template('block_ai_chat/templateedit_warning', []);
             $mform->addElement('html', $warninghtml);
         }
