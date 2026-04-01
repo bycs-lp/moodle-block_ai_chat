@@ -203,7 +203,7 @@ class manager {
             'userid' => $data->userid,
             'name' => $data->name,
             'prompt' => $data->prompt,
-            'userinfo' => $data->userinfo,
+            'userinfo' => html_to_text($data->userinfo),
             'type' => is_null($data->type) ? $currentrecord->type : $data->type,
             'timemodified' => time(),
         ];
@@ -214,8 +214,8 @@ class manager {
             'id' => $personaobject->id,
             'userid' => $personaobject->userid,
             'name' => $personaobject->name,
-            'prompt' => format_text($personaobject->prompt, FORMAT_MOODLE, ['para' => false]),
-            'userinfo' => format_text($personaobject->userinfo, FORMAT_MOODLE, ['para' => false]),
+            'prompt' => $personaobject->prompt,
+            'userinfo' => $personaobject->userinfo,
             'type' => $personaobject->type,
         ];
 
