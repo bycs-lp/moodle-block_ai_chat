@@ -140,7 +140,7 @@ class persona_form extends dynamic_form {
         if (empty($data['name'])) {
             $errors['name'] = get_string('errorname', 'block_ai_chat');
         }
-        if (empty($data['prompt'])) {
+        if (empty(trim(strip_tags($data['prompt']['text'])))) {
             $errors['prompt'] = get_string('errorprompt', 'block_ai_chat');
         }
         if (empty($data['userinfo'])) {
