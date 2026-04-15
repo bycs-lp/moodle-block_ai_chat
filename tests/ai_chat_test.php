@@ -217,6 +217,7 @@ final class ai_chat_test extends \advanced_testcase {
         $category = $this->getDataGenerator()->create_category();
         $course = $this->getDataGenerator()->create_course(['category' => $category->id]);
         $coursecontext = \context_course::instance($course->id);
+        $returnurl = (new \moodle_url('/course/view.php', ['id' => $course->id]))->out_as_local_url();
 
         $PAGE->set_url('/');
         $editoroptions = [
@@ -239,7 +240,7 @@ final class ai_chat_test extends \advanced_testcase {
         \core\di::get(\local_ai_manager\local\config_manager::class)->set_config('tenantenabled', false);
         $this->assertFalse(\core\di::get(\local_ai_manager\local\config_manager::class)->is_tenant_enabled());
         $editform = new mock_course_edit_form(null, ['course' => $course, 'category' => $category,
-            'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => '']);
+            'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => $returnurl]);
         $mform = $editform->get_mform();
         $this->assertFalse($mform->elementExists('addaichat'));
 
@@ -247,7 +248,7 @@ final class ai_chat_test extends \advanced_testcase {
         \core\di::get(\local_ai_manager\local\config_manager::class)->set_config('tenantenabled', true);
         $this->assertTrue(\core\di::get(\local_ai_manager\local\config_manager::class)->is_tenant_enabled());
         $editform = new mock_course_edit_form(null, ['course' => $course, 'category' => $category,
-            'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => '']);
+            'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => $returnurl]);
         $mform = $editform->get_mform();
         $this->assertTrue($mform->elementExists('addaichat'));
 
@@ -290,7 +291,7 @@ final class ai_chat_test extends \advanced_testcase {
 
         // Assert that addaichat element is existing and is checked.
         $editform = new mock_course_edit_form(null, ['course' => $course, 'category' => $category,
-            'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => '']);
+            'editoroptions' => $editoroptions, 'returnto' => '0', 'returnurl' => $returnurl]);
         $mform = $editform->get_mform();
 
         $addaichatelement = $mform->getElement('addaichat');

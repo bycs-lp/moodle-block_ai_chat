@@ -16,22 +16,178 @@
 
 namespace block_ai_chat\privacy;
 
+use context_system;
+use core_privacy\local\metadata\collection;
+use core_privacy\local\request\approved_contextlist;
+use core_privacy\local\request\approved_userlist;
+use core_privacy\local\request\contextlist;
+use core_privacy\local\request\transform;
+use core_privacy\local\request\userlist;
+use core_privacy\local\request\writer;
+
 /**
- * Privacy provider for block_ai_chat
+ * Privacy provider for block_ai_chat.
  *
  * @package    block_ai_chat
- * @copyright  2024 ISB Bayern
- * @author     Tobias Garske
+ * @copyright  2026 Paul Baumgart-Ouahid
+ * @author     Paul Baumgart-Ouahid <paul@humanspaces.org>
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
-class provider implements \core_privacy\local\metadata\null_provider {
+class provider implements
+    \core_privacy\local\metadata\provider,
+    \core_privacy\local\request\core_userlist_provider,
+    \core_privacy\local\request\plugin\provider {
     /**
-     * Get the language string identifier with the component's language
-     * file to explain why this plugin stores no data.
+     * Returns metadata about this plugin's user data.
      *
-     * @return  string
+     * @param collection $collection
+     * @return collection
      */
-    public static function get_reason(): string {
-        return 'privacy:metadata';
+    public static function get_metadata(collection $collection): collection {
+        $collection->add_database_table('block_ai_chat_personas', [
+            'userid' => 'privacy:metadata:block_ai_chat_personas:userid',
+            'name' => 'privacy:metadata:block_ai_chat_personas:name',
+            'prompt' => 'privacy:metadata:block_ai_chat_personas:prompt',
+            'userinfo' => 'privacy:metadata:block_ai_chat_personas:userinfo',
+            'type' => 'privacy:metadata:block_ai_chat_personas:type',
+            'timecreated' => 'privacy:metadata:block_ai_chat_personas:timecreated',
+            'timemodified' => 'privacy:metadata:block_ai_chat_personas:timemodified',
+        ], 'privacy:metadata:block_ai_chat_personas');
+
+        return $collection;
+    }
+
+    /**
+     * Get the list of contexts that contain user
+     * information for the specified user.
+     *
+     * @param int $userid
+     * @return contextlist
+     */
+    public static function get_contexts_for_userid(int $userid): contextlist {
+        global $DB;
+
+        $contextlist = new contextlist();
+        if ($DB->record_exists('block_ai_chat_personas', ['userid' => $userid])) {
+            $contextlist->add_system_context();
+        }
+
+        return $contextlist;
+    }
+
+    /**
+     * Export all user data for the specified user,
+     * in the specified contexts.
+     *
+     * @param approved_contextlist $contextlist
+     */
+    public static function export_user_data(approved_contextlist $contextlist): void {
+        global $DB;
+
+        $userid = $contextlist->get_user()->id;
+        foreach ($contextlist->get_contexts() as $context) {
+            if (!$context instanceof context_system) {
+                continue;
+            }
+
+            $records = $DB->get_records('block_ai_chat_personas', ['userid' => $userid], 'id ASC');
+            if (empty($records)) {
+                continue;
+            }
+
+            $personas = [];
+            foreach ($records as $record) {
+                $personas[] = (object) [
+                    'name' => $record->name,
+                    'prompt' => $record->prompt,
+                    'userinfo' => $record->userinfo,
+                    'type' => $record->type,
+                    'timecreated' => transform::datetime($record->timecreated),
+                    'timemodified' => transform::datetime($record->timemodified),
+                ];
+            }
+
+            writer::with_context($context)->export_data([
+                get_string('pluginname', 'block_ai_chat'),
+                'personas',
+            ], (object) ['personas' => $personas]);
+        }
+    }
+
+    /**
+     * Get the list of users who have data within a context.
+     *
+     * @param userlist $userlist
+     */
+    public static function get_users_in_context(userlist $userlist): void {
+        if (!$userlist->get_context() instanceof context_system) {
+            return;
+        }
+
+        $sql = "SELECT DISTINCT userid
+                  FROM {block_ai_chat_personas}";
+        $userlist->add_from_sql('userid', $sql, []);
+    }
+
+    /**
+     * Delete all data for all users in the specified context.
+     *
+     * @param \context $context
+     */
+    public static function delete_data_for_all_users_in_context(\context $context): void {
+        global $DB;
+
+        if (!$context instanceof context_system) {
+            return;
+        }
+
+        $DB->delete_records('block_ai_chat_personas_selected');
+        $DB->delete_records('block_ai_chat_personas');
+    }
+
+    /**
+     * Delete multiple users within a single context.
+     *
+     * @param approved_userlist $userlist
+     */
+    public static function delete_data_for_users(approved_userlist $userlist): void {
+        if (!$userlist->get_context() instanceof context_system) {
+            return;
+        }
+
+        foreach ($userlist->get_userids() as $userid) {
+            static::delete_data_for_userid($userid);
+        }
+    }
+
+    /**
+     * Delete all user data for the specified user,
+     * in the specified contexts.
+     *
+     * @param approved_contextlist $contextlist
+     */
+    public static function delete_data_for_user(approved_contextlist $contextlist): void {
+        foreach ($contextlist->get_contexts() as $context) {
+            if ($context instanceof context_system) {
+                static::delete_data_for_userid($contextlist->get_user()->id);
+            }
+        }
+    }
+
+    /**
+     * Delete persona data related to a userid.
+     *
+     * @param int $userid
+     */
+    protected static function delete_data_for_userid(int $userid): void {
+        global $DB;
+
+        $personaids = $DB->get_fieldset('block_ai_chat_personas', 'id', ['userid' => $userid]);
+        if (!empty($personaids)) {
+            [$insql, $params] = $DB->get_in_or_equal($personaids, SQL_PARAMS_NAMED);
+            $DB->delete_records_select('block_ai_chat_personas_selected', "personasid $insql", $params);
+        }
+
+        $DB->delete_records('block_ai_chat_personas', ['userid' => $userid]);
     }
 }
