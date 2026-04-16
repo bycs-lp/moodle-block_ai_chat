@@ -29,22 +29,49 @@
 {{{intro}}}
 <ul>
     {{#suggestions}}
-        <li><b>{{#str}}suggestionfieldname, block_ai_chat{{/str}}: </b>{{fieldname}}
-            <br/><b>{{#str}}suggestionlabel, block_ai_chat{{/str}}: </b>{{suggestiondisplayvalue}}
-            <br/><b>{{#str}}suggestionexplanation, block_ai_chat{{/str}}: </b>{{explanation}}<br/>
-            <button class="btn btn-icon btn-outline-primary btn-sm me-2" data-block_ai_chat-action="target_suggestion"
-                    data-block_ai_chat-for-element="{{elementId}}" title="{{#str}}suggestiontarget, block_ai_chat{{/str}}"{{#disabledButtons}} disabled{{/disabledButtons}}>
-                <i class="icon fa fa-bullseye fa-fw" aria-hidden="true"></i>
-                <span class="sr-only">{{#str}}suggestiontarget, block_ai_chat{{/str}}</span>
-            </button>
-            <button class="btn btn-info btn-sm" data-block_ai_chat-action="accept_suggestion" data-block_ai_chat-for-element="{{elementId}}"
-                    data-block_ai_chat-suggestionvalue="{{suggestionvalue}}" title="{{#str}}suggestionaccept, block_ai_chat{{/str}}"{{#disabledButtons}} disabled{{/disabledButtons}}>
-                {{#str}}suggestionaccept, block_ai_chat{{/str}}
-            </button>
-            <button class="btn btn-secondary btn-sm" data-block_ai_chat-action="decline_suggestion" data-block_ai_chat-for-element="{{elementId}}"
-                    title="{{#str}}suggestiondecline, block_ai_chat{{/str}}"{{#disabledButtons}} disabled{{/disabledButtons}}>
-                {{#str}}suggestiondecline, block_ai_chat{{/str}}
-            </button>
+        <li>
+            <div>
+                <b>{{#str}}suggestionfieldname, block_ai_chat{{/str}}: </b>
+                <div class="block_ai_chat-suggestion-box mb-2">{{fieldname}}</div>
+            </div>
+            <div>
+                <b>{{#str}}suggestionlabel, block_ai_chat{{/str}}: </b>
+                {{#isLong}}
+                    <div class="block_ai_chat-suggestion-box block_ai_chat-suggestion-wrapper mb-2">
+                        <a data-bs-toggle="collapse" href="#collapse-suggestion-{{elementId}}"
+                           role="button" aria-expanded="false" aria-controls="collapse-suggestion-{{elementId}}"
+                           class="block_ai_chat-suggestion-toggle">
+                            <i class="fa fa-chevron-right" aria-hidden="true"></i>
+                        </a>
+                        <div class="block_ai_chat-suggestion-preview">{{suggestionpreview}}</div>
+                        <div class="collapse block_ai_chat-suggestion-content" id="collapse-suggestion-{{elementId}}">{{{suggestiondisplayvalue}}}</div>
+                    </div>
+                {{/isLong}}
+                {{^isLong}}
+                    <div class="block_ai_chat-suggestion-box mb-2">{{{suggestiondisplayvalue}}}</div>
+                {{/isLong}}
+            </div>
+            <div>
+                <b>{{#str}}suggestionexplanation, block_ai_chat{{/str}}: </b>
+                <div class="block_ai_chat-suggestion-box mb-2">{{{explanation}}}</div>
+            </div>
+            <div class="block_ai_chat-suggestion-actions">
+                <button class="btn btn-icon btn-outline-primary btn-sm" data-block_ai_chat-action="target_suggestion"
+                        data-block_ai_chat-for-element="{{elementId}}" title="{{#str}}suggestiontarget, block_ai_chat{{/str}}"{{#disabledButtons}} disabled{{/disabledButtons}}>
+                    <i class="icon fa fa-bullseye fa-fw" aria-hidden="true"></i>
+                    <span class="sr-only">{{#str}}suggestiontarget, block_ai_chat{{/str}}</span>
+                </button>
+                <button class="btn btn-info btn-sm" data-block_ai_chat-action="accept_suggestion" data-block_ai_chat-for-element="{{elementId}}"
+                        data-block_ai_chat-suggestionvalue="{{suggestionvalue}}"
+                        data-block_ai_chat-suggestiondisplayvalue="{{suggestiondisplayvalue}}"
+                        title="{{#str}}suggestionaccept, block_ai_chat{{/str}}"{{#disabledButtons}} disabled{{/disabledButtons}}>
+                    {{#str}}suggestionaccept, block_ai_chat{{/str}}
+                </button>
+                <button class="btn btn-secondary btn-sm" data-block_ai_chat-action="decline_suggestion" data-block_ai_chat-for-element="{{elementId}}"
+                        title="{{#str}}suggestiondecline, block_ai_chat{{/str}}"{{#disabledButtons}} disabled{{/disabledButtons}}>
+                    {{#str}}suggestiondecline, block_ai_chat{{/str}}
+                </button>
+            </div>
         </li>
     {{/suggestions}}
 </ul>

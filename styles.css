@@ -117,7 +117,7 @@ body:not(.block_ai_chat_replacehelp).hasstickyfooter #ai_chat_button {
 .block_ai_chat_modal .content {
   display: flex;
   align-items: flex-start;
-  padding: 0.5rem 1rem 0.5rem 1rem;
+  padding: 0.5rem 0 0.5rem 1rem;
   position: relative;
 }
 .block_ai_chat_modal .content .text {
@@ -465,6 +465,51 @@ body.block_ai_chat_replacehelp.block_ai_chat_chatwindow .block_ai_chat_modal:not
 }
 .block_ai_chat_modal .modal-dialog-embedded.modal-dialog[tabindex="0"].focus .modal-content, .block_ai_chat_modal .modal-dialog-embedded.modal-dialog[tabindex="0"]:focus .modal-content {
   box-shadow: none;
+}
+
+.block_ai_chat-suggestion-box {
+  padding: 0.5rem;
+  background-color: var(--bs-tertiary-bg, var(--bs-gray-100));
+  border-radius: 0.375rem;
+  border: 1px solid var(--bs-border-color, var(--bs-gray-300));
+}
+.block_ai_chat-suggestion-box p:last-child {
+  margin-bottom: 0;
+}
+
+.block_ai_chat-suggestion-wrapper {
+  display: flex;
+  align-items: flex-start;
+}
+.block_ai_chat-suggestion-wrapper .block_ai_chat-suggestion-preview,
+.block_ai_chat-suggestion-wrapper .block_ai_chat-suggestion-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.block_ai_chat-suggestion-toggle {
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  margin-right: 0.5rem;
+  margin-top: 0.15rem;
+}
+.block_ai_chat-suggestion-toggle .fa {
+  transition: transform 0.2s;
+}
+.block_ai_chat-suggestion-toggle[aria-expanded=true] .fa {
+  transform: rotate(90deg);
+}
+.block_ai_chat-suggestion-toggle[aria-expanded=true] ~ .block_ai_chat-suggestion-preview {
+  display: none;
+}
+
+.block_ai_chat-suggestion-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+  margin-top: 0.25rem;
 }
 
 .block_ai_chat-history-marker {

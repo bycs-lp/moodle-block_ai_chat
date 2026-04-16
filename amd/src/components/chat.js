@@ -336,31 +336,43 @@ class Chat extends BaseContent {
         return '';
     }
 
+    /**
+     * Get the template context for agent answer rendering.
+     *
+     * @param {string} content The JSON content from the AI response
+     * @returns {Object} Template context for agent suggestions
+     */
     _getAgentAnswerTemplateContext(content) {
         const agentAnswer = JSON.parse(content);
         const chatOutputIntroObject = agentAnswer.chatoutput.filter(object => object.type === 'intro')[0];
         const chatOutputOutroObject = agentAnswer.chatoutput.filter(object => object.type === 'outro')[0];
+        const maxPreviewLength = 80;
         const suggestionContext = {
             intro: chatOutputIntroObject.text,
             suggestions: [],
             outro: chatOutputOutroObject.text
         };
-        agentAnswer.formelements.forEach(async(formElement) => {
-                const htmlElement = document.getElementById(formElement.id);
-                let newValue = formElement.newValue ? formElement.newValue.trim() : '';
-                if (newValue.length === 0) {
-                    newValue = 0;
-                }
-                suggestionContext.suggestions.push({
-                    fieldname: formElement.label,
-                    explanation: formElement.explanation,
-                    elementId: formElement.id,
-                    suggestionvalue: newValue,
-                    suggestiondisplayvalue: newValue,
-                    disabledButtons: !htmlElement
-                });
+        agentAnswer.formelements.forEach((formElement) => {
+            const htmlElement = document.getElementById(formElement.id);
+            let newValue = formElement.newValue ? formElement.newValue.toString().trim() : '';
+            if (newValue.length === 0) {
+                newValue = 0;
             }
-        );
+            const displayValue = formElement.suggestiondisplayvalue || newValue.toString();
+            // Strip HTML tags to get plain text for computing a truncated preview of long suggestions.
+            const plainText = displayValue.replace(/<[^>]*>/g, '');
+            const isLong = plainText.length > maxPreviewLength;
+            suggestionContext.suggestions.push({
+                fieldname: formElement.label,
+                explanation: formElement.explanation,
+                elementId: formElement.id,
+                suggestionvalue: newValue,
+                suggestiondisplayvalue: displayValue,
+                suggestionpreview: isLong ? plainText.substring(0, maxPreviewLength) + '…' : displayValue,
+                isLong: isLong,
+                disabledButtons: !htmlElement
+            });
+        });
         return suggestionContext;
     }
 }
