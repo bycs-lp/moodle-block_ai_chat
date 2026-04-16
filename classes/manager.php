@@ -517,7 +517,7 @@ class manager {
             $userid,
             $itemid,
             false,
-            'prompttext,promptcompletion',
+            'prompttext,promptcompletion,purpose',
             ['chat', 'agent'],
             $conversationlimit
         );
@@ -528,12 +528,80 @@ class manager {
                 'sender' => 'user',
                 'message' => $logentry->prompttext,
             ];
+            // Agent responses are stored as JSON containing formelements and chatoutput.
+            // If this raw JSON is sent as conversation context to the LLM, it will see the
+            // JSON schema pattern in its history and mimic it — even in chat mode.
+            // We therefore convert agent responses into plain text before including them in the context.
+            $completion = $logentry->promptcompletion;
+            if (!empty($logentry->purpose) && $logentry->purpose === 'agent') {
+                $completion = self::extract_text_from_agent_response($completion);
+            }
             $messages[] = [
                 'sender' => 'ai',
-                'message' => $logentry->promptcompletion,
+                'message' => $completion,
             ];
         }
         return $messages;
+    }
+
+    /**
+     * Extract a human-readable plain text summary from a raw agent JSON response.
+     *
+     * Agent responses are stored in the log as JSON containing 'formelements' (form field suggestions)
+     * and 'chatoutput' (intro/outro text). When these raw JSON strings are included in the conversation
+     * context for subsequent requests, the LLM sees the JSON schema and starts mimicking it.
+     *
+     * This method converts the agent response into clean plain text so the LLM only ever sees
+     * natural language in its conversation history.
+     *
+     * @param string $rawresponse The raw agent response string (typically JSON).
+     * @return string A plain text representation of the agent response.
+     */
+    protected static function extract_text_from_agent_response(string $rawresponse): string {
+        $decoded = json_decode($rawresponse, true);
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($decoded)) {
+            // Not valid JSON — likely already plain text (agent fallback). Return as-is.
+            return $rawresponse;
+        }
+
+        $parts = [];
+
+        // Extract chatoutput intro/outro texts — this is the conversational text the user actually saw.
+        if (!empty($decoded['chatoutput']) && is_array($decoded['chatoutput'])) {
+            foreach ($decoded['chatoutput'] as $outputitem) {
+                if (!empty($outputitem['text']) && is_string($outputitem['text'])) {
+                    $plaintext = trim(strip_tags($outputitem['text']));
+                    if ($plaintext !== '') {
+                        $parts[] = $plaintext;
+                    }
+                }
+            }
+        }
+
+        // Summarize form element suggestions so the LLM retains meaningful context
+        // about what was changed, without exposing any JSON structure.
+        if (!empty($decoded['formelements']) && is_array($decoded['formelements'])) {
+            $fieldlines = [];
+            foreach ($decoded['formelements'] as $formelement) {
+                $label = !empty($formelement['label']) ? trim(strip_tags($formelement['label'])) : '';
+                $explanation = !empty($formelement['explanation']) ? trim(strip_tags($formelement['explanation'])) : '';
+                if ($label !== '' && $explanation !== '') {
+                    $fieldlines[] = $label . ': ' . $explanation;
+                } else if ($label !== '') {
+                    $fieldlines[] = $label;
+                }
+            }
+            if (!empty($fieldlines)) {
+                $parts[] = get_string('agentcontextsummaryprefix', 'block_ai_chat')
+                    . ' ' . implode('; ', $fieldlines);
+            }
+        }
+
+        if (empty($parts)) {
+            return get_string('agentcontextsummaryfallback', 'block_ai_chat');
+        }
+
+        return implode("\n", $parts);
     }
 
     /**

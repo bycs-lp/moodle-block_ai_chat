@@ -25,6 +25,7 @@ use block_ai_chat\local\persona;
  * @copyright  2024 ISB Bayern
  * @author     Andreas Wagner
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
+ * @coversDefaultClass \block_ai_chat\manager
  */
 final class manager_test extends \advanced_testcase {
     /**
@@ -468,5 +469,377 @@ final class manager_test extends \advanced_testcase {
             $this->assertStringContainsString(get_string('error_viewpersonanotallowed', 'block_ai_chat'), $e->getMessage());
         }
         $this->assertTrue($exceptionthrown, 'Exception should be thrown for unauthorized persona access');
+    }
+
+    /**
+     * Data provider for test_extract_text_from_agent_response.
+     *
+     * @return array
+     */
+    public static function extract_text_from_agent_response_provider(): array {
+        return [
+            'Full agent response with formelements and chatoutput' => [
+                'input' => json_encode([
+                    'formelements' => [
+                        [
+                            'id' => 'id_summary_editor',
+                            'label' => 'Course description',
+                            'explanation' => 'Made the description more engaging',
+                            'newValue' => '<p>New description</p>',
+                        ],
+                        [
+                            'id' => 'id_fullname',
+                            'label' => 'Course name',
+                            'explanation' => 'Shortened the course name',
+                            'newValue' => 'Short name',
+                        ],
+                    ],
+                    'chatoutput' => [
+                        ['type' => 'intro', 'text' => 'Here are my suggestions for your course settings.'],
+                        ['type' => 'outro', 'text' => 'Let me know if you need further changes.'],
+                    ],
+                ]),
+                'expectedcontains' => [
+                    'Here are my suggestions for your course settings.',
+                    'Let me know if you need further changes.',
+                    'Course description: Made the description more engaging',
+                    'Course name: Shortened the course name',
+                ],
+                'notexpectedcontains' => [
+                    'formelements',
+                    'chatoutput',
+                    'newValue',
+                    '"type"',
+                    '"id"',
+                ],
+            ],
+            'Agent response with chatoutput only and empty formelements' => [
+                'input' => json_encode([
+                    'formelements' => [],
+                    'chatoutput' => [
+                        ['type' => 'intro', 'text' => 'I need more details about what you want to change.'],
+                        ['type' => 'outro', 'text' => ''],
+                    ],
+                ]),
+                'expectedcontains' => [
+                    'I need more details about what you want to change.',
+                ],
+                'notexpectedcontains' => [
+                    'formelements',
+                    '"type"',
+                ],
+            ],
+            'Agent response with HTML in chatoutput is stripped' => [
+                'input' => json_encode([
+                    'formelements' => [],
+                    'chatoutput' => [
+                        ['type' => 'intro', 'text' => '<p>Here are <strong>bold</strong> suggestions.</p>'],
+                        ['type' => 'outro', 'text' => ''],
+                    ],
+                ]),
+                'expectedcontains' => [
+                    'Here are bold suggestions.',
+                ],
+                'notexpectedcontains' => [
+                    '<p>',
+                    '<strong>',
+                    '</p>',
+                ],
+            ],
+            'Agent response with formelements having label only (no explanation)' => [
+                'input' => json_encode([
+                    'formelements' => [
+                        [
+                            'id' => 'id_fullname',
+                            'label' => 'Course name',
+                            'newValue' => 'New course name',
+                        ],
+                    ],
+                    'chatoutput' => [
+                        ['type' => 'intro', 'text' => 'Updated the name.'],
+                        ['type' => 'outro', 'text' => ''],
+                    ],
+                ]),
+                'expectedcontains' => [
+                    'Updated the name.',
+                    'Course name',
+                ],
+                'notexpectedcontains' => [
+                    'newValue',
+                    '"id"',
+                ],
+            ],
+            'Plain text response (not JSON) passes through unchanged' => [
+                'input' => 'This is just a regular text response from the AI.',
+                'expectedcontains' => [
+                    'This is just a regular text response from the AI.',
+                ],
+                'notexpectedcontains' => [],
+            ],
+            'Malformed JSON passes through unchanged' => [
+                'input' => '{"formelements": [broken json',
+                'expectedcontains' => [
+                    '{"formelements": [broken json',
+                ],
+                'notexpectedcontains' => [],
+            ],
+            'Empty JSON object returns fallback string' => [
+                'input' => json_encode([]),
+                'expectedcontains' => [
+                    get_string('agentcontextsummaryfallback', 'block_ai_chat'),
+                ],
+                'notexpectedcontains' => [],
+            ],
+            'JSON with empty chatoutput and empty formelements returns fallback' => [
+                'input' => json_encode([
+                    'formelements' => [],
+                    'chatoutput' => [],
+                ]),
+                'expectedcontains' => [
+                    get_string('agentcontextsummaryfallback', 'block_ai_chat'),
+                ],
+                'notexpectedcontains' => [],
+            ],
+            'JSON with only whitespace texts returns fallback' => [
+                'input' => json_encode([
+                    'formelements' => [],
+                    'chatoutput' => [
+                        ['type' => 'intro', 'text' => '   '],
+                        ['type' => 'outro', 'text' => ''],
+                    ],
+                ]),
+                'expectedcontains' => [
+                    get_string('agentcontextsummaryfallback', 'block_ai_chat'),
+                ],
+                'notexpectedcontains' => [],
+            ],
+            'Agent response with HTML in formelement labels and explanations is stripped' => [
+                'input' => json_encode([
+                    'formelements' => [
+                        [
+                            'id' => 'id_summary',
+                            'label' => '<b>Description</b>',
+                            'explanation' => '<em>Improved readability</em>',
+                            'newValue' => 'New value',
+                        ],
+                    ],
+                    'chatoutput' => [
+                        ['type' => 'intro', 'text' => 'Done.'],
+                        ['type' => 'outro', 'text' => ''],
+                    ],
+                ]),
+                'expectedcontains' => [
+                    'Description: Improved readability',
+                    'Done.',
+                ],
+                'notexpectedcontains' => [
+                    '<b>',
+                    '<em>',
+                    '</b>',
+                    '</em>',
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * Test the extract_text_from_agent_response method with various agent response formats.
+     *
+     * @covers ::extract_text_from_agent_response
+     * @dataProvider extract_text_from_agent_response_provider
+     *
+     * @param string $input The raw agent response string.
+     * @param array $expectedcontains Substrings that must be present in the result.
+     * @param array $notexpectedcontains Substrings that must NOT be present in the result.
+     */
+    public function test_extract_text_from_agent_response(
+        string $input,
+        array $expectedcontains,
+        array $notexpectedcontains,
+    ): void {
+        // The method is protected static, so we use reflection to test it directly.
+        $method = new \ReflectionMethod(manager::class, 'extract_text_from_agent_response');
+
+        $result = $method->invoke(null, $input);
+
+        $this->assertIsString($result, 'Result must always be a string.');
+        $this->assertNotEmpty($result, 'Result must never be empty.');
+
+        foreach ($expectedcontains as $expected) {
+            $this->assertStringContainsString(
+                $expected,
+                $result,
+                "Expected result to contain: \"{$expected}\"\nActual result: \"{$result}\""
+            );
+        }
+        foreach ($notexpectedcontains as $notexpected) {
+            $this->assertStringNotContainsString(
+                $notexpected,
+                $result,
+                "Result must NOT contain: \"{$notexpected}\"\nActual result: \"{$result}\""
+            );
+        }
+    }
+
+    /**
+     * Data provider for test_retrieve_conversationcontext_sanitizes_agent_responses.
+     *
+     * @return array
+     */
+    public static function retrieve_conversationcontext_mode_provider(): array {
+        return [
+            'Chat-only conversation has plain text context' => [
+                'logentries' => [
+                    [
+                        'purpose' => 'chat',
+                        'prompttext' => 'What is Moodle?',
+                        'promptcompletion' => 'Moodle is a learning management system.',
+                    ],
+                ],
+                'expectedairesponse' => 'Moodle is a learning management system.',
+                'notexpectedinairesponse' => [],
+            ],
+            'Agent response is sanitized to plain text in context' => [
+                'logentries' => [
+                    [
+                        'purpose' => 'agent',
+                        'prompttext' => 'Improve the course description',
+                        'promptcompletion' => json_encode([
+                            'formelements' => [
+                                [
+                                    'id' => 'id_summary',
+                                    'label' => 'Course description',
+                                    'explanation' => 'Made it more engaging',
+                                    'newValue' => '<p>Better description</p>',
+                                ],
+                            ],
+                            'chatoutput' => [
+                                ['type' => 'intro', 'text' => 'I have improved your course.'],
+                                ['type' => 'outro', 'text' => ''],
+                            ],
+                        ]),
+                    ],
+                ],
+                'expectedairesponse' => 'I have improved your course.',
+                'notexpectedinairesponse' => ['formelements', 'chatoutput', 'newValue', '"id"'],
+            ],
+            'Mixed conversation: agent JSON does not leak into context' => [
+                'logentries' => [
+                    [
+                        'purpose' => 'chat',
+                        'prompttext' => 'Hello',
+                        'promptcompletion' => 'Hi there!',
+                    ],
+                    [
+                        'purpose' => 'agent',
+                        'prompttext' => 'Change the name',
+                        'promptcompletion' => json_encode([
+                            'formelements' => [
+                                [
+                                    'id' => 'id_fullname',
+                                    'label' => 'Course name',
+                                    'explanation' => 'Renamed it',
+                                    'newValue' => 'New Name',
+                                ],
+                            ],
+                            'chatoutput' => [
+                                ['type' => 'intro', 'text' => 'Renamed the course.'],
+                                ['type' => 'outro', 'text' => ''],
+                            ],
+                        ]),
+                    ],
+                ],
+                'expectedairesponse' => 'Renamed the course.',
+                'notexpectedinairesponse' => ['formelements', '"id"', 'newValue'],
+            ],
+        ];
+    }
+
+    /**
+     * Test that retrieve_conversationcontext sanitizes agent responses.
+     *
+     * This is an integration-style test that inserts real log entries into the database
+     * and verifies the conversation context built by retrieve_conversationcontext does
+     * not contain raw JSON from agent responses.
+     *
+     * @covers ::retrieve_conversationcontext
+     * @covers ::extract_text_from_agent_response
+     * @dataProvider retrieve_conversationcontext_mode_provider
+     *
+     * @param array $logentries Log entries to insert.
+     * @param string $expectedairesponse Substring expected in the last AI response in context.
+     * @param array $notexpectedinairesponse Substrings that must not appear in any AI response in context.
+     */
+    public function test_retrieve_conversationcontext_sanitizes_agent_responses(
+        array $logentries,
+        string $expectedairesponse,
+        array $notexpectedinairesponse,
+    ): void {
+        global $DB, $USER;
+
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $course = $this->getDataGenerator()->create_course();
+        $coursecontext = \context_course::instance($course->id);
+        $block = $this->getDataGenerator()->create_block('ai_chat', ['parentcontextid' => $coursecontext->id]);
+        $blockcontext = \context_block::instance($block->id);
+
+        $manager = new manager($blockcontext->id, 'block_ai_chat');
+
+        $conversationid = 42;
+        $time = time();
+
+        foreach ($logentries as $index => $entry) {
+            $DB->insert_record('local_ai_manager_request_log', (object) [
+                'userid' => $USER->id,
+                'tenant' => 'phpunit',
+                'value' => 1,
+                'connector' => 'test',
+                'purpose' => $entry['purpose'],
+                'model' => 'test-model',
+                'prompttext' => $entry['prompttext'],
+                'promptcompletion' => $entry['promptcompletion'],
+                'duration' => 0.5,
+                'component' => 'block_ai_chat',
+                'contextid' => $blockcontext->id,
+                'coursecontextid' => $coursecontext->id,
+                'itemid' => $conversationid,
+                'timecreated' => $time + $index,
+                'deleted' => 0,
+            ]);
+        }
+
+        $context = $manager->retrieve_conversationcontext($conversationid, $USER->id, 50);
+
+        $this->assertNotEmpty($context, 'Conversation context should not be empty.');
+
+        // Collect all AI responses from the context.
+        $airesponses = array_filter($context, fn($msg) => $msg['sender'] === 'ai');
+        $allaitext = implode(' ', array_column($airesponses, 'message'));
+
+        $this->assertStringContainsString(
+            $expectedairesponse,
+            $allaitext,
+            "Expected AI context to contain: \"{$expectedairesponse}\"\nActual: \"{$allaitext}\""
+        );
+
+        foreach ($notexpectedinairesponse as $notexpected) {
+            $this->assertStringNotContainsString(
+                $notexpected,
+                $allaitext,
+                "AI context must NOT contain raw JSON fragment: \"{$notexpected}\"\nActual: \"{$allaitext}\""
+            );
+        }
+
+        // Verify user prompts are always passed through untouched.
+        $userprompts = array_filter($context, fn($msg) => $msg['sender'] === 'user');
+        foreach ($userprompts as $index => $userprompt) {
+            $this->assertSame(
+                $logentries[intdiv($index, 2)]['prompttext'] ?? $logentries[0]['prompttext'],
+                $userprompt['message'],
+                'User prompts must pass through unchanged.'
+            );
+        }
     }
 }
