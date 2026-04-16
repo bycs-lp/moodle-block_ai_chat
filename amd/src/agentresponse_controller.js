@@ -39,10 +39,7 @@ export const init = () => {
     document.querySelectorAll('[data-block_ai_chat-action="accept_suggestion"]').forEach(button => {
         button.addEventListener('click', () => {
             button.disabled = true;
-            const declineButton = document.querySelector(
-                '[data-block_ai_chat-action="decline_suggestion"][data-block_ai_chat-for-element="'
-                + button.dataset.block_ai_chatForElement + '"]'
-            );
+            const declineButton = button.parentElement.querySelector('[data-block_ai_chat-action="decline_suggestion"]');
             declineButton.disabled = true;
             injectSuggestionIntoForm(button);
         });
