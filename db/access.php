@@ -97,4 +97,50 @@ $capabilities = [
         ],
         'clonepermissionsfrom' => 'block/ai_chat:edit',
     ],
+
+    // MBS-10761: Form-assist capability (dedicated to in-form suggestions, mode `formassist`).
+    // Kept separate from `useagent` so form-assist can be granted without giving the full tool-agent.
+    'block/ai_chat:useformassist' => [
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_BLOCK,
+        'archetypes' => [
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW,
+        ],
+        'clonepermissionsfrom' => 'block/ai_chat:useagentmode',
+    ],
+
+    // MBS-10761: Tool-agent capability (mode `toolagent`, server-side tool execution).
+    'block/ai_chat:useagent' => [
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_BLOCK,
+        'archetypes' => [
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW,
+        ],
+        'clonepermissionsfrom' => 'block/ai_chat:useagentmode',
+    ],
+
+    // MBS-10761: Authorises a user to approve write-operations proposed by the tool-agent.
+    // Without this capability, approval cards are hidden and approve/reject external functions fail.
+    'block/ai_chat:approvewrite' => [
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_BLOCK,
+        'archetypes' => [
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW,
+        ],
+        'clonepermissionsfrom' => 'block/ai_chat:useagent',
+    ],
+
+    // MBS-10761: Authorises session-scoped trust preferences ("Always allow in this session").
+    'block/ai_chat:trustsession' => [
+        'captype' => 'write',
+        'contextlevel' => CONTEXT_BLOCK,
+        'archetypes' => [
+            'editingteacher' => CAP_ALLOW,
+            'manager' => CAP_ALLOW,
+        ],
+        'clonepermissionsfrom' => 'block/ai_chat:useagent',
+    ],
 ];

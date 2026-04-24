@@ -469,4 +469,58 @@ final class manager_test extends \advanced_testcase {
         }
         $this->assertTrue($exceptionthrown, 'Exception should be thrown for unauthorized persona access');
     }
+
+    /**
+     * Data provider for {@see test_is_mode_transition_allowed}.
+     *
+     * @return array<string, array{string, string, bool}>
+     */
+    public static function is_mode_transition_allowed_provider(): array {
+        return [
+            'chat-chat allowed' => ['chat', 'chat', true],
+            'formassist-formassist allowed' => ['formassist', 'formassist', true],
+            'toolagent-toolagent allowed' => ['toolagent', 'toolagent', true],
+            'chat-formassist blocked' => ['chat', 'formassist', false],
+            'chat-toolagent blocked' => ['chat', 'toolagent', false],
+            'formassist-chat blocked' => ['formassist', 'chat', false],
+            'formassist-toolagent blocked' => ['formassist', 'toolagent', false],
+            'toolagent-chat blocked' => ['toolagent', 'chat', false],
+            'toolagent-formassist blocked' => ['toolagent', 'formassist', false],
+        ];
+    }
+
+    /**
+     * Ensures the conversation mode lock rejects any mode change after the first turn (MBS-10761).
+     *
+     * @dataProvider is_mode_transition_allowed_provider
+     * @param string $stored Stored mode (locked on first turn).
+     * @param string $requested Mode requested on a subsequent turn.
+     * @param bool $expected Whether the transition is allowed.
+     * @covers \block_ai_chat\manager::is_mode_transition_allowed
+     */
+    public function test_is_mode_transition_allowed(string $stored, string $requested, bool $expected): void {
+        $this->assertSame($expected, manager::is_mode_transition_allowed($stored, $requested));
+    }
+
+    /**
+     * Ensures legacy mode name `agent` is normalised to the canonical `formassist` (MBS-10761).
+     *
+     * @covers \block_ai_chat\manager::normalise_mode
+     */
+    public function test_normalise_mode_accepts_legacy_agent_alias(): void {
+        $this->assertSame(manager::MODE_CHAT, manager::normalise_mode('chat'));
+        $this->assertSame(manager::MODE_FORMASSIST, manager::normalise_mode('agent'));
+        $this->assertSame(manager::MODE_FORMASSIST, manager::normalise_mode('formassist'));
+        $this->assertSame(manager::MODE_TOOLAGENT, manager::normalise_mode('toolagent'));
+    }
+
+    /**
+     * Ensures an unknown mode raises an exception (MBS-10761).
+     *
+     * @covers \block_ai_chat\manager::normalise_mode
+     */
+    public function test_normalise_mode_rejects_unknown(): void {
+        $this->expectException(\moodle_exception::class);
+        manager::normalise_mode('does-not-exist');
+    }
 }

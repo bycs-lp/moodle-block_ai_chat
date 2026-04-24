@@ -85,9 +85,8 @@ class request_ai extends external_api {
 
         // We do not need capability for local_ai_manager, because it is checked in the ai_manager directly.
         require_capability('block/ai_chat:view', $context);
-        if ($mode === 'agent') {
-            require_capability('block/ai_chat:useagentmode', $context);
-        }
+        // MBS-10761: Mode-specific capabilities are enforced in manager::request_ai() via
+        // require_mode_capability(), which also maps legacy `agent` to the canonical `formassist`.
 
         $manager = new manager($contextid, $component);
         return $manager->request_ai($prompt, $mode, $options);

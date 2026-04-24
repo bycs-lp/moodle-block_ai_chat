@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8" ?>
-<XMLDB PATH="blocks/ai_chat/db" VERSION="20251213" COMMENT="XMLDB file for Moodle blocks/ai_chat"
+<XMLDB PATH="blocks/ai_chat/db" VERSION="20260424" COMMENT="XMLDB file for Moodle blocks/ai_chat"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:noNamespaceSchemaLocation="../../../lib/xmldb/xmldb.xsd"
 >
@@ -70,6 +70,23 @@
       </KEYS>
       <INDEXES>
         <INDEX NAME="pagetype-aicontextid" UNIQUE="true" FIELDS="pagetype, aicontextid" COMMENT="Unique index for avoiding that there is a duplicate entry"/>
+      </INDEXES>
+    </TABLE>
+    <TABLE NAME="block_ai_chat_conversations" COMMENT="MBS-10761: Per-conversation metadata; locks the mode (chat/formassist/toolagent) at the first user turn.">
+      <FIELDS>
+        <FIELD NAME="id" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="true"/>
+        <FIELD NAME="contextid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Context id of the block_ai_chat instance."/>
+        <FIELD NAME="conversationid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false" COMMENT="Logical grouping id matching local_ai_manager_request_log.itemid."/>
+        <FIELD NAME="userid" TYPE="int" LENGTH="10" NOTNULL="true" SEQUENCE="false"/>
+        <FIELD NAME="agent_mode" TYPE="char" LENGTH="16" NOTNULL="true" DEFAULT="chat" SEQUENCE="false" COMMENT="Locked mode: chat | formassist | toolagent."/>
+        <FIELD NAME="timecreated" TYPE="int" LENGTH="10" NOTNULL="true" DEFAULT="0" SEQUENCE="false"/>
+      </FIELDS>
+      <KEYS>
+        <KEY NAME="primary" TYPE="primary" FIELDS="id"/>
+      </KEYS>
+      <INDEXES>
+        <INDEX NAME="contextid-conversationid" UNIQUE="true" FIELDS="contextid, conversationid"/>
+        <INDEX NAME="userid" UNIQUE="false" FIELDS="userid"/>
       </INDEXES>
     </TABLE>
   </TABLES>

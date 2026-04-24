@@ -476,12 +476,23 @@ class manager {
         $options['itemid'] = $conversationid;
         unset($options['conversationid']);
 
+        // MBS-10761: Normalise the mode name so both legacy (`agent`) and canonical (`formassist`) work.
+        $mode = self::normalise_mode($mode);
+
+        // MBS-10761: Capability dispatch per mode and per-conversation mode lock.
+        $this->require_mode_capability($mode);
+        $lockerror = $this->ensure_conversation_mode((int) $options['itemid'], $USER->id, $mode);
+        if ($lockerror !== null) {
+            return $lockerror;
+        }
+
         // MBS-10761: Tool-agent mode dispatches to the orchestrator instead of a purpose-based request.
         if ($mode === 'toolagent') {
-            require_capability('block/ai_chat:useagentmode', $this->context);
             return $this->request_toolagent($prompt, (int) $options['itemid'], $options);
         }
 
+        // MBS-10761: Canonical `formassist` maps to the `agent` purpose in local_ai_manager.
+        $purpose = $mode === 'formassist' ? 'agent' : $mode;
         $optionsrecords = options::get_options($this->context->id);
         $conversationlimit = 5;
         if ($optionsrecords && array_filter($optionsrecords, fn($record) => $record->name === 'historycontextmax') > 0) {
@@ -526,7 +537,7 @@ class manager {
                 trim(array_reduce($additionalcontexts, fn($carry, $item) => $carry . PHP_EOL . trim($item), ''));
         }
 
-        $aimanager = new \local_ai_manager\manager($mode);
+        $aimanager = new \local_ai_manager\manager($purpose);
         $requestresult = $aimanager->perform_request($prompt, $this->component, $this->context->id, $options);
         if ($requestresult->get_code() !== 200) {
             return [
@@ -1174,5 +1185,125 @@ class manager {
         }
 
         throw new moodle_exception('error_viewpersonanotallowed', 'block_ai_chat');
+    }
+
+    /**
+     * Canonical conversation mode constants (MBS-10761).
+     */
+    public const MODE_CHAT = 'chat';
+    /** @var string Form-assist mode (maps to local_ai_manager purpose "agent"). */
+    public const MODE_FORMASSIST = 'formassist';
+    /** @var string Tool-agent mode (dispatches to the orchestrator). */
+    public const MODE_TOOLAGENT = 'toolagent';
+
+    /**
+     * Normalise the incoming mode name, accepting the legacy name `agent` as alias for `formassist`.
+     *
+     * @param string $mode Requested mode.
+     * @return string Canonical mode identifier.
+     * @throws moodle_exception When the mode is unknown.
+     */
+    public static function normalise_mode(string $mode): string {
+        $canonical = match ($mode) {
+            'chat' => self::MODE_CHAT,
+            'agent', 'formassist' => self::MODE_FORMASSIST,
+            'toolagent' => self::MODE_TOOLAGENT,
+            default => null,
+        };
+        if ($canonical === null) {
+            throw new moodle_exception('error_invalidmode', 'block_ai_chat', '', $mode);
+        }
+        return $canonical;
+    }
+
+    /**
+     * Decide whether a transition between two locked conversation modes is allowed (MBS-10761).
+     *
+     * The mode is locked at the first user turn. Subsequent turns must use the same mode.
+     *
+     * @param string $stored Mode recorded on the first turn.
+     * @param string $requested Mode requested on a subsequent turn.
+     * @return bool True when the requested mode is compatible with the stored mode.
+     */
+    public static function is_mode_transition_allowed(string $stored, string $requested): bool {
+        return $stored === $requested;
+    }
+
+    /**
+     * Check the capability matching the requested mode (MBS-10761).
+     *
+     * @param string $mode Canonical mode.
+     */
+    protected function require_mode_capability(string $mode): void {
+        switch ($mode) {
+            case self::MODE_CHAT:
+                require_capability('block/ai_chat:view', $this->context);
+                break;
+            case self::MODE_FORMASSIST:
+                // Accept either the dedicated new capability or the legacy one for BC.
+                if (!has_capability('block/ai_chat:useformassist', $this->context)
+                        && !has_capability('block/ai_chat:useagentmode', $this->context)) {
+                    throw new \required_capability_exception(
+                        $this->context,
+                        'block/ai_chat:useformassist',
+                        'nopermissions',
+                        ''
+                    );
+                }
+                break;
+            case self::MODE_TOOLAGENT:
+                if (!has_capability('block/ai_chat:useagent', $this->context)
+                        && !has_capability('block/ai_chat:useagentmode', $this->context)) {
+                    throw new \required_capability_exception(
+                        $this->context,
+                        'block/ai_chat:useagent',
+                        'nopermissions',
+                        ''
+                    );
+                }
+                break;
+        }
+    }
+
+    /**
+     * Ensure the conversation's locked mode matches the requested mode; lock on first turn (MBS-10761).
+     *
+     * Returns a reactive error payload when the stored mode differs from the requested mode, otherwise
+     * inserts (or reuses) a row in `block_ai_chat_conversations` and returns `null` to signal success.
+     *
+     * @param int $conversationid Conversation / itemid grouping value.
+     * @param int $userid User initiating the turn.
+     * @param string $mode Canonical requested mode.
+     * @return array|null Null on success; on lock violation a payload with `code`/`message`/`content`.
+     */
+    protected function ensure_conversation_mode(int $conversationid, int $userid, string $mode): ?array {
+        global $DB;
+        $existing = $DB->get_record(
+            'block_ai_chat_conversations',
+            ['contextid' => $this->context->id, 'conversationid' => $conversationid],
+            'id, agent_mode',
+            IGNORE_MISSING
+        );
+        if ($existing) {
+            if (!self::is_mode_transition_allowed($existing->agent_mode, $mode)) {
+                $a = (object) ['stored' => $existing->agent_mode, 'requested' => $mode];
+                return [
+                    'code' => 423,
+                    'message' => get_string('error_conversationmodelocked', 'block_ai_chat', $a),
+                    'debuginfo' => '',
+                    'content' => [],
+                ];
+            }
+            return null;
+        }
+        $record = (object) [
+            'contextid' => $this->context->id,
+            'conversationid' => $conversationid,
+            'userid' => $userid,
+            'agent_mode' => $mode,
+            'timecreated' => time(),
+        ];
+        $DB->insert_record('block_ai_chat_conversations', $record);
+        return null;
     }
 }

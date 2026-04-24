@@ -101,5 +101,24 @@ function xmldb_block_ai_chat_upgrade($oldversion) {
         upgrade_block_savepoint(true, 2026012200, 'ai_chat');
     }
 
+    if ($oldversion < 2026042500) {
+        // MBS-10761: Track the locked mode per conversation so the mode cannot switch mid-dialogue.
+        $table = new xmldb_table('block_ai_chat_conversations');
+        $table->add_field('id', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, XMLDB_SEQUENCE, null);
+        $table->add_field('contextid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('conversationid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('userid', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, null);
+        $table->add_field('agent_mode', XMLDB_TYPE_CHAR, '16', null, XMLDB_NOTNULL, null, 'chat');
+        $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
+        $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
+        $table->add_index('contextid-conversationid', XMLDB_INDEX_UNIQUE, ['contextid', 'conversationid']);
+        $table->add_index('userid', XMLDB_INDEX_NOTUNIQUE, ['userid']);
+        if (!$dbman->table_exists($table)) {
+            $dbman->create_table($table);
+        }
+
+        upgrade_block_savepoint(true, 2026042500, 'ai_chat');
+    }
+
     return true;
 }
