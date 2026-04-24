@@ -17,9 +17,9 @@
 
 @media (max-width: 576px) {
   #ai_chat_button {
-    top: 87vh;
     right: 0.5rem;
-    bottom: unset;
+    bottom: 1rem;
+    top: auto;
   }
 }
 .cursor-pointer {
