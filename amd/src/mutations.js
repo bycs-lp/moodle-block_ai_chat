@@ -310,6 +310,85 @@ export default class {
     }
 
     /**
+     * Abort an in-flight or awaiting-approval agent run (MBS-10761 Paket 2).
+     *
+     * @param {Object} stateManager the state manager
+     * @param {number} runid the agent run id
+     */
+    async abortAgentRun(stateManager, runid) {
+        try {
+            await fetchMany([{
+                methodname: 'local_ai_manager_agent_abort_run',
+                args: {runid},
+            }])[0];
+        } catch (ex) {
+            await displayException(ex);
+            return;
+        }
+        stateManager.setReadOnly(false);
+        if (stateManager.state.agent) {
+            stateManager.state.agent.currentRunId = null;
+            stateManager.state.agent.pendingApprovals = [];
+            stateManager.state.agent.progressText = '';
+        }
+        stateManager.setReadOnly(true);
+        this.setLoadingState(stateManager, false);
+    }
+
+    /**
+     * Undo a reversible tool call within the configured window (MBS-10761 Paket 2).
+     *
+     * @param {Object} stateManager the state manager
+     * @param {number} callid the tool call id
+     */
+    async undoToolResult(stateManager, callid) {
+        let response;
+        try {
+            response = await fetchMany([{
+                methodname: 'local_ai_manager_agent_undo_tool_result',
+                args: {callid},
+            }])[0];
+        } catch (ex) {
+            await displayException(ex);
+            return;
+        }
+        stateManager.setReadOnly(false);
+        if (stateManager.state.agent && Array.isArray(stateManager.state.agent.lastResults)) {
+            stateManager.state.agent.lastResults = stateManager.state.agent.lastResults.map((entry) => {
+                if (entry.callid === callid) {
+                    return {...entry, undone: true, undone_at: response ? response.undone_at : 0};
+                }
+                return entry;
+            });
+        }
+        stateManager.setReadOnly(true);
+    }
+
+    /**
+     * Client-side timer tick used by the undo-button countdown watcher.
+     *
+     * Decrements `secondsLeft` on every `state.agent.lastResults[]` entry and
+     * flags entries whose window elapsed so the Reactive-Component can hide
+     * the Undo button without a network round-trip.
+     *
+     * @param {Object} stateManager the state manager
+     */
+    tickUndoWindow(stateManager) {
+        if (!stateManager.state.agent || !Array.isArray(stateManager.state.agent.lastResults)) {
+            return;
+        }
+        stateManager.setReadOnly(false);
+        stateManager.state.agent.lastResults = stateManager.state.agent.lastResults.map((entry) => {
+            if (entry.undone || typeof entry.secondsLeft !== 'number') {
+                return entry;
+            }
+            const next = entry.secondsLeft - 1;
+            return {...entry, secondsLeft: Math.max(0, next), expired: next <= 0};
+        });
+        stateManager.setReadOnly(true);
+    }
+
+    /**
      * Resume an agent run via a second round-trip to block_ai_chat_request_ai with mode=toolagent.
      *
      * @param {Object} stateManager the state manager

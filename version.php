@@ -25,8 +25,8 @@
 
 defined('MOODLE_INTERNAL') || die();
 
-$plugin->release = '3.1.3';
-$plugin->version = 2026042500;
+$plugin->release = '3.1.4';
+$plugin->version = 2026042501;
 $plugin->requires = 2025041400;
 $plugin->supported = [500, 501];
 $plugin->component = 'block_ai_chat';
