@@ -14,6 +14,8 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 import {callExternalFunctionReactiveUpdate} from 'block_ai_chat/utils';
+import {call as fetchMany} from 'core/ajax';
+import {exception as displayException} from 'core/notification';
 
 /**
  * Mutations for the AI Chat block.
@@ -239,6 +241,97 @@ export default class {
         stateManager.setReadOnly(false);
         stateManager.state.config.mode = mode;
         stateManager.setReadOnly(true);
+    }
+
+    /**
+     * Approve a pending tool call (MBS-10761 tool-agent flow) and resume the run.
+     *
+     * @param {Object} stateManager the state manager
+     * @param {number} runid the agent run id
+     * @param {number} callindex the pending tool call index
+     * @param {string} token the HMAC approval token returned by the backend
+     */
+    async approveToolCall(stateManager, runid, callindex, token) {
+        this.setLoadingState(stateManager, true);
+        try {
+            await fetchMany([{
+                methodname: 'local_ai_manager_agent_approve_tool_call',
+                args: {runid, callindex, token},
+            }])[0];
+        } catch (ex) {
+            this.setLoadingState(stateManager, false);
+            await displayException(ex);
+            return;
+        }
+        this.setLoadingState(stateManager, false);
+        await this.resumeAgentRun(stateManager, runid);
+    }
+
+    /**
+     * Reject a pending tool call and resume the run so the LLM can recover.
+     *
+     * @param {Object} stateManager the state manager
+     * @param {number} runid the agent run id
+     * @param {number} callindex the pending tool call index
+     * @param {string} reason optional user reason
+     */
+    async rejectToolCall(stateManager, runid, callindex, reason = '') {
+        this.setLoadingState(stateManager, true);
+        try {
+            await fetchMany([{
+                methodname: 'local_ai_manager_agent_reject_tool_call',
+                args: {runid, callindex, reason},
+            }])[0];
+        } catch (ex) {
+            this.setLoadingState(stateManager, false);
+            await displayException(ex);
+            return;
+        }
+        this.setLoadingState(stateManager, false);
+        await this.resumeAgentRun(stateManager, runid);
+    }
+
+    /**
+     * Mark a tool as always-trusted for the current session, user or tenant.
+     *
+     * @param {Object} stateManager the state manager
+     * @param {string} toolname the frankenstyle tool name
+     * @param {string} scope one of "session", "user", "tenant"
+     */
+    async trustTool(stateManager, toolname, scope) {
+        try {
+            await fetchMany([{
+                methodname: 'local_ai_manager_agent_trust_tool',
+                args: {toolname, scope},
+            }])[0];
+        } catch (ex) {
+            await displayException(ex);
+        }
+    }
+
+    /**
+     * Resume an agent run via a second round-trip to block_ai_chat_request_ai with mode=toolagent.
+     *
+     * @param {Object} stateManager the state manager
+     * @param {number} runid the agent run id
+     */
+    async resumeAgentRun(stateManager, runid) {
+        this.setLoadingState(stateManager, true);
+        const options = JSON.stringify({
+            conversationid: stateManager.state.config.currentConversationId,
+            runid,
+        });
+        const result = await callExternalFunctionReactiveUpdate('block_ai_chat_request_ai', {
+            contextid: stateManager.state.static.contextid,
+            component: stateManager.state.static.component,
+            mode: 'toolagent',
+            prompt: '',
+            options,
+        });
+        this.setLoadingState(stateManager, false);
+        if (result !== null) {
+            stateManager.processUpdates(result);
+        }
     }
 
     /**

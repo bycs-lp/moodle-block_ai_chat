@@ -58,6 +58,8 @@ class Chat extends BaseContent {
             OUTPUT_WRAPPER: `[data-block_ai_chat-element='outputwrapper']`,
             CHAT_OUTPUT: `[data-block_ai_chat-element='chatoutput']`,
             HISTORY_MARKER: `[data-block_ai_chat-element='historymarker']`,
+            AGENT_APPROVAL_AREA: `[data-block_ai_chat-element='agentapprovalarea']`,
+            AGENT_RELOAD_AREA: `[data-block_ai_chat-element='agentreloadarea']`,
         };
         this._debouncedScrollToBottom = debounce((messageElement) => this._scrollToBottom(messageElement), 350);
         this._debouncedFocusInputTextarea = debounce(() => this._focusInputTextarea(), 350);
@@ -79,6 +81,7 @@ class Chat extends BaseContent {
             {watch: `messages:created`, handler: this._addMessageToChatArea},
             {watch: `personas${this.reactive.state.config.currentPersona}:deleted`, handler: this._removeCurrentPersona},
             {watch: `config.loadingState:updated`, handler: this._handleLoadingStateUpdated},
+            {watch: `agent:updated`, handler: this._renderAgentApprovals},
         ];
     }
 
@@ -128,6 +131,121 @@ class Chat extends BaseContent {
             };
         }
         this.reactive.dispatch('submitAiRequest', prompt, additionalOptions);
+    }
+
+    /**
+     * MBS-10761: Render pending tool-agent approval cards into a dedicated area at the bottom of CHAT_OUTPUT.
+     *
+     * @param {Object} watcher reactive watcher payload
+     * @param {Object} watcher.element the current agent state slice
+     */
+    async _renderAgentApprovals({element}) {
+        const chatOutput = this.getElement(this.selectors.CHAT_OUTPUT);
+        if (!chatOutput) {
+            return;
+        }
+        let area = chatOutput.querySelector(this.selectors.AGENT_APPROVAL_AREA);
+        if (!area) {
+            area = document.createElement('div');
+            area.setAttribute('data-block_ai_chat-element', 'agentapprovalarea');
+            chatOutput.appendChild(area);
+            area.addEventListener('click', this._handleAgentApprovalClick.bind(this));
+        }
+        area.innerHTML = '';
+        const runid = parseInt(element.runid, 10);
+        const approvals = Array.isArray(element.pendingApprovals) ? element.pendingApprovals : [];
+        if (runid <= 0 || approvals.length === 0) {
+            await this._renderReloadHint(element);
+            return;
+        }
+        for (const approval of approvals) {
+            const card = document.createElement('div');
+            area.appendChild(card);
+            const {html, js} = await Templates.renderForPromise('block_ai_chat/agent_approval_card', {
+                runid: runid,
+                callindex: approval.callindex,
+                tool: approval.tool,
+                describe: approval.describe,
+                token: approval.token,
+                affected: [],
+            });
+            Templates.replaceNode(card, html, js);
+        }
+        await this._renderReloadHint(element);
+    }
+
+    /**
+     * MBS-10761: Render the "reload page" hint after a successful mutating tool-agent run.
+     *
+     * @param {Object} element the current agent state slice
+     */
+    async _renderReloadHint(element) {
+        const chatOutput = this.getElement(this.selectors.CHAT_OUTPUT);
+        if (!chatOutput) {
+            return;
+        }
+        let area = chatOutput.querySelector(this.selectors.AGENT_RELOAD_AREA);
+        if (!area) {
+            area = document.createElement('div');
+            area.setAttribute('data-block_ai_chat-element', 'agentreloadarea');
+            chatOutput.appendChild(area);
+            area.addEventListener('click', this._handleAgentReloadClick.bind(this));
+        }
+        if (!element.reloadSuggested) {
+            area.innerHTML = '';
+            return;
+        }
+        // Already rendered for this run.
+        if (area.dataset.runid === String(element.runid)) {
+            return;
+        }
+        const {html, js} = await Templates.renderForPromise('block_ai_chat/agent_reload_hint', {});
+        area.innerHTML = '';
+        const placeholder = document.createElement('div');
+        area.appendChild(placeholder);
+        Templates.replaceNode(placeholder, html, js);
+        area.dataset.runid = String(element.runid);
+    }
+
+    /**
+     * MBS-10761: Handle click on the reload hint button.
+     *
+     * @param {MouseEvent} event
+     */
+    _handleAgentReloadClick(event) {
+        const button = event.target.closest('[data-action="agent-reload"]');
+        if (!button) {
+            return;
+        }
+        window.location.reload();
+    }
+
+    /**
+     * Delegated click handler for approval card buttons.
+     *
+     * @param {MouseEvent} event the click event
+     */
+    _handleAgentApprovalClick(event) {
+        const button = event.target.closest('[data-action]');
+        if (!button) {
+            return;
+        }
+        const card = button.closest('.block_ai_chat-agent-approval');
+        if (!card) {
+            return;
+        }
+        const runid = parseInt(card.dataset.runid, 10);
+        const callindex = parseInt(card.dataset.callindex, 10);
+        const token = card.dataset.token;
+        const action = button.dataset.action;
+        if (action === 'agent-approve') {
+            this.reactive.dispatch('approveToolCall', runid, callindex, token);
+        } else if (action === 'agent-reject') {
+            this.reactive.dispatch('rejectToolCall', runid, callindex, '');
+        } else if (action === 'agent-trust-session') {
+            const tool = card.dataset.tool || '';
+            this.reactive.dispatch('trustTool', tool, 'session');
+        }
     }
 
     async _handleLoadingStateUpdated({element}) {

@@ -26,5 +26,6 @@ export const RENDER_MODE = {
 
 export const MODES = {
     CHAT: 'chat',
-    AGENT: 'agent'
+    AGENT: 'agent',
+    TOOLAGENT: 'toolagent'
 };

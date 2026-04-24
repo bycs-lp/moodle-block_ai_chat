@@ -1,0 +1,75 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle. If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template block_ai_chat/agent_approval_card
+
+    Pending tool-call approval card for the MBS-10761 tool-agent flow.
+
+    Classes required for JS:
+    * data-action="agent-approve"
+    * data-action="agent-reject"
+    * data-action="agent-trust-session"
+
+    Classes required for styling:
+    * block_ai_chat-agent-approval
+
+    Context variables required for this template:
+    * runid - integer, id of the agent run
+    * callindex - integer, call index of the pending tool call
+    * tool - string, tool name (frankenstyle-like identifier)
+    * describe - string, user-facing description
+    * token - string, HMAC approval token
+    * affected - array of strings (optional)
+
+    Example context (json):
+    {
+        "runid": 12,
+        "callindex": 0,
+        "tool": "course_list",
+        "describe": "List the courses the user is enrolled in",
+        "token": "abc123",
+        "affected": ["Course: Math 101"]
+    }
+}}
+<div class="block_ai_chat-agent-approval card mb-2"
+     data-runid="{{runid}}"
+     data-callindex="{{callindex}}"
+     data-tool="{{tool}}"
+     data-token="{{token}}">
+    <div class="card-body">
+        <p class="mb-2">{{#str}}agenttoolagent_willperform, block_ai_chat{{/str}}</p>
+        <p class="font-weight-bold mb-1">{{describe}}</p>
+        {{#affected.length}}
+            <ul class="mb-2">
+                {{#affected}}
+                    <li>{{.}}</li>
+                {{/affected}}
+            </ul>
+        {{/affected.length}}
+        <div class="d-flex flex-wrap gap-2">
+            <button type="button" class="btn btn-primary" data-action="agent-approve">
+                {{#str}}agenttoolagent_approve, block_ai_chat{{/str}}
+            </button>
+            <button type="button" class="btn btn-secondary" data-action="agent-reject">
+                {{#str}}agenttoolagent_reject, block_ai_chat{{/str}}
+            </button>
+            <button type="button" class="btn btn-outline-secondary" data-action="agent-trust-session">
+                {{#str}}agenttoolagent_alwaystrustsession, block_ai_chat{{/str}}
+            </button>
+        </div>
+    </div>
+</div>

@@ -197,6 +197,9 @@ class Main extends BaseComponent {
             showAgentMode: this.reactive.state.static.renderMode === RENDER_MODE.MODAL
                 ? this.reactive.state.static.showAgentMode
                 : false,
+            showToolagentMode: this.reactive.state.static.renderMode === RENDER_MODE.MODAL
+                ? this.reactive.state.static.showToolagentMode
+                : false,
             showViews: this.reactive.state.static.renderMode === RENDER_MODE.MODAL
         });
         this.getElement(this.selectors.TITLEAREA_PLACEHOLDER).replaceWith(titleAreaComponent.getElement());

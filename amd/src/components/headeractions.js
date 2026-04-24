@@ -35,6 +35,7 @@ class HeaderActions extends BaseComponent {
             VIEWMODE_OPENFULL_BUTTON: '[data-block_ai_chat-element="viewmodeopenfullbutton"]',
             VIEWMODE_DOCKRIGHT_BUTTON: '[data-block_ai_chat-element="viewmodedockrightbutton"]',
             MODE_SWITCH: `[data-block_ai_chat-element='modeswitch']`,
+            TOOLAGENT_SWITCH: `[data-block_ai_chat-element='toolagentswitch']`,
             PERSONA_BANNER: `[data-block_ai_chat-element='personabanner']`,
             PERSONA_INFO_MODAL_MANAGE_PERSONA_BUTTON: `[data-block_ai_chat-element='personainfomodalpersonalistbutton']`,
             MFORM: `#page form.mform`,
@@ -75,6 +76,15 @@ class HeaderActions extends BaseComponent {
                 this.getElement(this.selectors.MODE_SWITCH),
                 'click',
                 this._clickModeSwitchListener
+            );
+        }
+
+        const toolagentSwitch = this.getElement(this.selectors.TOOLAGENT_SWITCH);
+        if (toolagentSwitch) {
+            this.addEventListener(
+                toolagentSwitch,
+                'click',
+                this._clickToolagentSwitchListener
             );
         }
 
@@ -266,33 +276,48 @@ class HeaderActions extends BaseComponent {
     async _modeUpdated({element}) {
         const modeChatString = await getString('modechat', 'block_ai_chat');
         const modeAgentString = await getString('modeagent', 'block_ai_chat');
+        const modeToolagentString = await getString('modetoolagent', 'block_ai_chat');
         const modeSwitch = this.getElement(this.selectors.MODE_SWITCH);
-        if (!modeSwitch) {
-            // We have no mode switch, so nothing to do.
-            return;
-        }
-        const mformElement = document.querySelector(this.selectors.MFORM);
-        if (
-            // TODO this can be improved, for example does not really work for dynamically hidden
-            //  forms like the one mod/forum/view.php.
-            mformElement
-            && window.getComputedStyle(mformElement).display !== 'none'
-            && window.getComputedStyle(mformElement).visibility !== 'hidden'
-        ) {
-            modeSwitch.classList.remove('d-none');
-        } else {
-            modeSwitch.classList.add('d-none');
-            this.reactive.dispatch('setMode', MODES.CHAT);
+        const toolagentSwitch = this.getElement(this.selectors.TOOLAGENT_SWITCH);
+
+        // The classic DOM-form agent mode toggle depends on an MFORM being visible.
+        if (modeSwitch) {
+            const mformElement = document.querySelector(this.selectors.MFORM);
+            const mformVisible = mformElement
+                && window.getComputedStyle(mformElement).display !== 'none'
+                && window.getComputedStyle(mformElement).visibility !== 'hidden';
+            if (mformVisible) {
+                modeSwitch.classList.remove('d-none');
+            } else {
+                modeSwitch.classList.add('d-none');
+                // Only force back to CHAT if we are in classic AGENT mode. Never downgrade the
+                // independent TOOLAGENT mode just because the page has no form.
+                if (element.mode === MODES.AGENT) {
+                    this.reactive.dispatch('setMode', MODES.CHAT);
+                }
+            }
+            modeSwitch.innerText = element.mode === MODES.AGENT ? modeAgentString : modeChatString;
+            if (element.mode === MODES.AGENT) {
+                modeSwitch.classList.remove('bg-dark');
+                modeSwitch.classList.add('bg-primary');
+            } else {
+                modeSwitch.classList.remove('bg-primary');
+                modeSwitch.classList.add('bg-dark');
+            }
         }
 
-        modeSwitch.innerText = element.mode === MODES.AGENT ? modeAgentString : modeChatString;
-        if (element.mode === MODES.AGENT) {
-            modeSwitch.classList.remove('bg-dark');
-            modeSwitch.classList.add('bg-primary');
-        } else {
-            modeSwitch.classList.remove('bg-primary');
-            modeSwitch.classList.add('bg-dark');
+        // Tool-Agent toggle is independent of MFORM presence.
+        if (toolagentSwitch) {
+            toolagentSwitch.innerText = element.mode === MODES.TOOLAGENT ? modeToolagentString : modeChatString;
+            if (element.mode === MODES.TOOLAGENT) {
+                toolagentSwitch.classList.remove('bg-dark');
+                toolagentSwitch.classList.add('bg-primary');
+            } else {
+                toolagentSwitch.classList.remove('bg-primary');
+                toolagentSwitch.classList.add('bg-dark');
+            }
         }
+
         // We need to check if we need to show or hide the persona banner.
         this._refreshPersona({element: this.reactive.state.config});
     }
@@ -309,6 +334,12 @@ class HeaderActions extends BaseComponent {
         }
         const currentMode = this.reactive.state.config.mode;
         const newMode = currentMode === MODES.AGENT ? MODES.CHAT : MODES.AGENT;
+        this.reactive.dispatch('setMode', newMode);
+    }
+
+    async _clickToolagentSwitchListener() {
+        const currentMode = this.reactive.state.config.mode;
+        const newMode = currentMode === MODES.TOOLAGENT ? MODES.CHAT : MODES.TOOLAGENT;
         this.reactive.dispatch('setMode', newMode);
     }
 }

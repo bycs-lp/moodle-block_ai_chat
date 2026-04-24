@@ -284,10 +284,56 @@ class manager {
             '*',
             ['chat', 'agent']
         );
-        $messages = [];
-        // Go over all log entries and create conversation items.
+        // Tool-agent turns are stored in local_ai_manager_agent_runs, not in request_log.
+        // Merge them in so the conversation history shows tool-agent interactions after page reload.
+        $agentruns = \local_ai_manager\local\agent\entity\agent_run::get_records(
+            [
+                'conversationid' => $conversationid,
+                'userid' => $userid,
+                'component' => $this->component,
+                'contextid' => $this->context->id,
+                'status' => \local_ai_manager\local\agent\entity\agent_run::STATUS_COMPLETED,
+            ],
+            'started',
+            'ASC',
+        );
+
+        // Build a combined timeline ordered by creation time so interleaved chat + tool-agent messages stay in order.
+        $timeline = [];
         foreach ($logentries as $logentry) {
-            $messages = array_merge($messages, $this->convert_log_entry_to_messages($logentry, $logentry->purpose));
+            $timeline[] = [
+                'sortkey' => (int) $logentry->timecreated,
+                'type' => 'log',
+                'entry' => $logentry,
+            ];
+        }
+        foreach ($agentruns as $run) {
+            $finaltext = (string) $run->get('final_text');
+            if ($finaltext === '') {
+                continue;
+            }
+            $timeline[] = [
+                'sortkey' => (int) $run->get('started'),
+                'type' => 'run',
+                'entry' => $run,
+            ];
+        }
+        usort($timeline, static fn($a, $b) => $a['sortkey'] <=> $b['sortkey']);
+
+        $messages = [];
+        foreach ($timeline as $item) {
+            if ($item['type'] === 'log') {
+                $messages = array_merge($messages, $this->convert_log_entry_to_messages($item['entry']));
+            } else {
+                $messages = array_merge($messages, $this->convert_agent_run_to_messages($item['entry']));
+            }
+        }
+
+        // MBS-10761: After a page reload, re-hydrate any tool-agent run that is still awaiting
+        // approval so the approval card reappears in the UI.
+        $pendingstate = $this->build_pending_agent_state($userid, $conversationid);
+        if ($pendingstate !== null) {
+            $messages[] = $pendingstate;
         }
         return [
             'code' => 200,
@@ -312,14 +358,38 @@ class manager {
             ['chat', 'agent'],
             1
         );
-        if (empty($logentries)) {
-            return 0;
+        $latest = 0;
+        $latesttime = 0;
+        if (!empty($logentries)) {
+            $entry = array_values($logentries)[0];
+            if (!empty($entry->itemid)) {
+                $latest = (int) $entry->itemid;
+                $latesttime = (int) ($entry->timecreated ?? 0);
+            }
         }
-        $entry = array_values($logentries)[0];
-        if (empty($entry->itemid)) {
-            return 0;
+        // Also consider conversations that only contain tool-agent turns.
+        $agentruns = \local_ai_manager\local\agent\entity\agent_run::get_records(
+            [
+                'userid' => $userid,
+                'component' => $this->component,
+                'contextid' => $this->context->id,
+            ],
+            'started',
+            'DESC',
+        );
+        foreach ($agentruns as $run) {
+            $conversationid = (int) $run->get('conversationid');
+            if ($conversationid <= 0) {
+                continue;
+            }
+            $started = (int) $run->get('started');
+            if ($started > $latesttime) {
+                $latest = $conversationid;
+                $latesttime = $started;
+            }
+            break;
         }
-        return $entry->itemid;
+        return $latest;
     }
 
     /**
@@ -405,6 +475,13 @@ class manager {
         }
         $options['itemid'] = $conversationid;
         unset($options['conversationid']);
+
+        // MBS-10761: Tool-agent mode dispatches to the orchestrator instead of a purpose-based request.
+        if ($mode === 'toolagent') {
+            require_capability('block/ai_chat:useagentmode', $this->context);
+            return $this->request_toolagent($prompt, (int) $options['itemid'], $options);
+        }
+
         $optionsrecords = options::get_options($this->context->id);
         $conversationlimit = 5;
         if ($optionsrecords && array_filter($optionsrecords, fn($record) => $record->name === 'historycontextmax') > 0) {
@@ -465,6 +542,128 @@ class manager {
     }
 
     /**
+     * Dispatch a tool-agent request to the {@see \local_ai_manager\agent\orchestrator} (MBS-10761).
+     *
+     * Returns reactive UI state updates containing the user prompt, the assistant answer
+     * (when the run is complete), and — when the orchestrator paused for approval — the
+     * agent state (pending approvals, run id, status).
+     *
+     * @param string $prompt User prompt.
+     * @param int $conversationid Conversation / item id.
+     * @param array $options Raw options array; `runid` may be set to resume an existing run,
+     *                       `draftitemids` may list draft file areas.
+     * @return array Reactive UI payload with `code`, `message`, `content`.
+     */
+    protected function request_toolagent(string $prompt, int $conversationid, array $options): array {
+        global $USER;
+        try {
+            /** @var \local_ai_manager\external\agent_runner_factory $factory */
+            $factory = \core\di::get(\local_ai_manager\external\agent_runner_factory::class);
+            $orchestrator = $factory->build($this->component, $this->context);
+        } catch (\Throwable $e) {
+            return [
+                'code' => 503,
+                'message' => get_string('agenttoolagent_disabled', 'block_ai_chat'),
+                'debuginfo' => $e->getMessage(),
+                'content' => [],
+            ];
+        }
+
+        try {
+            $resumeid = (int) ($options['runid'] ?? 0);
+            $draftitemids = array_values(array_map('intval', (array) ($options['draftitemids'] ?? [])));
+            if ($resumeid > 0) {
+                $result = $orchestrator->resume($resumeid, $USER, $this->context, $draftitemids);
+            } else {
+                $result = $orchestrator->run(
+                    $USER,
+                    $this->context,
+                    $prompt,
+                    $conversationid,
+                    null,
+                    $this->component,
+                    $draftitemids,
+                );
+            }
+        } catch (\moodle_exception $e) {
+            return [
+                'code' => 500,
+                'message' => $e->getMessage(),
+                'debuginfo' => '',
+                'content' => [],
+            ];
+        }
+
+        return [
+            'code' => 200,
+            'content' => $this->convert_run_result_to_updates($result, $prompt, $conversationid),
+        ];
+    }
+
+    /**
+     * Turn a {@see \local_ai_manager\agent\run_result} into reactive UI state updates.
+     *
+     * Always emits a user-prompt message. Adds an assistant message when the run completed
+     * and emits an `agent` state update carrying runid/status/pending approvals for the
+     * block_ai_chat frontend's approval card rendering.
+     *
+     * @param \local_ai_manager\agent\run_result $result The orchestrator outcome.
+     * @param string $prompt Original user prompt (empty when resuming).
+     * @param int $conversationid Conversation id for message metadata.
+     * @return array List of state updates.
+     */
+    protected function convert_run_result_to_updates(
+        \local_ai_manager\agent\run_result $result,
+        string $prompt,
+        int $conversationid,
+    ): array {
+        $updates = [];
+        if ($prompt !== '') {
+            $updates[] = [
+                'name' => 'messages',
+                'action' => 'put',
+                'fields' => json_encode([
+                    'id' => 'run-' . $result->runid . '-user',
+                    'conversationid' => $conversationid,
+                    'content' => s($prompt),
+                    'sender' => 'user',
+                    'messageMode' => 'toolagent',
+                    'rendered' => false,
+                ]),
+            ];
+        }
+        if ($result->is_complete() && $result->final_text !== null) {
+            $updates[] = [
+                'name' => 'messages',
+                'action' => 'put',
+                'fields' => json_encode([
+                    'id' => 'run-' . $result->runid . '-ai',
+                    'conversationid' => $conversationid,
+                    'content' => format_text($result->final_text, FORMAT_MARKDOWN, ['context' => $this->context]),
+                    'sender' => 'ai',
+                    'messageMode' => 'toolagent',
+                    'rendered' => false,
+                ]),
+            ];
+        }
+        $reloadsuggested = $result->is_complete() && $this->has_successful_mutation($result->tool_results);
+        $updates[] = [
+            'name' => 'agent',
+            'action' => 'put',
+            'fields' => json_encode([
+                'runid' => $result->runid,
+                'status' => $result->status,
+                'iterations' => $result->iterations,
+                'errorCode' => $result->error_code,
+                'errorMessage' => $result->error_message,
+                'pendingApprovals' => $result->pending_approvals,
+                'reloadSuggested' => $reloadsuggested,
+            ]),
+        ];
+        return $updates;
+    }
+
+    /**
      * Convert a log entry into two message entries for the reactive UI.
      *
      * @param stdClass $logentry the log entry from 'local_ai_manager_request_log' table
@@ -500,6 +699,172 @@ class manager {
                 ]),
             ],
         ];
+    }
+
+    /**
+     * Convert a completed tool-agent run into UI state updates so the conversation history
+     * shows tool-agent turns after a page reload.
+     *
+     * @param \local_ai_manager\local\agent\entity\agent_run $run a completed agent run
+     * @return array messages formatted as reactive UI state updates
+     */
+    protected function convert_agent_run_to_messages(
+        \local_ai_manager\local\agent\entity\agent_run $run,
+    ): array {
+        $runid = (int) $run->get('id');
+        $userprompt = (string) $run->get('user_prompt');
+        $finaltext = (string) $run->get('final_text');
+        $updates = [];
+        if ($userprompt !== '') {
+            $updates[] = [
+                'name' => 'messages',
+                'action' => 'put',
+                'fields' => json_encode([
+                    'id' => 'run-' . $runid . '-user',
+                    'conversationid' => (int) $run->get('conversationid'),
+                    'content' => s($userprompt),
+                    'sender' => 'user',
+                    'messageMode' => 'toolagent',
+                    'rendered' => false,
+                ]),
+            ];
+        }
+        if ($finaltext !== '') {
+            $updates[] = [
+                'name' => 'messages',
+                'action' => 'put',
+                'fields' => json_encode([
+                    'id' => 'run-' . $runid . '-ai',
+                    'conversationid' => (int) $run->get('conversationid'),
+                    'content' => format_text($finaltext, FORMAT_MARKDOWN, ['context' => $this->context]),
+                    'sender' => 'ai',
+                    'messageMode' => 'toolagent',
+                    'rendered' => false,
+                ]),
+            ];
+        }
+        return $updates;
+    }
+
+    /**
+     * Build the reactive `agent` state update carrying any still-pending approvals for a
+     * conversation, so the approval cards re-appear after a page reload.
+     *
+     * Fresh HMAC tokens are issued for each awaiting tool_call — the client needs a valid,
+     * unexpired token to submit the approve/reject external call.
+     *
+     * @param int $userid the id of the user
+     * @param int $conversationid the id of the conversation
+     * @return array|null a single state update, or null if nothing is pending
+     */
+    protected function build_pending_agent_state(int $userid, int $conversationid): ?array {
+        if ($conversationid <= 0) {
+            return null;
+        }
+        $runs = \local_ai_manager\local\agent\entity\agent_run::get_records(
+            [
+                'conversationid' => $conversationid,
+                'userid' => $userid,
+                'component' => $this->component,
+                'contextid' => $this->context->id,
+                'status' => \local_ai_manager\local\agent\entity\agent_run::STATUS_AWAITING_APPROVAL,
+            ],
+            'started',
+            'DESC',
+        );
+        if (empty($runs)) {
+            return null;
+        }
+        // Only the most recent awaiting run needs its card rendered — older ones were either
+        // resumed already or are stale.
+        $run = reset($runs);
+        $runid = (int) $run->get('id');
+
+        $calls = \local_ai_manager\local\agent\entity\tool_call::get_records(
+            ['runid' => $runid],
+            'callindex',
+            'ASC',
+        );
+        $pending = [];
+        $registry = \core\di::get(\local_ai_manager\agent\tool_registry::class);
+        $tokenissuer = \local_ai_manager\agent\approval_token::instance();
+        foreach ($calls as $call) {
+            if ($call->get('approval_state') !== \local_ai_manager\local\agent\entity\tool_call::APPROVAL_AWAITING) {
+                continue;
+            }
+            if ($call->get('result_json') !== null) {
+                continue;
+            }
+            $toolname = (string) $call->get('toolname');
+            $args = json_decode((string) $call->get('args_json'), true) ?: [];
+            try {
+                $tool = $registry->get_by_name($toolname);
+                $describe = $tool->describe_for_user($args);
+                $affected = $tool->get_affected_objects($args);
+            } catch (\Throwable $e) {
+                // Tool disappeared (e.g. disabled since issue) — show a fallback description.
+                $describe = $toolname;
+                $affected = [];
+            }
+            $token = $tokenissuer->issue(
+                $runid,
+                (int) $call->get('callindex'),
+                $userid,
+                (string) $call->get('args_hash'),
+            );
+            $pending[] = [
+                'callid' => (int) $call->get('id'),
+                'callindex' => (int) $call->get('callindex'),
+                'tool' => $toolname,
+                'args' => $args,
+                'token' => $token,
+                'describe' => $describe,
+                'affected' => $affected,
+                'dry_run' => null,
+            ];
+        }
+        if (empty($pending)) {
+            return null;
+        }
+        return [
+            'name' => 'agent',
+            'action' => 'put',
+            'fields' => json_encode([
+                'runid' => $runid,
+                'status' => (string) $run->get('status'),
+                'iterations' => (int) $run->get('iterations'),
+                'errorCode' => null,
+                'errorMessage' => null,
+                'pendingApprovals' => $pending,
+                'reloadSuggested' => false,
+            ]),
+        ];
+    }
+
+    /**
+     * Check whether a run's tool_results contain at least one successful mutating tool call.
+     *
+     * Used to decide whether the UI should offer a "Reload page" hint so newly created or
+     * updated course/module objects become visible in surrounding Moodle navigation.
+     *
+     * @param array $toolresults list of ['toolname' => string, 'ok' => bool, ...] entries
+     * @return bool
+     */
+    protected function has_successful_mutation(array $toolresults): bool {
+        foreach ($toolresults as $entry) {
+            if (empty($entry['ok'])) {
+                continue;
+            }
+            $toolname = (string) ($entry['toolname'] ?? '');
+            if ($toolname === '') {
+                continue;
+            }
+            // Mutating tool names follow the pattern *_create / *_update / *_delete.
+            if (preg_match('/_(create|update|delete)$/', $toolname) === 1) {
+                return true;
+            }
+        }
+        return false;
     }
 
     /**
@@ -634,6 +999,7 @@ class manager {
                 'showPersona' => $haseditcapability,
                 'showOptions' => $haseditcapability,
                 'showAgentMode' => has_capability('block/ai_chat:useagentmode', $this->context) && $agentavailable,
+                'showToolagentMode' => has_capability('block/ai_chat:useagentmode', $this->context),
                 'agentModeUnavailablePagetypes' => $agentunavailablepagetypes,
                 'canEditSystemPersonas' => has_capability('block/ai_chat:managepersonatemplates', $this->context),
                 'isAdmin' => is_siteadmin(),
@@ -664,6 +1030,15 @@ class manager {
             // adding of messages in the UI.
             'messages' => [],
             'personas' => $this->get_personas(),
+            // MBS-10761: Tool-agent run state slice. Populated by request_toolagent() via reactive updates.
+            'agent' => [
+                'runid' => 0,
+                'status' => '',
+                'iterations' => 0,
+                'errorCode' => '',
+                'errorMessage' => '',
+                'pendingApprovals' => [],
+            ],
         ];
     }
 
@@ -681,6 +1056,7 @@ class manager {
                 'showPersona' => new external_value(PARAM_BOOL, 'Configuring personas allowed'),
                 'showOptions' => new external_value(PARAM_BOOL, 'Configuring options allowed'),
                 'showAgentMode' => new external_value(PARAM_BOOL, 'Agent mode allowed'),
+                'showToolagentMode' => new external_value(PARAM_BOOL, 'Tool-Agent mode allowed'),
                 'agentModeUnavailablePagetypes' => new external_multiple_structure(
                     new external_value(
                         PARAM_RAW,
@@ -710,6 +1086,22 @@ class manager {
             'personas' => new external_multiple_structure(
                 self::get_persona_structure(),
             ),
+            'agent' => new external_single_structure([
+                'runid' => new external_value(PARAM_INT, 'Current tool-agent run id (0 = none)'),
+                'status' => new external_value(PARAM_ALPHANUMEXT, 'Run status'),
+                'iterations' => new external_value(PARAM_INT, 'Number of iterations performed'),
+                'errorCode' => new external_value(PARAM_ALPHANUMEXT, 'Stable error code'),
+                'errorMessage' => new external_value(PARAM_RAW, 'User-facing error message'),
+                'pendingApprovals' => new external_multiple_structure(
+                    new external_single_structure([
+                        'callindex' => new external_value(PARAM_INT, 'Call index within the run'),
+                        'tool' => new external_value(PARAM_ALPHANUMEXT, 'Tool name'),
+                        'describe' => new external_value(PARAM_RAW, 'User-facing description'),
+                        'token' => new external_value(PARAM_RAW, 'HMAC approval token'),
+                    ]),
+                    'Pending tool call approvals'
+                ),
+            ]),
         ]);
     }
 

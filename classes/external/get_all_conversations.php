@@ -100,6 +100,33 @@ class get_all_conversations extends external_api {
             }
         }
 
+        // Also include tool-agent conversations (stored in local_ai_manager_agent_runs).
+        $agentruns = \local_ai_manager\local\agent\entity\agent_run::get_records(
+            [
+                'userid' => $USER->id,
+                'component' => $component,
+                'contextid' => $contextid,
+            ],
+            'started',
+            'ASC',
+        );
+        foreach ($agentruns as $run) {
+            $conversationid = (int) $run->get('conversationid');
+            if ($conversationid <= 0) {
+                continue;
+            }
+            $started = (int) $run->get('started');
+            if (array_key_exists($conversationid, $result)) {
+                $result[$conversationid]['timecreated'] = max((int) $result[$conversationid]['timecreated'], $started);
+                continue;
+            }
+            $result[$conversationid] = [
+                'conversationid' => $conversationid,
+                'timecreated' => $started,
+                'title' => format_string((string) $run->get('user_prompt')),
+            ];
+        }
+
         if (!empty($result)) {
             uasort($result, function ($a, $b) {
                 return $b['timecreated'] <=> $a['timecreated'];

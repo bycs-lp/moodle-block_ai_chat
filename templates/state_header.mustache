@@ -30,6 +30,12 @@
             {{! This is populated dynamically with JS. }}
         </div>
     {{/showAgentMode}}
+    {{#showToolagentMode}}
+        <div class="block_ai_chat-toolagentswitch badge rounded-pill bg-dark cursor-pointer" data-block_ai_chat-element="toolagentswitch"{{!
+        }} title="{{#str}}modetoolagentinfo, block_ai_chat{{/str}}">
+            {{! This is populated dynamically with JS. }}
+        </div>
+    {{/showToolagentMode}}
     <div class="block_ai_chat-personabanner badge rounded-pill bg-info text-truncate cursor-pointer" data-block_ai_chat-element="personabanner"{{!
          }} title="{{#str}}personabannerinfo, block_ai_chat{{/str}}">
         {{! This is populated dynamically with JS. }}
