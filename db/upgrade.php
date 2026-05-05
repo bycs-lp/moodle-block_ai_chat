@@ -73,7 +73,7 @@ function xmldb_block_ai_chat_upgrade($oldversion) {
         $table->add_field('name', XMLDB_TYPE_CHAR, '255', null, null, null, null);
         $table->add_field('description', XMLDB_TYPE_TEXT, null, null, null, null, null);
         $table->add_field('content', XMLDB_TYPE_TEXT, null, null, null, null, null);
-        $table->add_field('enabled', XMLDB_TYPE_TEXT, null, null, null, null, null);
+        $table->add_field('enabled', XMLDB_TYPE_INTEGER, '1', null, null, null, null);
         $table->add_field('timecreated', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
         $table->add_field('timemodified', XMLDB_TYPE_INTEGER, '10', null, XMLDB_NOTNULL, null, '0');
         $table->add_key('primary', XMLDB_KEY_PRIMARY, ['id']);
@@ -99,6 +99,19 @@ function xmldb_block_ai_chat_upgrade($oldversion) {
     if ($oldversion < 2026012200) {
         block_ai_chat_cleanup_left_over_data();
         upgrade_block_savepoint(true, 2026012200, 'ai_chat');
+    }
+
+    if ($oldversion < 2026061100) {
+        // Fix the 'enabled' field type in block_ai_chat_aicontext table.
+        // It was incorrectly created as XMLDB_TYPE_TEXT instead of XMLDB_TYPE_INTEGER.
+        $table = new xmldb_table('block_ai_chat_aicontext');
+        $field = new xmldb_field('enabled', XMLDB_TYPE_INTEGER, '1', null, null, null, null, 'content');
+
+        if ($dbman->field_exists($table, $field)) {
+            $dbman->change_field_type($table, $field);
+        }
+
+        upgrade_block_savepoint(true, 2026061100, 'ai_chat');
     }
 
     return true;
