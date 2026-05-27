@@ -28,7 +28,6 @@ use block_ai_chat\local\aicontext_form_handler;
  * @covers     \block_ai_chat\local\aicontext_form_handler
  */
 final class aicontext_form_handler_test extends \advanced_testcase {
-
     /**
      * Ensures HTML tags are stripped from content when storing an aicontext record.
      */
@@ -44,7 +43,8 @@ final class aicontext_form_handler_test extends \advanced_testcase {
         $data = (object) [
             'name' => 'Cloze test',
             'description' => 'Test description',
-            'content' => "Curly braces must be escaped:<br /> * `{` becomes `\\{`<br /> * `}` becomes `\\}`<br /><br />Use valid Cloze syntax.",
+            'content' => 'Curly braces must be escaped:<br />'
+                . ' * { becomes \{<br /> * } becomes \}<br /><br />Use valid Cloze syntax.',
             'enabled' => 1,
             'pagetypes' => '',
         ];
