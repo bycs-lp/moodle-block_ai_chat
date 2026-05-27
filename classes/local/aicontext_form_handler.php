@@ -60,7 +60,7 @@ class aicontext_form_handler {
         $aicontextrecord->name = trim($data->name);
         // Description is optional, thus could be null.
         $aicontextrecord->description = property_exists($data, 'description') ? trim($data->description) : null;
-        $aicontextrecord->content = trim($data->content);
+        $aicontextrecord->content = html_to_text(trim($data->content), 0);
         $aicontextrecord->enabled = $data->enabled ? 1 : 0;
         $aicontextrecord->timemodified = time();
         if (!empty($aicontextrecord->id)) {
