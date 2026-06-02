@@ -450,10 +450,15 @@ body.block_ai_chat_dockright {
         }
     }
 
+    .block_ai_chat_modal:not(.embedded) {
+        z-index: 900 !important;
+    }
+
     .block_ai_chat_modal:not(.embedded) .modal-dialog {
         position: fixed;
         width: 50%;
         max-width: 50%;
+        top: var(--bycs-topbar-height, 0px);
         right: 0;
         bottom: 0;
         margin-top: 0;
