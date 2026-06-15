@@ -366,6 +366,10 @@ body.block_ai_chat_dockright.block_ai_chat_open #page-wrapper #page,
 body.block_ai_chat_dockright.block_ai_chat_open #sticky-footer {
   margin-right: 50%;
 }
+body.block_ai_chat_dockright.block_ai_chat_open .navbar.fixed-top,
+body.block_ai_chat_dockright.block_ai_chat_open bycs-topbar {
+  z-index: 1058;
+}
 body.block_ai_chat_dockright .block_ai_chat_modal:not(.embedded) .modal-dialog {
   position: fixed;
   width: 50%;
