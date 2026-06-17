@@ -442,19 +442,21 @@ body.block_ai_chat_openfull {
     }
 }
 
+// MBS-10833: When the chat window or dock-right panel is open it renders as a modal
+// (z-index 1057). Raise the Boost navbar above it so its popovers
+// (e.g. the user-profile menu) stay visible.
+body.block_ai_chat_chatwindow.block_ai_chat_open,
+body.block_ai_chat_dockright.block_ai_chat_open {
+    .navbar.fixed-top {
+        z-index: 1058;
+    }
+}
+
 body.block_ai_chat_dockright {
     &.block_ai_chat_open {
         #page-wrapper #page,
         #sticky-footer {
             margin-right: 50%;
-        }
-
-        // When docked right, the chat is a modal (z-index 1057). Raise the navbar/topbar
-        // above it so its popovers (e.g. the user-profile menu) stay visible.
-        // Covers Boost (.navbar.fixed-top) and mebis (bycs-topbar).
-        .navbar.fixed-top,
-        bycs-topbar {
-            z-index: 1058;
         }
     }
 
