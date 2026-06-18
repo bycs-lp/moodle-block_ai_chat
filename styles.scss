@@ -20,9 +20,11 @@
 
 @media (max-width: 576px) {
     #ai_chat_button {
-        top: 87vh;
+        // Use bottom positioning on mobile to keep the button visible while
+        // browser toolbars expand/collapse during scrolling.
+        top: unset;
+        bottom: 1rem;
         right: .5rem;
-        bottom: unset;
     }
 }
 
