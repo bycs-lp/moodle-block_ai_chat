@@ -20,19 +20,8 @@
 
 @media (max-width: 576px) {
     #ai_chat_button {
-        // Anchor to the bottom (analogous to the default desktop placement) instead of using a
-        // vh-based "top" value.
-        //
-        // MBS-10848: A previous "top: 87vh" caused the button to disappear/reappear while scrolling
-        // on mobile browsers. The "vh" unit references the *large* viewport (as if the browser
-        // toolbar were hidden) and never changes when the toolbar dynamically shows/hides while
-        // scrolling. As a result, the fixed button was pushed out of the *visible* area when the
-        // toolbar collapsed on scroll-down and only became visible again when the toolbar
-        // reappeared on scroll-up. This was not reproducible in dev tools because their device
-        // emulation uses a static viewport with no dynamically collapsing browser chrome.
-        //
-        // Anchoring with "bottom" tracks the actual visible viewport edge in every mobile browser
-        // regardless of the toolbar state.
+        // Use bottom positioning on mobile to keep the button visible while
+        // browser toolbars expand/collapse during scrolling.
         top: unset;
         bottom: 1rem;
         right: .5rem;
