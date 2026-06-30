@@ -618,8 +618,14 @@ class manager {
         $conversationcontext =
             $DB->get_record('block_ai_chat_options', ['contextid' => $this->context->id, 'name' => 'historycontextmax']);
         $currentpersonaid = persona::get_current_persona_id($this->context->id);
-        $aiconfig = ai_manager_utils::get_ai_config($USER, $this->context->id, null, ['agent']);
-        $agentavailable = $aiconfig['purposes'][0]['available'] === ai_manager_utils::AVAILABILITY_AVAILABLE;
+        // We need the availability of both the chat and the agent purpose to decide which mode the chatbot should
+        // start in. The order of the returned purposes is not guaranteed to match the requested order, so we filter
+        // out the relevant purpose sub-array by its purpose name.
+        $aiconfig = ai_manager_utils::get_ai_config($USER, $this->context->id, null, ['chat', 'agent']);
+        $chatpurpose = array_values(array_filter($aiconfig['purposes'], fn($purpose) => $purpose['purpose'] === 'chat'));
+        $agentpurpose = array_values(array_filter($aiconfig['purposes'], fn($purpose) => $purpose['purpose'] === 'agent'));
+        $chatavailable = !empty($chatpurpose) && $chatpurpose[0]['available'] === ai_manager_utils::AVAILABILITY_AVAILABLE;
+        $agentavailable = !empty($agentpurpose) && $agentpurpose[0]['available'] === ai_manager_utils::AVAILABILITY_AVAILABLE;
         $agentunavailablepagetypes = array_filter(
             array_map(
                 'trim',
@@ -636,6 +642,9 @@ class manager {
                 'showPersona' => $haseditcapability,
                 'showOptions' => $haseditcapability,
                 'showAgentMode' => has_capability('block/ai_chat:useagentmode', $this->context) && $agentavailable,
+                // Whether the chat purpose itself is available. Used by the frontend to decide whether to start
+                // directly in agent mode (if chat is not available but the agent mode is usable on this page).
+                'chatAvailable' => $chatavailable,
                 'agentModeUnavailablePagetypes' => $agentunavailablepagetypes,
                 'canEditSystemPersonas' => has_capability('block/ai_chat:managepersonatemplates', $this->context),
                 'isAdmin' => is_siteadmin(),
@@ -683,6 +692,7 @@ class manager {
                 'showPersona' => new external_value(PARAM_BOOL, 'Configuring personas allowed'),
                 'showOptions' => new external_value(PARAM_BOOL, 'Configuring options allowed'),
                 'showAgentMode' => new external_value(PARAM_BOOL, 'Agent mode allowed'),
+                'chatAvailable' => new external_value(PARAM_BOOL, 'Whether the chat purpose is available'),
                 'agentModeUnavailablePagetypes' => new external_multiple_structure(
                     new external_value(
                         PARAM_RAW,

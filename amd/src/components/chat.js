@@ -374,12 +374,15 @@ class Chat extends BaseContent {
      */
     async isAiChatAvailable() {
         const contextid = this.reactive.state.static.contextid;
-        const aiConfig = await getAiConfig(contextid, null, ['chat']);
+        // We check the availability of the purpose that matches the current mode. In agent mode the chatbot uses
+        // the 'agent' purpose, in chat mode the 'chat' purpose.
+        const purpose = this.reactive.state.config.mode === MODES.AGENT ? 'agent' : 'chat';
+        const aiConfig = await getAiConfig(contextid, null, [purpose]);
         if (aiConfig.availability.available === 'disabled') {
-            return aiConfig.availability.errormessage;
+            return aiConfig.availability.errormessage || await getString('aichatnotavailable', 'block_ai_chat');
         }
         if (aiConfig.purposes[0].available === 'disabled') {
-            return aiConfig.purposes[0].errormessage;
+            return aiConfig.purposes[0].errormessage || await getString('aichatnotavailable', 'block_ai_chat');
         }
         return '';
     }

@@ -21,7 +21,8 @@ import Mutations from 'block_ai_chat/mutations';
 import * as Ajax from 'core/ajax';
 import {exception as displayException, alert as alertModal} from 'core/notification';
 import Log from 'core/log';
-import {RENDER_MODE} from 'block_ai_chat/constants';
+import {RENDER_MODE, MODES} from 'block_ai_chat/constants';
+import {isMformVisibleOnPage} from 'block_ai_chat/utils';
 
 
 /**
@@ -79,6 +80,17 @@ export const init = async(contextid, mainElementSelector, modal = null, componen
     }
 
     state.static.renderMode = modal === null ? RENDER_MODE.EMBEDDED : RENDER_MODE.MODAL;
+
+    // Decide the initial mode. By default the chatbot starts in chat mode. However, if the chat purpose is not
+    // available but the agent mode is usable on this page, we start directly in agent mode. The agent mode is only
+    // usable in modal render mode, if the user is allowed to use it (and it is available) and if a form is present
+    // on the page. On pages without a form the chatbot stays in chat mode and will be shown as unavailable.
+    if (!state.static.chatAvailable
+        && state.static.renderMode === RENDER_MODE.MODAL
+        && state.static.showAgentMode
+        && isMformVisibleOnPage()) {
+        state.config.mode = MODES.AGENT;
+    }
 
     let reactiveChatName;
     if (state.static.renderMode === RENDER_MODE.MODAL) {
