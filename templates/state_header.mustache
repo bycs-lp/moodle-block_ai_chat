@@ -21,12 +21,13 @@
 
     Example context (json):
     {
+        "modeInfoTitle": "Click to toggle between \"chat\" and \"agent\" mode"
     }
 }}
 <div class="block_ai_chat-stateheader d-flex flex-row gap-2" data-block_ai_chat-element="stateheader">
     {{#showAgentMode}}
         <div class="block_ai_chat-modeswitch badge rounded-pill bg-dark cursor-pointer d-none" data-block_ai_chat-element="modeswitch"{{!
-        }} title="{{#str}}modeinfo, block_ai_chat{{/str}}">
+        }} title="{{modeInfoTitle}}">
             {{! This is populated dynamically with JS. }}
         </div>
     {{/showAgentMode}}

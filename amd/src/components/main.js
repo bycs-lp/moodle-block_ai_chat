@@ -15,6 +15,7 @@
 
 import {BaseComponent} from 'core/reactive';
 import Templates from 'core/templates';
+import {getString} from 'core/str';
 import {hash} from 'block_ai_chat/utils';
 import LocalStorage from 'core/localstorage';
 import ModalEvents from 'core/modal_events';
@@ -197,7 +198,9 @@ class Main extends BaseComponent {
             showAgentMode: this.reactive.state.static.renderMode === RENDER_MODE.MODAL
                 ? this.reactive.state.static.showAgentMode
                 : false,
-            showViews: this.reactive.state.static.renderMode === RENDER_MODE.MODAL
+            showViews: this.reactive.state.static.renderMode === RENDER_MODE.MODAL,
+            // We inject the string as a context variable so Mustache escapes it safely for the title attribute.
+            modeInfoTitle: await getString('modeinfo', 'block_ai_chat')
         });
         this.getElement(this.selectors.TITLEAREA_PLACEHOLDER).replaceWith(titleAreaComponent.getElement());
         titleAreaPlaceholder.remove();
