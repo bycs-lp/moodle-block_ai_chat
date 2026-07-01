@@ -25,6 +25,9 @@ import {showErrorToast} from 'block_ai_chat/utils';
 import {MODES} from 'block_ai_chat/constants';
 import * as DomExtractor from 'block_ai_chat/dom_extractor';
 import {debounce} from 'core/utils';
+import Log from 'core/log';
+
+const RAG_SELECTION_BRIDGE_KEY = 'localAiContentRagSelection';
 
 class Chat extends BaseContent {
     /**
@@ -121,6 +124,10 @@ class Chat extends BaseContent {
             return;
         }
         const additionalOptions = {};
+        const ragselectionbridge = window[RAG_SELECTION_BRIDGE_KEY];
+        if (ragselectionbridge && typeof ragselectionbridge.getSelected === 'function') {
+            additionalOptions.ragrecordids = ragselectionbridge.getSelected(this.reactive.state.static.contextid);
+        }
         if (this.reactive.state.config.mode === MODES.AGENT) {
             additionalOptions.agentoptions = {
                 formelements: DomExtractor.extractDomElements(),

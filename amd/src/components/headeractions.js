@@ -3,6 +3,9 @@ import {getString} from 'core/str';
 import {confirm as confirmModal, alert as alertModal} from 'core/notification';
 import ModalForm from 'core_form/modalform';
 import ModalCancel from 'core/modal_cancel';
+import ModalEvents from 'core/modal_events';
+import Templates from 'core/templates';
+import Fetch from 'core/fetch';
 import {MODES} from 'block_ai_chat/constants';
 
 /**
@@ -36,6 +39,7 @@ class HeaderActions extends BaseComponent {
             VIEWMODE_DOCKRIGHT_BUTTON: '[data-block_ai_chat-element="viewmodedockrightbutton"]',
             MODE_SWITCH: `[data-block_ai_chat-element='modeswitch']`,
             PERSONA_BANNER: `[data-block_ai_chat-element='personabanner']`,
+            RAG_SELECTION_BUTTON: `[data-block_ai_chat-element='ragselectionbutton']`,
             PERSONA_INFO_MODAL_MANAGE_PERSONA_BUTTON: `[data-block_ai_chat-element='personainfomodalpersonalistbutton']`,
             MFORM: `#page form.mform`,
         };
@@ -67,6 +71,11 @@ class HeaderActions extends BaseComponent {
             this.getElement(this.selectors.PERSONA_BANNER),
             'click',
             this._showPersonaInfoModal
+        );
+        this.addEventListener(
+            this.getElement(this.selectors.RAG_SELECTION_BUTTON),
+            'click',
+            this._showRagSelectionModal
         );
 
         const modeSwitch = this.getElement(this.selectors.MODE_SWITCH);
@@ -261,6 +270,54 @@ class HeaderActions extends BaseComponent {
                 personaInfoModal.hide();
             });
         }
+    }
+
+    async _showRagSelectionModal(event) {
+        event.preventDefault();
+
+        const contextid = this.reactive.state.static.contextid;
+        const title = await getString('aicontext', 'block_ai_chat');
+        const {html, js} = await Templates.renderForPromise('local_ai_content/rag_context_selector', {contextid});
+
+        const ragSelectionModal = await ModalCancel.create({
+            title,
+            body: html,
+            large: true,
+        });
+        Templates.runTemplateJS(js);
+
+        ragSelectionModal.getRoot().on(ModalEvents.hidden, async() => {
+            const modalElement = ragSelectionModal.getModal()[0];
+            const checkboxElements = modalElement.querySelectorAll('.rag-context-selector input[type="checkbox"]');
+            if (checkboxElements.length === 0) {
+                ragSelectionModal.destroy();
+                return;
+            }
+
+            const selectedIds = Array.from(
+                modalElement.querySelectorAll('.rag-context-selector input[type="checkbox"]:checked')
+            ).map((checkbox) => parseInt(checkbox.value, 10)).filter((id) => !isNaN(id) && id > 0);
+            const ragrecordids = selectedIds.join(',');
+
+            const ragselectionbridge = window.localAiContentRagSelection;
+            if (ragselectionbridge && typeof ragselectionbridge.setSelected === 'function') {
+                ragselectionbridge.setSelected(contextid, ragrecordids);
+            }
+
+            const response = await Fetch.performPost(
+                'local_ai_content',
+                `ragcontext/${contextid}`,
+                {body: JSON.stringify({ragrecordids})}
+            );
+            if (!response.ok) {
+                const errortitle = await getString('notice', 'block_ai_chat');
+                await alertModal(errortitle, `HTTP ${response.status}`);
+            }
+
+            ragSelectionModal.destroy();
+        });
+
+        await ragSelectionModal.show();
     }
 
     async _modeUpdated({element}) {

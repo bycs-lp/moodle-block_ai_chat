@@ -49,6 +49,12 @@ class request_ai extends external_api {
                     VALUE_DEFAULT,
                     '{}'
                 ),
+                'ragrecordids' => new external_value(
+                    PARAM_SEQUENCE,
+                    'Comma-separated list of RAG record IDs',
+                    VALUE_DEFAULT,
+                    ''
+                ),
             ]
         );
     }
@@ -61,27 +67,43 @@ class request_ai extends external_api {
      * @param string $mode The mode to be used (can be "chat" or "agent")
      * @param string $prompt The prompt to send to the AI
      * @param string $options Additional options for the AI request as stringified JSON
+     * @param string $ragrecordids Comma-separated list of RAG record IDs
      * @return array response array including status code and content array containing reactive state updates
      */
-    public static function execute(int $contextid, string $component, string $mode, string $prompt, string $options): array {
+    public static function execute(
+        int $contextid,
+        string $component,
+        string $mode,
+        string $prompt,
+        string $options,
+        string $ragrecordids
+    ): array {
         [
             'contextid' => $contextid,
             'component' => $component,
             'mode' => $mode,
             'prompt' => $prompt,
             'options' => $options,
+            'ragrecordids' => $ragrecordids,
         ] = external_api::validate_parameters(self::execute_parameters(), [
             'contextid' => $contextid,
             'component' => $component,
             'mode' => $mode,
             'prompt' => $prompt,
             'options' => $options,
+            'ragrecordids' => $ragrecordids,
         ]);
 
         $context = \context_helper::instance_by_id($contextid);
         self::validate_context($context);
 
         $options = json_decode($options, true);
+        if (!is_array($options)) {
+            $options = [];
+        }
+        if ($ragrecordids !== '') {
+            $options['ragrecordids'] = $ragrecordids;
+        }
 
         // We do not need capability for local_ai_manager, because it is checked in the ai_manager directly.
         require_capability('block/ai_chat:view', $context);
