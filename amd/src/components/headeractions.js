@@ -297,17 +297,17 @@ class HeaderActions extends BaseComponent {
             const selectedIds = Array.from(
                 modalElement.querySelectorAll('.rag-context-selector input[type="checkbox"]:checked')
             ).map((checkbox) => parseInt(checkbox.value, 10)).filter((id) => !isNaN(id) && id > 0);
-            const ragrecordids = selectedIds.join(',');
+            const sourceids = selectedIds.join(',');
 
             const ragselectionbridge = window.localAiContentRagSelection;
             if (ragselectionbridge && typeof ragselectionbridge.setSelected === 'function') {
-                ragselectionbridge.setSelected(contextid, ragrecordids);
+                ragselectionbridge.setSelected(contextid, sourceids);
             }
 
             const response = await Fetch.performPost(
                 'local_ai_content',
                 `ragcontext/${contextid}`,
-                {body: JSON.stringify({ragrecordids})}
+                {body: JSON.stringify({sourceids})}
             );
             if (!response.ok) {
                 const errortitle = await getString('notice', 'block_ai_chat');
