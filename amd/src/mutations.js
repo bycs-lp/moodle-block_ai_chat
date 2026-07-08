@@ -14,7 +14,6 @@
 // along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 
 import {callExternalFunctionReactiveUpdate} from 'block_ai_chat/utils';
-import Log from 'core/log';
 
 /**
  * Mutations for the AI Chat block.
@@ -48,13 +47,13 @@ export default class {
     async submitAiRequest(stateManager, prompt, additionalOptions) {
         this.setLoadingState(stateManager, true);
         const normalizedAdditionalOptions = additionalOptions || {};
-        const ragrecordids = typeof normalizedAdditionalOptions.ragrecordids === 'string'
-            ? normalizedAdditionalOptions.ragrecordids
+        const sourceids = typeof normalizedAdditionalOptions.sourceids === 'string'
+            ? normalizedAdditionalOptions.sourceids
             : '';
         const options = {
             conversationid: stateManager.state.config.currentConversationId,
             ...normalizedAdditionalOptions,
-            ragrecordids,
+            sourceids,
         };
 
         const requestOptions = JSON.stringify(options);
@@ -65,7 +64,7 @@ export default class {
                 mode: stateManager.state.config.mode,
                 prompt: prompt,
                 options: requestOptions,
-                ragrecordids,
+                sourceids,
             }
         );
         if (result === null) {

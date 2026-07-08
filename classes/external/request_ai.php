@@ -49,9 +49,9 @@ class request_ai extends external_api {
                     VALUE_DEFAULT,
                     '{}'
                 ),
-                'ragrecordids' => new external_value(
+                'sourceids' => new external_value(
                     PARAM_SEQUENCE,
-                    'Comma-separated list of RAG record IDs',
+                    'Comma-separated list of source IDs',
                     VALUE_DEFAULT,
                     ''
                 ),
@@ -67,7 +67,7 @@ class request_ai extends external_api {
      * @param string $mode The mode to be used (can be "chat" or "agent")
      * @param string $prompt The prompt to send to the AI
      * @param string $options Additional options for the AI request as stringified JSON
-     * @param string $ragrecordids Comma-separated list of RAG record IDs
+     * @param string $sourceids Comma-separated list of source IDs
      * @return array response array including status code and content array containing reactive state updates
      */
     public static function execute(
@@ -76,7 +76,7 @@ class request_ai extends external_api {
         string $mode,
         string $prompt,
         string $options,
-        string $ragrecordids
+        string $sourceids
     ): array {
         [
             'contextid' => $contextid,
@@ -84,14 +84,14 @@ class request_ai extends external_api {
             'mode' => $mode,
             'prompt' => $prompt,
             'options' => $options,
-            'ragrecordids' => $ragrecordids,
+            'sourceids' => $sourceids,
         ] = external_api::validate_parameters(self::execute_parameters(), [
             'contextid' => $contextid,
             'component' => $component,
             'mode' => $mode,
             'prompt' => $prompt,
             'options' => $options,
-            'ragrecordids' => $ragrecordids,
+            'sourceids' => $sourceids,
         ]);
 
         $context = \context_helper::instance_by_id($contextid);
@@ -101,8 +101,8 @@ class request_ai extends external_api {
         if (!is_array($options)) {
             $options = [];
         }
-        if ($ragrecordids !== '') {
-            $options['ragrecordids'] = $ragrecordids;
+        if ($sourceids !== '') {
+            $options['sourceids'] = $sourceids;
         }
 
         // We do not need capability for local_ai_manager, because it is checked in the ai_manager directly.
