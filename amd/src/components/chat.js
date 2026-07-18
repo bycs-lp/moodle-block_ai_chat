@@ -141,7 +141,9 @@ class Chat extends BaseContent {
         const temporaryPromptMessage = {
             'id': 'temporaryprompt',
             'sender': 'user',
-            'content': this.getElement(this.selectors.INPUT_TEXTAREA).value,
+            // Escape the raw prompt: the message template renders content unescaped, the persisted
+            // message is escaped server side, so the temporary one must be escaped here as well.
+            'content': this.escapeHtml(this.getElement(this.selectors.INPUT_TEXTAREA).value),
             'agentMode': false
         };
 
@@ -153,6 +155,20 @@ class Chat extends BaseContent {
             // Very hacky, but we need to fire this event manually to trigger the auto-resize.
             inputTextarea.dispatchEvent(new Event('input'));
         }
+    }
+
+    /**
+     * Escapes HTML special characters, mirroring PHP's htmlspecialchars() used for persisted messages.
+     *
+     * @param {string} text the raw text to escape
+     * @returns {string} the escaped text
+     */
+    escapeHtml(text) {
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
     }
 
     _handleKeyDownOnInputTextarea(event) {
