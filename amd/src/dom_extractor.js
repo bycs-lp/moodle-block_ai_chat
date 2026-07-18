@@ -188,6 +188,12 @@ export const extractDomElements = () => {
             elementData.checked = node.checked || false;
         }
 
+        // Check if the editor format is html or text.
+        if (type === 'textarea') {
+            const tiny = window.tinymce?.get(node.id);
+            elementData.editorFormat = tiny ? 'html' : 'text';
+        }
+
         // Add legacy _enabled dependency information if present.
         if (dependsOnEnabled) {
             elementData.dependsOnEnabled = dependsOnEnabled;

@@ -358,7 +358,9 @@ class Chat extends BaseContent {
             if (newValue.length === 0) {
                 newValue = 0;
             }
-            const displayValue = formElement.suggestiondisplayvalue || newValue.toString();
+            // The sanitized display value is the only value safe for the raw template rendering.
+            // An empty value means the sanitizer rejected the whole suggestion.
+            const displayValue = formElement.suggestiondisplayvalue || '';
             // Strip HTML tags to get plain text for computing a truncated preview of long suggestions.
             const plainText = displayValue.replace(/<[^>]*>/g, '');
             const isLong = plainText.length > maxPreviewLength;
