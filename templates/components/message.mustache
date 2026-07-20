@@ -30,7 +30,7 @@
 <div class="message {{^senderai}}agent{{/senderai}}{{#senderai}}ai{{/senderai}}"{{!
   }} data-block_ai_chat-component="message" data-block_ai_chat-messageid="{{id}}">
     <div class="content filter_mathjaxloader_equation{{#loading}} awaitanswer{{/loading}}">
-        <img src="{{globals.config.wwwroot}}/blocks/ai_chat/pix/ai-icon.svg" alt="" class="ai_chat_icon mr-2">
+        <img src="{{globals.config.wwwroot}}/blocks/ai_chat/pix/ai-icon.svg" alt="" class="ai_chat_icon me-2">
         <a data-block_ai_chat-element="copybutton" class="copy"
             {{!We use data-action and data-clipboard-target to make core/copy_to_clipboard work out of the box.}}
            data-action="copytoclipboard" data-clipboard-target="[data-block_ai_chat-messageid='{{id}}'] [data-block_ai_chat-element='messagecontent']"{{!
@@ -39,7 +39,7 @@
         {{#loading}}
             <div class="text small">
                 <div class="spinner-border text-secondary" role="status"></div>
-                <span class="ml-2">{{#str}} awaitanswer, block_ai_chat {{/str}}</span>
+                <span class="ms-2">{{#str}} awaitanswer, block_ai_chat {{/str}}</span>
             </div>
         {{/loading}}
         {{^loading}}

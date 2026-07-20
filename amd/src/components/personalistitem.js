@@ -37,7 +37,7 @@ class PersonaListItem extends BaseComponent {
             // This is our dummy object "no persona", skip it.
             return;
         }
-        this.getElement().classList.add('ml-2');
+        this.getElement().classList.add('ms-2');
         const editPersonaLink = this.getElement(this.selectors.EDIT_PERSONA_LINK);
         if (editPersonaLink) {
             this.addEventListener(editPersonaLink, 'click', async(e) => {

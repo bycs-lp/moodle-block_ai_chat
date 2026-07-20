@@ -78,7 +78,7 @@ if ($aicontextform->is_cancelled()) {
         $aicontextform->set_data($aicontextformhandler->get_data_for_aicontext_form($id));
     }
     echo $OUTPUT->header();
-    echo html_writer::start_div('w-75 d-flex flex-column align-items-center ml-auto mr-auto');
+    echo html_writer::start_div('w-75 d-flex flex-column align-items-center ms-auto me-auto');
     echo $OUTPUT->render_from_template(
         'block_ai_chat/edit_aicontext_heading',
         [
