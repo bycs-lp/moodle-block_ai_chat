@@ -106,10 +106,34 @@ class Chat extends BaseContent {
         const newelement = newcomponent.getElement();
         node.replaceChild(newelement, placeholder);
         this.reactive.dispatch('setMessageRendered', element.id, true);
+        this._highlightCodeBlocks(newelement);
 
         // Pass the element to enable smart scrolling for long responses.
         this._debouncedScrollToBottom(newelement);
         this._debouncedFocusInputTextarea();
+    }
+
+    /**
+     * Applies syntax highlighting to the code blocks of a freshly inserted message.
+     *
+     * The chat output is formatted with filters disabled, so filter_codehighlighter never runs and never
+     * loads Prism. Even on pages where it did run, its initialization highlights only once on page load,
+     * which does not cover messages arriving via AJAX.
+     *
+     * @param {HTMLElement} messageElement the message node that has just been added to the DOM
+     */
+    async _highlightCodeBlocks(messageElement) {
+        if (!messageElement.querySelector('pre code')) {
+            return;
+        }
+        try {
+            const PrismJS = await import('filter_codehighlighter/prism');
+            PrismJS.plugins.customClass.prefix('prism-');
+            PrismJS.highlightAllUnder(messageElement);
+        } catch (exception) {
+            // The codehighlighter filter is an optional plugin, so code blocks just stay unhighlighted.
+            window.console.debug('block_ai_chat: code highlighting unavailable', exception);
+        }
     }
 
     async _submitAiRequestListener() {
