@@ -20,6 +20,7 @@ import {constants as TinyAiConstants} from 'tiny_ai/constants';
 import Templates from 'core/templates';
 import {getAiConfig} from 'local_ai_manager/config';
 import {getString} from 'core/str';
+import Log from 'core/log';
 import {alert as displayAlert} from 'core/notification';
 import {showErrorToast} from 'block_ai_chat/utils';
 import {MODES} from 'block_ai_chat/constants';
@@ -120,6 +121,9 @@ class Chat extends BaseContent {
      * loads Prism. Even on pages where it did run, its initialization highlights only once on page load,
      * which does not cover messages arriving via AJAX.
      *
+     * Workaround: we deep-include the filter's Prism module here until MDL-88910
+     * (https://moodle.atlassian.net/browse/MDL-88910) ships the client-side rehighlight in the filter itself.
+     *
      * @param {HTMLElement} messageElement the message node that has just been added to the DOM
      */
     async _highlightCodeBlocks(messageElement) {
@@ -132,7 +136,7 @@ class Chat extends BaseContent {
             PrismJS.highlightAllUnder(messageElement);
         } catch (exception) {
             // The codehighlighter filter is an optional plugin, so code blocks just stay unhighlighted.
-            window.console.debug('block_ai_chat: code highlighting unavailable', exception);
+            Log.debug('block_ai_chat: code highlighting unavailable', exception);
         }
     }
 
