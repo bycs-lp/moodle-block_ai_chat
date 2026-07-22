@@ -169,9 +169,9 @@ class Chat extends BaseContent {
         const temporaryPromptMessage = {
             'id': 'temporaryprompt',
             'sender': 'user',
-            // Escape the raw prompt: the message template renders content unescaped, the persisted
-            // message is escaped server side, so the temporary one must be escaped here as well.
-            'content': this.escapeHtml(this.getElement(this.selectors.INPUT_TEXTAREA).value),
+            // Format the raw prompt like the persisted message (server side format_text(FORMAT_PLAIN)), so
+            // the temporary message keeps line breaks and indentation and is safe for unescaped rendering.
+            'content': this.formatPlainText(this.getElement(this.selectors.INPUT_TEXTAREA).value),
             'agentMode': false
         };
 
@@ -186,17 +186,20 @@ class Chat extends BaseContent {
     }
 
     /**
-     * Escapes HTML special characters, mirroring PHP's htmlspecialchars() used for persisted messages.
+     * Formats a raw prompt for display, mirroring the server side format_text(..., FORMAT_PLAIN): escapes
+     * HTML special characters, keeps indentation via non-breaking spaces and turns line breaks into <br>.
      *
-     * @param {string} text the raw text to escape
-     * @returns {string} the escaped text
+     * @param {string} text the raw text to format
+     * @returns {string} the formatted, display-safe text
      */
-    escapeHtml(text) {
+    formatPlainText(text) {
         return text
             .replace(/&/g, '&amp;')
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
-            .replace(/"/g, '&quot;');
+            .replace(/"/g, '&quot;')
+            .replace(/ {2}/g, '&nbsp; ')
+            .replace(/\n/g, '<br>');
     }
 
     _handleKeyDownOnInputTextarea(event) {

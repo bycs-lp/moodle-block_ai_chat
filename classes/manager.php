@@ -480,7 +480,9 @@ class manager {
                 'fields' => json_encode([
                     'id' => $logentry->id . '-1',
                     'conversationid' => $logentry->itemid,
-                    'content' => htmlspecialchars($logentry->prompttext),
+                    // FORMAT_PLAIN escapes the raw prompt and turns line breaks into <br> so multi-line
+                    // input (e.g. pasted code) keeps its formatting when rendered unescaped in the template.
+                    'content' => format_text($logentry->prompttext, FORMAT_PLAIN),
                     'sender' => 'user',
                     'messageMode' => 'chat',
                     'rendered' => false,
