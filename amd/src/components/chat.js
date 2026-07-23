@@ -198,6 +198,7 @@ class Chat extends BaseContent {
             .replace(/</g, '&lt;')
             .replace(/>/g, '&gt;')
             .replace(/"/g, '&quot;')
+            // HTML collapses multiple spaces into one, so replace each pair by a protected space to keep indentation.
             .replace(/ {2}/g, '&nbsp; ')
             .replace(/\n/g, '<br>');
     }
