@@ -20,6 +20,7 @@ import {constants as TinyAiConstants} from 'tiny_ai/constants';
 import Templates from 'core/templates';
 import {getAiConfig} from 'local_ai_manager/config';
 import {getString} from 'core/str';
+import Log from 'core/log';
 import {alert as displayAlert} from 'core/notification';
 import {showErrorToast} from 'block_ai_chat/utils';
 import {MODES} from 'block_ai_chat/constants';
@@ -106,10 +107,37 @@ class Chat extends BaseContent {
         const newelement = newcomponent.getElement();
         node.replaceChild(newelement, placeholder);
         this.reactive.dispatch('setMessageRendered', element.id, true);
+        this._highlightCodeBlocks(newelement);
 
         // Pass the element to enable smart scrolling for long responses.
         this._debouncedScrollToBottom(newelement);
         this._debouncedFocusInputTextarea();
+    }
+
+    /**
+     * Applies syntax highlighting to the code blocks of a freshly inserted message.
+     *
+     * The chat output is formatted with filters disabled, so filter_codehighlighter never runs and never
+     * loads Prism. Even on pages where it did run, its initialization highlights only once on page load,
+     * which does not cover messages arriving via AJAX.
+     *
+     * Workaround: we deep-include the filter's Prism module here until MDL-88910
+     * (https://moodle.atlassian.net/browse/MDL-88910) ships the client-side rehighlight in the filter itself.
+     *
+     * @param {HTMLElement} messageElement the message node that has just been added to the DOM
+     */
+    async _highlightCodeBlocks(messageElement) {
+        if (!messageElement.querySelector('pre code')) {
+            return;
+        }
+        try {
+            const PrismJS = await import('filter_codehighlighter/prism');
+            PrismJS.plugins.customClass.prefix('prism-');
+            PrismJS.highlightAllUnder(messageElement);
+        } catch (exception) {
+            // The codehighlighter filter is an optional plugin, so code blocks just stay unhighlighted.
+            Log.debug('block_ai_chat: code highlighting unavailable', exception);
+        }
     }
 
     async _submitAiRequestListener() {
@@ -141,7 +169,9 @@ class Chat extends BaseContent {
         const temporaryPromptMessage = {
             'id': 'temporaryprompt',
             'sender': 'user',
-            'content': this.getElement(this.selectors.INPUT_TEXTAREA).value,
+            // Format the raw prompt like the persisted message (server side format_text(FORMAT_PLAIN)), so
+            // the temporary message keeps line breaks and indentation and is safe for unescaped rendering.
+            'content': this.formatPlainText(this.getElement(this.selectors.INPUT_TEXTAREA).value),
             'agentMode': false
         };
 
@@ -153,6 +183,24 @@ class Chat extends BaseContent {
             // Very hacky, but we need to fire this event manually to trigger the auto-resize.
             inputTextarea.dispatchEvent(new Event('input'));
         }
+    }
+
+    /**
+     * Formats a raw prompt for display, mirroring the server side format_text(..., FORMAT_PLAIN): escapes
+     * HTML special characters, keeps indentation via non-breaking spaces and turns line breaks into <br>.
+     *
+     * @param {string} text the raw text to format
+     * @returns {string} the formatted, display-safe text
+     */
+    formatPlainText(text) {
+        return text
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            // HTML collapses multiple spaces into one, so replace each pair by a protected space to keep indentation.
+            .replace(/ {2}/g, '&nbsp; ')
+            .replace(/\n/g, '<br>');
     }
 
     _handleKeyDownOnInputTextarea(event) {
@@ -358,7 +406,9 @@ class Chat extends BaseContent {
             if (newValue.length === 0) {
                 newValue = 0;
             }
-            const displayValue = formElement.suggestiondisplayvalue || newValue.toString();
+            // The sanitized display value is the only value safe for the raw template rendering.
+            // An empty value means the sanitizer rejected the whole suggestion.
+            const displayValue = formElement.suggestiondisplayvalue || '';
             // Strip HTML tags to get plain text for computing a truncated preview of long suggestions.
             const plainText = displayValue.replace(/<[^>]*>/g, '');
             const isLong = plainText.length > maxPreviewLength;

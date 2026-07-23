@@ -71,15 +71,24 @@ const injectSuggestionIntoForm = (button) => {
     const relatedElement = formElements.filter(formElement => formElement.id === button.dataset.block_ai_chatForElement)[0];
 
     if (relatedElement.type === 'textarea') {
-        // The display value is already clean HTML from the backend (markdown_to_html + format_text).
-        // The browser automatically decodes HTML entities from data-attributes.
-        const htmlContent = button.dataset.block_ai_chatSuggestiondisplayvalue
-            || button.dataset.block_ai_chatSuggestionvalue;
-        const tiny = window.tinymce?.get(relatedElement.id);
-        if (tiny) {
-            tiny.setContent(htmlContent);
+        // The display value is the only value safe for HTML injection: it is sanitized HTML
+        // from the backend (markdown_to_html + format_text). The browser automatically
+        // decodes HTML entities from data-attributes.
+        const htmlContent = button.dataset.block_ai_chatSuggestiondisplayvalue;
+
+        if (relatedElement.editorFormat === 'html') {
+            // An empty display value means the sanitizer rejected the whole suggestion,
+            // so there is nothing safe to inject.
+            if (htmlContent) {
+                const tiny = window.tinymce?.get(relatedElement.id);
+                if (tiny) {
+                    tiny.setContent(htmlContent);
+                }
+                htmlElement.value = htmlContent;
+            }
+        } else {
+            htmlElement.value = button.dataset.block_ai_chatSuggestionvalue;
         }
-        htmlElement.value = htmlContent;
     } else if (relatedElement.type === 'checkbox') {
         if (parseInt(button.dataset.block_ai_chatSuggestionvalue) === 1) {
             // We cannot set the value, because it won't fire events. So the mform YUI won't recognize a change.
