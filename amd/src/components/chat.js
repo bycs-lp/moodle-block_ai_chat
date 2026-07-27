@@ -378,7 +378,7 @@ class Chat extends BaseContent {
         if (aiConfig.availability.available === 'disabled') {
             return aiConfig.availability.errormessage;
         }
-        if (aiConfig.purposes[0].available === 'disabled') {
+        if (aiConfig.purposes[0].available === 'disabled' || aiConfig.purposes[0].available === 'hidden') {
             return aiConfig.purposes[0].errormessage;
         }
         return '';
