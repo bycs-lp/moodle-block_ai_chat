@@ -296,7 +296,11 @@ class HeaderActions extends BaseComponent {
         if (!this.reactive.state.static.chatAvailable) {
             modeSwitch.classList.remove('cursor-pointer');
             modeSwitch.classList.add('opacity-50');
-            modeSwitch.setAttribute('aria-disabled', 'true');
+            modeSwitch.setAttribute('disabled', 'disabled');
+        } else {
+            modeSwitch.classList.add('cursor-pointer');
+            modeSwitch.classList.remove('opacity-50');
+            modeSwitch.removeAttribute('disabled');
         }
         // We need to check if we need to show or hide the persona banner.
         this._refreshPersona({element: this.reactive.state.config});
