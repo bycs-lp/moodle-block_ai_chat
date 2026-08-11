@@ -45,7 +45,10 @@ along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
         <div data-block_ai_chat-element="titleareaplaceholder">
             {{! Will be replaced by the title component template components/title.mustache anyway. }}
             {{! However, it is needed to render the modal, because it will complain about a missing title region otherwise. }}
-            <h5 id="{{uniqid}}-modal-title" class="modal-title text-truncate" data-region="title"></h5>
+            <h5 id="{{uniqid}}-modal-title" class="modal-title text-truncate" data-region="title">
+                {{! Just a fallback string, so mustache lint is content, will be set by JS.}}
+                {{#str}}pluginname, block_ai_chat{{/str}}
+            </h5>
         </div>
     {{/header}}
     {{$body}}

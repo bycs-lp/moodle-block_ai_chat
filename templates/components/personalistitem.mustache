@@ -35,6 +35,10 @@
 </div>
 {{#js}}
     require(['block_ai_chat/components/personalistitem'], function(component) {
-        component.init('[data-block_ai_chat-component="personalistitem"][data-id="personalistitem-{{uniqid}}"][data-block_ai_chat-persona-id="{{id}}"]');
+        const selector =
+            '[data-block_ai_chat-component="personalistitem"]' +
+            '[data-id="personalistitem-{{uniqid}}"]' +
+            '[data-block_ai_chat-persona-id="{{id}}"]';
+        component.init(selector);
     });
 {{/js}}
