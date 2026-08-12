@@ -5,7 +5,6 @@ import ModalForm from 'core_form/modalform';
 import ModalCancel from 'core/modal_cancel';
 import ModalEvents from 'core/modal_events';
 import Templates from 'core/templates';
-import Fetch from 'core/fetch';
 import {MODES} from 'block_ai_chat/constants';
 
 /**
@@ -286,34 +285,8 @@ class HeaderActions extends BaseComponent {
         });
         Templates.runTemplateJS(js);
 
-        ragSelectionModal.getRoot().on(ModalEvents.hidden, async() => {
-            const modalElement = ragSelectionModal.getModal()[0];
-            const checkboxElements = modalElement.querySelectorAll('.rag-context-selector input[type="checkbox"]');
-            if (checkboxElements.length === 0) {
-                ragSelectionModal.destroy();
-                return;
-            }
-
-            const selectedIds = Array.from(
-                modalElement.querySelectorAll('.rag-context-selector input[type="checkbox"]:checked')
-            ).map((checkbox) => parseInt(checkbox.value, 10)).filter((id) => !isNaN(id) && id > 0);
-            const sourceids = selectedIds.join(',');
-
-            const ragselectionbridge = window.localAiContentRagSelection;
-            if (ragselectionbridge && typeof ragselectionbridge.setSelected === 'function') {
-                ragselectionbridge.setSelected(contextid, sourceids);
-            }
-
-            const response = await Fetch.performPost(
-                'local_ai_content',
-                `ragcontext/${contextid}`,
-                {body: JSON.stringify({sourceids})}
-            );
-            if (!response.ok) {
-                const errortitle = await getString('notice', 'block_ai_chat');
-                await alertModal(errortitle, `HTTP ${response.status}`);
-            }
-
+        // The React component owns selection state and persistence end-to-end.
+        ragSelectionModal.getRoot().on(ModalEvents.hidden, () => {
             ragSelectionModal.destroy();
         });
 
