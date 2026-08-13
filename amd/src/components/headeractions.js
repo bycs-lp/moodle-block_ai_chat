@@ -3,6 +3,7 @@ import {getString} from 'core/str';
 import {confirm as confirmModal, alert as alertModal} from 'core/notification';
 import ModalForm from 'core_form/modalform';
 import ModalCancel from 'core/modal_cancel';
+import ModalSaveCancel from 'core/modal_save_cancel';
 import ModalEvents from 'core/modal_events';
 import Templates from 'core/templates';
 import {MODES} from 'block_ai_chat/constants';
@@ -38,7 +39,7 @@ class HeaderActions extends BaseComponent {
             VIEWMODE_DOCKRIGHT_BUTTON: '[data-block_ai_chat-element="viewmodedockrightbutton"]',
             MODE_SWITCH: `[data-block_ai_chat-element='modeswitch']`,
             PERSONA_BANNER: `[data-block_ai_chat-element='personabanner']`,
-            RAG_SELECTION_BUTTON: `[data-block_ai_chat-element='ragselectionbutton']`,
+            SOURCE_SELECTION_BUTTON: `[data-block_ai_chat-element='sourceselectionbutton']`,
             PERSONA_INFO_MODAL_MANAGE_PERSONA_BUTTON: `[data-block_ai_chat-element='personainfomodalpersonalistbutton']`,
             MFORM: `#page form.mform`,
         };
@@ -72,9 +73,9 @@ class HeaderActions extends BaseComponent {
             this._showPersonaInfoModal
         );
         this.addEventListener(
-            this.getElement(this.selectors.RAG_SELECTION_BUTTON),
+            this.getElement(this.selectors.SOURCE_SELECTION_BUTTON),
             'click',
-            this._showRagSelectionModal
+            this._showSourceSelectionModal
         );
 
         const modeSwitch = this.getElement(this.selectors.MODE_SWITCH);
@@ -271,26 +272,38 @@ class HeaderActions extends BaseComponent {
         }
     }
 
-    async _showRagSelectionModal(event) {
+    async _showSourceSelectionModal(event) {
         event.preventDefault();
 
         const contextid = this.reactive.state.static.contextid;
         const title = await getString('aicontext', 'block_ai_chat');
-        const {html, js} = await Templates.renderForPromise('local_ai_content/rag_context_selector', {contextid});
+        const {html, js} = await Templates.renderForPromise('local_ai_content/source_selector', {contextid});
 
-        const ragSelectionModal = await ModalCancel.create({
+        const sourceSelectionModal = await ModalSaveCancel.create({
             title,
             body: html,
             large: true,
         });
         Templates.runTemplateJS(js);
 
-        // The React component owns selection state and persistence end-to-end.
-        ragSelectionModal.getRoot().on(ModalEvents.hidden, () => {
-            ragSelectionModal.destroy();
+        sourceSelectionModal.getRoot().on(ModalEvents.save, async(e) => {
+            e.preventDefault();
+            const bridge = window.localAiContentSourceSelection;
+            if (!bridge || typeof bridge.saveSelection !== 'function') {
+                return;
+            }
+            const saved = await bridge.saveSelection(contextid);
+            if (saved) {
+                sourceSelectionModal.hide();
+            }
         });
 
-        await ragSelectionModal.show();
+        // The React component owns selection state and persistence end-to-end.
+        sourceSelectionModal.getRoot().on(ModalEvents.hidden, () => {
+            sourceSelectionModal.destroy();
+        });
+
+        await sourceSelectionModal.show();
     }
 
     async _modeUpdated({element}) {
