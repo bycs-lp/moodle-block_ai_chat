@@ -106,3 +106,20 @@ export const stripHtmlTags = (textWithTags) => {
     // Trim leading/trailing whitespace
     return text.trim();
 };
+
+/**
+ * Determine whether a usable (visible) Moodle form is present on the current page.
+ *
+ * The agent mode relies on a form being present on the page (it reads and fills its form elements).
+ * This helper is used both for deciding the initial chatbot mode and for toggling the mode switch.
+ *
+ * @returns {boolean} true if a visible mform is present on the page
+ */
+export const isMformVisibleOnPage = () => {
+    const mformElement = document.querySelector('#page form.mform');
+    if (!mformElement) {
+        return false;
+    }
+    const computedStyle = window.getComputedStyle(mformElement);
+    return computedStyle.display !== 'none' && computedStyle.visibility !== 'hidden';
+};

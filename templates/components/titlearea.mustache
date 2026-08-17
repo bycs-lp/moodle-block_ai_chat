@@ -45,6 +45,9 @@ along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
 </div>
 {{#js}}
     require(['block_ai_chat/components/titlearea'], (TitleAreaComponent) => {
-        TitleAreaComponent.init('[data-block_ai_chat-component="titlearea"][data-id="titlearea-{{uniqid}}"]');
+        const selector =
+            '[data-block_ai_chat-component="titlearea"]' +
+            '[data-id="titlearea-{{uniqid}}"]';
+        TitleAreaComponent.init(selector);
     });
 {{/js}}

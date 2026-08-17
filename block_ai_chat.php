@@ -75,7 +75,7 @@ class block_ai_chat extends block_base {
             $USER,
             $context->id,
             null,
-            ['chat', 'singleprompt', 'translate', 'itt', 'imggen', 'tts']
+            ['chat', 'agent', 'singleprompt', 'translate', 'itt', 'imggen', 'tts']
         );
         if ($aiconfig['availability']['available'] === ai_manager_utils::AVAILABILITY_HIDDEN) {
             return $this->content;

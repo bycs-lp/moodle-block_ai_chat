@@ -39,6 +39,7 @@ $string['ai_chat:managepersonatemplates'] = 'Manage global persona templates';
 $string['ai_chat:myaddinstance'] = 'Add an AI Chat block to my moodle';
 $string['ai_chat:useagentmode'] = 'Use agent mode';
 $string['ai_chat:view'] = 'Access the AI Chat block';
+$string['aichatnotavailable'] = 'The AI chat is currently not available.';
 $string['aicontext'] = 'AI context';
 $string['aicontextdeleted'] = 'AI context deleted';
 $string['aicontextdescription'] = 'Description what the context is and what it is for (optional)';

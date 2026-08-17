@@ -4,6 +4,7 @@ import {confirm as confirmModal, alert as alertModal} from 'core/notification';
 import ModalForm from 'core_form/modalform';
 import ModalCancel from 'core/modal_cancel';
 import {MODES} from 'block_ai_chat/constants';
+import {isMformVisibleOnPage} from 'block_ai_chat/utils';
 
 /**
  * Component representing a message in the ai_chat.
@@ -37,7 +38,6 @@ class HeaderActions extends BaseComponent {
             MODE_SWITCH: `[data-block_ai_chat-element='modeswitch']`,
             PERSONA_BANNER: `[data-block_ai_chat-element='personabanner']`,
             PERSONA_INFO_MODAL_MANAGE_PERSONA_BUTTON: `[data-block_ai_chat-element='personainfomodalpersonalistbutton']`,
-            MFORM: `#page form.mform`,
         };
     }
 
@@ -271,13 +271,10 @@ class HeaderActions extends BaseComponent {
             // We have no mode switch, so nothing to do.
             return;
         }
-        const mformElement = document.querySelector(this.selectors.MFORM);
         if (
             // TODO this can be improved, for example does not really work for dynamically hidden
             //  forms like the one mod/forum/view.php.
-            mformElement
-            && window.getComputedStyle(mformElement).display !== 'none'
-            && window.getComputedStyle(mformElement).visibility !== 'hidden'
+            isMformVisibleOnPage()
         ) {
             modeSwitch.classList.remove('d-none');
         } else {
@@ -293,11 +290,27 @@ class HeaderActions extends BaseComponent {
             modeSwitch.classList.remove('bg-primary');
             modeSwitch.classList.add('bg-dark');
         }
+        // If the chat purpose is not available, the chatbot is locked into agent mode. The mode switch stays visible
+        // to indicate the current mode, but switching back to chat mode is not possible, so we render it as not
+        // clickable.
+        if (!this.reactive.state.static.chatAvailable) {
+            modeSwitch.classList.remove('cursor-pointer');
+            modeSwitch.classList.add('opacity-50');
+            modeSwitch.setAttribute('disabled', 'disabled');
+        } else {
+            modeSwitch.classList.add('cursor-pointer');
+            modeSwitch.classList.remove('opacity-50');
+            modeSwitch.removeAttribute('disabled');
+        }
         // We need to check if we need to show or hide the persona banner.
         this._refreshPersona({element: this.reactive.state.config});
     }
 
     async _clickModeSwitchListener() {
+        if (!this.reactive.state.static.chatAvailable) {
+            // The chat purpose is not available, so the chatbot is locked into agent mode and switching is disabled.
+            return;
+        }
         if (
             this.reactive.state.config.mode === MODES.CHAT
             && this.reactive.state.static.agentModeUnavailablePagetypes.includes(document.body.id)
