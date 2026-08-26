@@ -46,6 +46,9 @@
             <div data-block_ai_chat-element="messagecontent" class="text text-break overflow-x-auto">
                 {{^agentMode}}
                     {{{content}}}
+                    {{#ragSources}}
+                        {{> block_ai_chat/rag_sources}}
+                    {{/ragSources}}
                 {{/agentMode}}
                 {{#agentMode}}
                     {{> block_ai_chat/agent_suggestions}}

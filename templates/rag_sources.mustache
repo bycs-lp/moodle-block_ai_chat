@@ -1,0 +1,50 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template block_ai_chat/rag_sources
+
+    RAG source reference list rendered below an assistant message.
+
+    Context variables:
+    * hasSources bool
+    * hasMore bool
+    * collapseId string
+    * initiallyVisibleSources array
+    * collapsedSources array
+}}
+{{#hasSources}}
+    <div class="mt-2 small">
+        <div class="fw-bold">{{#str}} ragsourceslabel, block_ai_chat {{/str}}</div>
+        <ul class="mb-0 pl-3">
+            {{#initiallyVisibleSources}}
+                {{> block_ai_chat/rag_source_item}}
+            {{/initiallyVisibleSources}}
+        </ul>
+        {{#hasMore}}
+            <a class="small" data-bs-toggle="collapse" href="#{{collapseId}}" role="button" aria-expanded="false" aria-controls="{{collapseId}}">
+                {{#str}} ragsourcesmore, block_ai_chat {{/str}}
+            </a>
+            <div class="collapse mt-1" id="{{collapseId}}">
+                <ul class="mb-0 pl-3">
+                    {{#collapsedSources}}
+                        {{> block_ai_chat/rag_source_item}}
+                    {{/collapsedSources}}
+                </ul>
+            </div>
+        {{/hasMore}}
+    </div>
+{{/hasSources}}

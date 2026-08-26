@@ -25,8 +25,7 @@ import {showErrorToast} from 'block_ai_chat/utils';
 import {MODES} from 'block_ai_chat/constants';
 import * as DomExtractor from 'block_ai_chat/dom_extractor';
 import {debounce} from 'core/utils';
-
-const SOURCE_SELECTION_BRIDGE_KEY = 'localAiContentSourceSelection';
+import {getSelectedSourceIdsForContext} from 'local_ai_content/sources_selection_data_manager';
 
 class Chat extends BaseContent {
     /**
@@ -103,6 +102,7 @@ class Chat extends BaseContent {
             templateData = {...templateData, ...agentResponse};
         } else {
             templateData.content = element.content;
+            templateData.ragSources = this._getRagSourcesTemplateContext(element);
         }
         const newcomponent = await this.renderComponent(placeholder, 'block_ai_chat/components/message', templateData);
         const newelement = newcomponent.getElement();
@@ -123,10 +123,8 @@ class Chat extends BaseContent {
             return;
         }
         const additionalOptions = {};
-        const sourceselectionbridge = window[SOURCE_SELECTION_BRIDGE_KEY];
-        if (sourceselectionbridge && typeof sourceselectionbridge.getSelected === 'function') {
-            additionalOptions.sourceids = sourceselectionbridge.getSelected(this.reactive.state.static.contextid);
-        }
+        const selectedsourceids = getSelectedSourceIdsForContext(this.reactive.state.static.contextid);
+        additionalOptions.sourceids = selectedsourceids.join(',');
         if (this.reactive.state.config.mode === MODES.AGENT) {
             additionalOptions.agentoptions = {
                 formelements: DomExtractor.extractDomElements(),
@@ -380,6 +378,42 @@ class Chat extends BaseContent {
             });
         });
         return suggestionContext;
+    }
+
+    /**
+     * Build template context for optional RAG source list rendering.
+     *
+     * @param {Object} message Assistant message object
+     * @returns {?Object} Mustache context or null when no sources are available
+     */
+    _getRagSourcesTemplateContext(message) {
+        if (!message || !message.ragResult || !Array.isArray(message.ragResult.sources)) {
+            return null;
+        }
+
+        const normalizedSources = message.ragResult.sources
+            .map((source, index) => ({
+                sourceId: Number(source.sourceId ?? source.sourceid ?? 0),
+                title: source.title || '',
+                url: source.url || '',
+                locator: source.locator || '',
+                locatorDisplay: source.locator ? `(${source.locator})` : '',
+                isLinked: Boolean(source.url),
+                itemId: `${message.id}-rag-source-${index}`,
+            }))
+            .filter((source) => source.title !== '');
+
+        if (normalizedSources.length === 0) {
+            return null;
+        }
+
+        return {
+            hasSources: true,
+            hasMore: normalizedSources.length > 2,
+            collapseId: `${message.id}-rag-sources-collapse`,
+            initiallyVisibleSources: normalizedSources.slice(0, 2),
+            collapsedSources: normalizedSources.slice(2),
+        };
     }
 }
 
