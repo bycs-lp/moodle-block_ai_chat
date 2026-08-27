@@ -25,7 +25,7 @@ import {showErrorToast} from 'block_ai_chat/utils';
 import {MODES} from 'block_ai_chat/constants';
 import * as DomExtractor from 'block_ai_chat/dom_extractor';
 import {debounce} from 'core/utils';
-import {getSelectedSourceIdsForContext} from 'local_ai_content/sources_selection_data_manager';
+import {getSelectedSourceIds} from 'local_ai_content/source_selector';
 
 class Chat extends BaseContent {
     /**
@@ -123,7 +123,7 @@ class Chat extends BaseContent {
             return;
         }
         const additionalOptions = {};
-        const selectedsourceids = getSelectedSourceIdsForContext(this.reactive.state.static.contextid);
+        const selectedsourceids = getSelectedSourceIds(this.reactive.state.static.contextid);
         additionalOptions.sourceids = selectedsourceids.join(',');
         if (this.reactive.state.config.mode === MODES.AGENT) {
             additionalOptions.agentoptions = {

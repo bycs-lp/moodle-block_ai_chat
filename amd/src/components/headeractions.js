@@ -3,7 +3,6 @@ import {getString} from 'core/str';
 import {confirm as confirmModal, alert as alertModal} from 'core/notification';
 import ModalForm from 'core_form/modalform';
 import ModalCancel from 'core/modal_cancel';
-import Templates from 'core/templates';
 import {MODES} from 'block_ai_chat/constants';
 
 /**
@@ -37,7 +36,6 @@ class HeaderActions extends BaseComponent {
             VIEWMODE_DOCKRIGHT_BUTTON: '[data-block_ai_chat-element="viewmodedockrightbutton"]',
             MODE_SWITCH: `[data-block_ai_chat-element='modeswitch']`,
             PERSONA_BANNER: `[data-block_ai_chat-element='personabanner']`,
-            SOURCE_SELECTION_BUTTON: `[data-block_ai_chat-element='sourceselectionbutton']`,
             PERSONA_INFO_MODAL_MANAGE_PERSONA_BUTTON: `[data-block_ai_chat-element='personainfomodalpersonalistbutton']`,
             MFORM: `#page form.mform`,
         };
@@ -70,15 +68,6 @@ class HeaderActions extends BaseComponent {
             'click',
             this._showPersonaInfoModal
         );
-        const ragSelectionButton = this.getElement(this.selectors.SOURCE_SELECTION_BUTTON);
-        if (ragSelectionButton) {
-            this.addEventListener(
-                ragSelectionButton,
-                'click',
-                this._showRagSelectionModal
-            );
-        }
-
         const modeSwitch = this.getElement(this.selectors.MODE_SWITCH);
         if (modeSwitch) {
             this.addEventListener(
@@ -273,22 +262,6 @@ class HeaderActions extends BaseComponent {
         }
     }
 
-    async _showRagSelectionModal(event) {
-        event.preventDefault();
-
-        const contextid = this.reactive.state.static.contextid;
-        const title = await getString('aicontext', 'block_ai_chat');
-        const {html, js} = await Templates.renderForPromise('local_ai_content/source_selector', {contextid});
-
-        const ragSelectionModal = await ModalCancel.create({
-            title,
-            body: html,
-            large: true,
-        });
-        Templates.runTemplateJS(js);
-
-        await ragSelectionModal.show();
-    }
 
     async _modeUpdated({element}) {
         const modeChatString = await getString('modechat', 'block_ai_chat');
