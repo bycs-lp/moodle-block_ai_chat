@@ -194,6 +194,57 @@ final class manager_test extends \advanced_testcase {
     }
 
     /**
+     * Ensures edit_persona keeps the stored owner and ignores a submitted foreign user id.
+     *
+     * @covers \block_ai_chat\manager::edit_persona
+     */
+    public function test_edit_persona_keeps_owner(): void {
+        global $DB;
+
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $block = $this->getDataGenerator()->create_block(
+            'ai_chat',
+            ['parentcontextid' => \context_course::instance($course->id)->id]
+        );
+        $manager = new manager(\context_block::instance($block->id)->id, 'block_ai_chat');
+        $owner = $this->getDataGenerator()->create_user();
+        $victim = $this->getDataGenerator()->create_user();
+        $persona = $this->getDataGenerator()->get_plugin_generator('block_ai_chat')->create_persona([
+            'userid' => $owner->id,
+            'name' => 'Owned Persona',
+            'prompt' => 'Owned prompt',
+            'userinfo' => 'Owned info',
+            'type' => persona::TYPE_USER,
+        ]);
+        $this->setUser($owner);
+
+        // Violation: a foreign user id in the submitted data must not transfer the persona.
+        $manager->edit_persona((object) [
+            'id' => $persona->id,
+            'userid' => $victim->id,
+            'name' => 'Planted Persona',
+            'prompt' => 'Planted prompt',
+            'userinfo' => 'Planted info',
+            'type' => persona::TYPE_USER,
+        ], $owner->id);
+        $this->assertEquals($owner->id, $DB->get_field('block_ai_chat_personas', 'userid', ['id' => $persona->id]));
+
+        // Verification: the owner's regular edit is still saved.
+        $manager->edit_persona((object) [
+            'id' => $persona->id,
+            'name' => 'Renamed Persona',
+            'prompt' => 'Renamed prompt',
+            'userinfo' => 'Renamed info',
+            'type' => persona::TYPE_USER,
+        ], $owner->id);
+        $record = $DB->get_record('block_ai_chat_personas', ['id' => $persona->id], '*', MUST_EXIST);
+        $this->assertSame('Renamed Persona', $record->name);
+        $this->assertEquals($owner->id, $record->userid);
+    }
+
+    /**
      * Test for retrieving the correct personas.
      *
      * @covers \block_ai_chat\manager::get_personas
