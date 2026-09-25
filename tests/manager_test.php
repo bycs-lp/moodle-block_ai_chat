@@ -469,4 +469,93 @@ final class manager_test extends \advanced_testcase {
         }
         $this->assertTrue($exceptionthrown, 'Exception should be thrown for unauthorized persona access');
     }
+
+    /**
+     * Tests the conversion of a log entry into the user and AI messages for the reactive UI.
+     *
+     * @covers \block_ai_chat\manager::convert_log_entry_to_messages
+     */
+    public function test_convert_log_entry_to_messages(): void {
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $course = $this->getDataGenerator()->create_course();
+        $coursecontext = \context_course::instance($course->id);
+        $block = $this->getDataGenerator()->create_block('ai_chat', ['parentcontextid' => $coursecontext->id]);
+        $blockcontext = \context_block::instance($block->id);
+        $manager = new manager($blockcontext->id, 'block_ai_chat');
+
+        /** @var \local_ai_manager_generator $aimanagergenerator */
+        $aimanagergenerator = $this->getDataGenerator()->get_plugin_generator('local_ai_manager');
+        $logentry = $aimanagergenerator->create_request_log_entry([
+            'purpose' => 'chat',
+            'contextid' => $blockcontext->id,
+            'itemid' => 42,
+            'prompttext' => "<b>First line</b>\nSecond line",
+            'promptcompletion' => 'Some **bold** AI answer',
+        ]);
+
+        $messages = $manager->convert_log_entry_to_messages($logentry);
+        $this->assert_converted_messages($messages, $logentry, 'chat');
+
+        // The user prompt is being treated as plain text: HTML is escaped, line breaks are kept.
+        $usermessage = json_decode($messages[0]['fields']);
+        $this->assertStringNotContainsString('<b>', $usermessage->content);
+        $this->assertStringContainsString('&lt;b&gt;First line&lt;/b&gt;', $usermessage->content);
+        $this->assertStringContainsString('<br', $usermessage->content);
+        $this->assertStringContainsString('Second line', $usermessage->content);
+
+        // The AI answer is being rendered from markdown to HTML.
+        $aimessage = json_decode($messages[1]['fields']);
+        $this->assertStringContainsString('<strong>bold</strong>', $aimessage->content);
+
+        // Log entries of the agent purpose are being marked with message mode 'agent'.
+        $agentlogentry = $aimanagergenerator->create_request_log_entry([
+            'purpose' => 'agent',
+            'contextid' => $blockcontext->id,
+            'itemid' => 42,
+            'prompttext' => 'Some agent prompt',
+            'promptcompletion' => 'Some agent answer',
+        ]);
+        $messages = $manager->convert_log_entry_to_messages($agentlogentry);
+        $this->assert_converted_messages($messages, $agentlogentry, 'agent');
+        $this->assertStringContainsString('Some agent prompt', json_decode($messages[0]['fields'])->content);
+        $this->assertStringContainsString('Some agent answer', json_decode($messages[1]['fields'])->content);
+
+        // Log entries of a purpose which has been disabled meanwhile still need to be converted.
+        \local_ai_manager\plugininfo\aipurpose::enable_plugin('chat', 0);
+        $this->assertNotContains('chat', \local_ai_manager\plugininfo\aipurpose::get_enabled_plugins());
+        $messages = $manager->convert_log_entry_to_messages($logentry);
+        $this->assert_converted_messages($messages, $logentry, 'chat');
+        $this->assertStringContainsString('<strong>bold</strong>', json_decode($messages[1]['fields'])->content);
+    }
+
+    /**
+     * Helper function to assert the general structure of the messages returned by convert_log_entry_to_messages.
+     *
+     * @param array $messages the messages returned by {@see manager::convert_log_entry_to_messages}
+     * @param \stdClass $logentry the log entry which has been converted
+     * @param string $expectedmode the expected message mode of the AI message
+     */
+    private function assert_converted_messages(array $messages, \stdClass $logentry, string $expectedmode): void {
+        $this->assertCount(2, $messages);
+        foreach ($messages as $message) {
+            $this->assertSame('messages', $message['name']);
+            $this->assertSame('put', $message['action']);
+        }
+
+        $usermessage = json_decode($messages[0]['fields']);
+        $this->assertSame($logentry->id . '-1', $usermessage->id);
+        $this->assertEquals($logentry->itemid, $usermessage->conversationid);
+        $this->assertSame('user', $usermessage->sender);
+        $this->assertSame('chat', $usermessage->messageMode);
+        $this->assertFalse($usermessage->rendered);
+
+        $aimessage = json_decode($messages[1]['fields']);
+        $this->assertSame($logentry->id . '-2', $aimessage->id);
+        $this->assertEquals($logentry->itemid, $aimessage->conversationid);
+        $this->assertSame('ai', $aimessage->sender);
+        $this->assertSame($expectedmode, $aimessage->messageMode);
+        $this->assertFalse($aimessage->rendered);
+    }
 }
