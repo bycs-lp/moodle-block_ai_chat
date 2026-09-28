@@ -55,9 +55,6 @@ class persona_form extends dynamic_form {
         $mform->addElement('hidden', 'personaid');
         $mform->setType('personaid', PARAM_INT);
 
-        $mform->addElement('hidden', 'userid');
-        $mform->setType('userid', PARAM_INT);
-
         $personarecord = $DB->get_record('block_ai_chat_personas', ['id' => $this->_ajaxformdata['personaid']]);
         if (!empty($personarecord) && intval($personarecord->type) === persona::TYPE_TEMPLATE) {
             $warninghtml = $OUTPUT->render_from_template('block_ai_chat/templateedit_warning', []);
@@ -172,7 +169,6 @@ class persona_form extends dynamic_form {
 
         $personadata = new stdClass();
         $personadata->id = $formdata->personaid;
-        $personadata->userid = $formdata->userid;
         $personadata->name = $formdata->name;
         // The attributes prompt and userinfo are raw params, need to be sanitized on output.
         $personadata->prompt = $formdata->prompt['text'];
@@ -195,7 +191,6 @@ class persona_form extends dynamic_form {
 
         $data = [
             'personaid' => $this->_ajaxformdata['personaid'],
-            'userid' => $personarecord->userid,
             'name' => $personarecord->name,
             'userinfo' => $personarecord->userinfo,
             'type' => $personarecord->type,

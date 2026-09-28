@@ -200,7 +200,7 @@ class manager {
 
         $personaobject = (object) [
             'id' => $data->id,
-            'userid' => $data->userid,
+            'userid' => $currentrecord->userid,
             'name' => $data->name,
             'prompt' => $data->prompt,
             'userinfo' => html_to_text($data->userinfo),
