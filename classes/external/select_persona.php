@@ -52,6 +52,7 @@ class select_persona extends external_api {
      * @return array response array including status code and content array containing reactive state updates
      */
     public static function execute(int $contextid, string $component, int $personaid): array {
+        global $USER;
         [
             'contextid' => $contextid,
             'component' => $component,
@@ -67,6 +68,10 @@ class select_persona extends external_api {
         require_capability('block/ai_chat:edit', \context::instance_by_id($contextid));
 
         $manager = new manager($contextid, $component);
+        if ($personaid !== 0) {
+            // Must run before the selection is stored: require_view_persona() accepts personas already selected here.
+            $manager->require_view_persona($personaid, $USER->id);
+        }
         return $manager->select_persona($personaid);
     }
 
