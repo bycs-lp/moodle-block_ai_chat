@@ -27,7 +27,6 @@ use block_ai_chat\local\persona;
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
 final class select_persona_test extends \advanced_testcase {
-    #[\PHPUnit\Framework\Attributes\Group('baseline')]
     /**
      * A teacher must not select the private persona of another user.
      *
@@ -58,7 +57,6 @@ final class select_persona_test extends \advanced_testcase {
         $this->assertFalse($DB->record_exists('block_ai_chat_personas_selected', ['contextid' => $blockcontext->id]));
     }
 
-    #[\PHPUnit\Framework\Attributes\Group('baseline')]
     /**
      * A teacher can still select an own persona.
      *
