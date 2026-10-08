@@ -45,7 +45,7 @@ export const extractDomElements = () => {
     // Comprehensive selector for all form input types including hidden fields and buttons.
     // This covers standard inputs, textareas, selects, and special Moodle form elements.
     const selector =
-        'input[type="text"], input[type="password"], input[type="email"], input[type="number"], ' +
+        'input[type="text"], input[type="email"], input[type="number"], ' +
         'input[type="search"], input[type="tel"], input[type="url"], input[type="date"], ' +
         'input[type="datetime-local"], input[type="checkbox"], input[type="radio"], input[type="file"], ' +
         'input[type="hidden"], input[type="submit"], input[type="button"], textarea, select';
@@ -62,7 +62,10 @@ export const extractDomElements = () => {
         // Extract current value based on element type and special handling for different inputs.
         if (type === 'input') {
             type = node.type;
-            if (type === 'checkbox' || type === 'radio') {
+            if (type === 'hidden') {
+                // Hidden values such as the sesskey must not be sent to the AI provider.
+                currentValue = '';
+            } else if (type === 'checkbox' || type === 'radio') {
                 // For checkboxes and radios, return the value only if checked, otherwise empty.
                 currentValue = node.checked ? node.value || 'on' : '';
             } else {
