@@ -362,6 +362,11 @@ body.block_ai_chat_openfull a#block_ai_chat_openfull {
   color: #007bff;
 }
 
+body.block_ai_chat_chatwindow.block_ai_chat_open .navbar.fixed-top,
+body.block_ai_chat_dockright.block_ai_chat_open .navbar.fixed-top {
+  z-index: 1058;
+}
+
 body.block_ai_chat_dockright.block_ai_chat_open #page-wrapper #page,
 body.block_ai_chat_dockright.block_ai_chat_open #sticky-footer {
   margin-right: 50%;
