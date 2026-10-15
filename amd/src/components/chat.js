@@ -151,7 +151,7 @@ class Chat extends BaseContent {
             return;
         }
         const additionalOptions = {};
-        const selectedsourceids = getSelectedSourceIds(this.reactive.state.static.contextid);
+        const selectedsourceids = await getSelectedSourceIds(this.reactive.state.static.contextid);
         additionalOptions.sourceids = selectedsourceids.join(',');
         if (this.reactive.state.config.mode === MODES.AGENT) {
             additionalOptions.agentoptions = {
