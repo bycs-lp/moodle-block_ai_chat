@@ -55,6 +55,11 @@ export const extractDomElements = () => {
     // Process each form element found in the DOM.
     // eslint-disable-next-line complexity
     domNodes.forEach((node) => {
+        // Password unmask fields switch to type text when revealed, so detect them by their wrapper instead of the type.
+        if (node.closest('[data-passwordunmask="wrapper"]')) {
+            return;
+        }
+
         let type = node.tagName.toLowerCase();
         let currentValue = '';
         const options = [];
