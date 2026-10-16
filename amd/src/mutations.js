@@ -46,14 +46,9 @@ export default class {
 
     async submitAiRequest(stateManager, prompt, additionalOptions) {
         this.setLoadingState(stateManager, true);
-        const normalizedAdditionalOptions = additionalOptions || {};
-        const sourceids = typeof normalizedAdditionalOptions.sourceids === 'string'
-            ? normalizedAdditionalOptions.sourceids
-            : '';
         const options = {
             conversationid: stateManager.state.config.currentConversationId,
-            ...normalizedAdditionalOptions,
-            sourceids,
+            ...additionalOptions,
         };
 
         const requestOptions = JSON.stringify(options);
@@ -64,7 +59,7 @@ export default class {
                 mode: stateManager.state.config.mode,
                 prompt: prompt,
                 options: requestOptions,
-                sourceids,
+                sourceids: additionalOptions.sourceids,
             }
         );
         if (result === null) {

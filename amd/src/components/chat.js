@@ -21,7 +21,7 @@ import Templates from 'core/templates';
 import {getAiConfig} from 'local_ai_manager/config';
 import {getString} from 'core/str';
 import Log from 'core/log';
-import {alert as displayAlert} from 'core/notification';
+import {alert as displayAlert, exception as displayException} from 'core/notification';
 import {showErrorToast} from 'block_ai_chat/utils';
 import {MODES} from 'block_ai_chat/constants';
 import * as DomExtractor from 'block_ai_chat/dom_extractor';
@@ -151,7 +151,14 @@ class Chat extends BaseContent {
             return;
         }
         const additionalOptions = {};
-        const selectedsourceids = await getSelectedSourceIds(this.reactive.state.static.contextid);
+        let selectedsourceids;
+        try {
+            selectedsourceids = await getSelectedSourceIds(this.reactive.state.static.contextid);
+        } catch (exception) {
+            // Do not silently answer without the selected sources.
+            await displayException(exception);
+            return;
+        }
         additionalOptions.sourceids = selectedsourceids.join(',');
         if (this.reactive.state.config.mode === MODES.AGENT) {
             additionalOptions.agentoptions = {
@@ -434,38 +441,30 @@ class Chat extends BaseContent {
     }
 
     /**
-     * Build template context for optional RAG source list rendering.
+     * Build template context for the RAG source list rendering.
      *
      * @param {Object} message Assistant message object
-     * @returns {?Object} Mustache context or null when no sources are available
+     * @returns {?Object} Mustache context or null if the answer is not based on selected sources
      */
     _getRagSourcesTemplateContext(message) {
-        if (!message || !message.ragResult || !Array.isArray(message.ragResult.sources)) {
+        // Only answers based on the selected sources carry a rag result, which then always contains sources.
+        if (!message.ragResult) {
             return null;
         }
 
-        const normalizedSources = message.ragResult.sources
-            .map((source, index) => ({
-                sourceId: Number(source.sourceId ?? source.sourceid ?? 0),
-                title: source.title || '',
-                url: source.url || '',
-                locator: source.locator || '',
-                locatorDisplay: source.locator ? `(${source.locator})` : '',
-                isLinked: Boolean(source.url),
-                itemId: `${message.id}-rag-source-${index}`,
-            }))
-            .filter((source) => source.title !== '');
-
-        if (normalizedSources.length === 0) {
-            return null;
-        }
+        const sources = message.ragResult.sources.map((source, index) => ({
+            ...source,
+            locatorDisplay: source.locator ? `(${source.locator})` : '',
+            isLinked: source.url !== '',
+            itemId: `${message.id}-rag-source-${index}`,
+        }));
 
         return {
             hasSources: true,
-            hasMore: normalizedSources.length > 2,
+            hasMore: sources.length > 2,
             collapseId: `${message.id}-rag-sources-collapse`,
-            initiallyVisibleSources: normalizedSources.slice(0, 2),
-            collapsedSources: normalizedSources.slice(2),
+            initiallyVisibleSources: sources.slice(0, 2),
+            collapsedSources: sources.slice(2),
         };
     }
 }

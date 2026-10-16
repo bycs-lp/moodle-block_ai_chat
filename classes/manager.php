@@ -473,12 +473,11 @@ class manager {
     public function convert_log_entry_to_messages(stdClass $logentry): array {
         $connectorfactory = \core\di::get(\local_ai_manager\local\connector_factory::class);
         $purpose = $connectorfactory->get_purpose_by_purpose_string($logentry->purpose);
-        $ragresult = null;
+        $ragsources = [];
         if (!empty($logentry->requestoptions)) {
-            $decodedoptions = json_decode((string)$logentry->requestoptions, true);
-            if (is_array($decodedoptions) && !empty($decodedoptions['ragresult']) && is_array($decodedoptions['ragresult'])) {
-                $ragresult = $decodedoptions['ragresult'];
-            }
+            $requestoptions = json_decode($logentry->requestoptions, true, flags: JSON_THROW_ON_ERROR);
+            // Only requests using the selected sources (RAG) store a rag result.
+            $ragsources = $requestoptions['ragresult']['sources'] ?? [];
         }
 
         $aimessage = [
@@ -489,9 +488,9 @@ class manager {
             'messageMode' => $logentry->purpose === 'agent' ? 'agent' : 'chat',
             'rendered' => false,
         ];
-        if (!empty($ragresult['sources']) && is_array($ragresult['sources'])) {
+        if (!empty($ragsources)) {
             $aimessage['ragResult'] = [
-                'sources' => array_values($ragresult['sources']),
+                'sources' => $ragsources,
             ];
         }
 
