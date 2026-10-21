@@ -16,6 +16,18 @@
 import Modal from 'core/modal';
 import * as ReactiveInit from 'block_ai_chat/reactive_init';
 
+/**
+ * Ensure the floating button is not trapped inside a hidden block drawer and
+ * that it is properly placed regarding accessibility.
+ *
+ * @param {HTMLElement} chatButton Floating chat trigger button.
+ */
+const moveFloatingButtonToBody = (chatButton) => {
+    if (chatButton.parentElement !== document.body) {
+        document.body.append(chatButton);
+    }
+};
+
 
 /**
  * Initializes the AI chat modal.
@@ -30,6 +42,9 @@ export const init = async(contextid) => {
     if (!chatButton) {
         return;
     }
+
+    moveFloatingButtonToBody(chatButton);
+
     chatButton.addEventListener('click', async() => {
             const modal = await Modal.create({
                 template: 'block_ai_chat/modal',

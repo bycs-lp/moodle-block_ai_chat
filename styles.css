@@ -26,8 +26,9 @@
   cursor: pointer;
 }
 
-.drawer-right.show #ai_chat_button,
-.show-drawer-right #ai_chat_button {
+body:not(:has(.drawerheadertop)):has(.drawer-right.show) #ai_chat_button,
+body:not(:has(.drawerheadertop)):has(.show-drawer-right) #ai_chat_button,
+body:not(.pagelayout-standard):not(.limitedwidth):has(.show-drawer-right) #ai_chat_button {
   right: calc(315px + 2rem);
 }
 
