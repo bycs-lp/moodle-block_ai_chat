@@ -51,7 +51,17 @@
             return;
         }
         const data = event.data;
-        if (!data || data.type !== 'run' || typeof data.code !== 'string' || !Number.isInteger(data.id)) {
+        if (!data || !Number.isInteger(data.id)) {
+            return;
+        }
+        if (data.type === 'rotate' && Number.isInteger(data.handle) && Number.isFinite(data.elev)
+                && Number.isFinite(data.azim)) {
+            getWorker().postMessage({
+                type: 'rotate', id: data.id, handle: data.handle, elev: data.elev, azim: data.azim, draft: data.draft === true,
+            });
+            return;
+        }
+        if (data.type !== 'run' || typeof data.code !== 'string') {
             return;
         }
         const sliderValues = {};

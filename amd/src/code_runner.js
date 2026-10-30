@@ -51,6 +51,8 @@ const selectors = {
 
 const MAX_SLIDERS = 10;
 const SLIDER_DEBOUNCE = 150;
+const ROTATION_PER_PIXEL = 0.5;
+const ROTATION_PER_KEY = 10;
 
 /** @type {WeakMap<HTMLElement, {running: boolean, rerun: boolean}>} execution state per code runner */
 const runnerStates = new WeakMap();
@@ -151,6 +153,30 @@ class Sandbox {
      * @returns {Promise<Object>} the result of the worker
      */
     run(code, onStatus, sliderValues) {
+        return this.send({type: 'run', code, sliderValues}, onStatus);
+    }
+
+    /**
+     * Renders a kept 3D figure of a previous run from another viewing angle.
+     *
+     * @param {number} handle handle of the figure
+     * @param {number} elev elevation angle in degrees
+     * @param {number} azim azimuth angle in degrees
+     * @param {boolean} draft whether to render with low resolution while dragging
+     * @returns {Promise<Object>} the result of the worker
+     */
+    rotate(handle, elev, azim, draft) {
+        return this.send({type: 'rotate', handle, elev, azim, draft}, () => undefined);
+    }
+
+    /**
+     * Sends a request to the sandbox.
+     *
+     * @param {Object} message the request without id
+     * @param {Function} onStatus called with status updates of the request
+     * @returns {Promise<Object>} the result of the worker
+     */
+    send(message, onStatus) {
         const id = this.nextId++;
         const promise = new Promise((resolve, reject) => {
             this.runs.set(id, {resolve, reject, onStatus});
@@ -160,7 +186,7 @@ class Sandbox {
         ready.then(() => {
             if (this.iframe === iframe && this.runs.has(id)) {
                 // The sandbox has an opaque origin, so there is no other target origin to address it.
-                iframe.contentWindow.postMessage({type: 'run', id, code, sliderValues}, '*');
+                iframe.contentWindow.postMessage({...message, id}, '*');
             }
             return null;
         }).catch(Log.error);
@@ -225,12 +251,98 @@ const createTextBlock = (text, classes) => {
 };
 
 /**
+ * Makes the image of a 3D figure rotatable by dragging with the mouse or with the arrow keys.
+ *
+ * @param {HTMLImageElement} img the image
+ * @param {Sandbox} sandbox the sandbox keeping the figure
+ * @param {number} handle handle of the figure in the sandbox
+ * @param {number[]} view initial elevation and azimuth in degrees
+ */
+const makeRotatable = async(img, sandbox, handle, view) => {
+    let [elev, azim] = view;
+    let busy = false;
+    let pending = null;
+    let start = null;
+    const hint = await getString('executionrotatehint', 'block_ai_chat');
+    img.classList.add('block_ai_chat-rotatable');
+    img.tabIndex = 0;
+    img.draggable = false;
+    img.title = hint;
+    img.alt += '. ' + hint;
+
+    // Only one rendering at a time, intermediate angles are skipped while the sandbox is busy.
+    const render = async(draft) => {
+        if (busy) {
+            pending = pending === false ? false : draft;
+            return;
+        }
+        busy = true;
+        try {
+            const result = await sandbox.rotate(handle, elev, azim, draft);
+            const image = Array.isArray(result.images) ? result.images[0] : null;
+            if (image && isValidImage(image)) {
+                img.src = 'data:' + image.mime + ';base64,' + image.data;
+            }
+        } catch (exception) {
+            if (!(exception instanceof SandboxAbortedError)) {
+                Log.error(exception);
+            }
+        }
+        busy = false;
+        if (pending !== null) {
+            const draftpending = pending;
+            pending = null;
+            render(draftpending);
+        }
+    };
+    const clampElevation = (value) => Math.max(-90, Math.min(90, value));
+
+    img.addEventListener('pointerdown', (event) => {
+        start = {x: event.clientX, y: event.clientY, elev, azim};
+        img.setPointerCapture(event.pointerId);
+        event.preventDefault();
+    });
+    img.addEventListener('pointermove', (event) => {
+        if (!start) {
+            return;
+        }
+        azim = start.azim - (event.clientX - start.x) * ROTATION_PER_PIXEL;
+        elev = clampElevation(start.elev + (event.clientY - start.y) * ROTATION_PER_PIXEL);
+        render(true);
+    });
+    const end = () => {
+        if (start) {
+            start = null;
+            render(false);
+        }
+    };
+    img.addEventListener('pointerup', end);
+    img.addEventListener('pointercancel', end);
+    img.addEventListener('keydown', (event) => {
+        const changes = {
+            ArrowLeft: [0, ROTATION_PER_KEY],
+            ArrowRight: [0, -ROTATION_PER_KEY],
+            ArrowUp: [-ROTATION_PER_KEY, 0],
+            ArrowDown: [ROTATION_PER_KEY, 0],
+        }[event.key];
+        if (!changes) {
+            return;
+        }
+        event.preventDefault();
+        elev = clampElevation(elev + changes[0]);
+        azim += changes[1];
+        render(false);
+    });
+};
+
+/**
  * Renders the result of the worker into the output area, replacing the previous output.
  *
  * @param {HTMLElement} output the output area
  * @param {Object} result the result of the worker
+ * @param {Sandbox} sandbox the sandbox which created the result
  */
-const renderResult = async(output, result) => {
+const renderResult = async(output, result, sandbox) => {
     const fragment = document.createDocumentFragment();
     if (typeof result.stdout === 'string' && result.stdout !== '') {
         fragment.appendChild(createTextBlock(result.stdout, 'bg-light'));
@@ -246,6 +358,15 @@ const renderResult = async(output, result) => {
         const img = document.createElement('img');
         img.className = 'img-fluid d-block bg-white border rounded p-1 mt-2';
         img.alt = await getString('executionoutputimage', 'block_ai_chat', index + 1);
+        const rotatable = Number.isInteger(image.handle) && Array.isArray(image.view)
+            && image.view.length === 2 && image.view.every(Number.isFinite);
+        if (rotatable) {
+            // Keep the display size when low resolution drafts are shown while rotating.
+            img.addEventListener('load', () => {
+                img.width = img.naturalWidth;
+            }, {once: true});
+            await makeRotatable(img, sandbox, image.handle, image.view);
+        }
         img.src = 'data:' + image.mime + ';base64,' + image.data;
         fragment.appendChild(img);
     }
@@ -379,7 +500,7 @@ const execute = async(pre, runner, sandbox) => {
     try {
         const result = await sandbox.run(pre.textContent, onStatus, getSliderValues(runner));
         renderSliders(pre, runner, sandbox, result.sliders);
-        await renderResult(output, result);
+        await renderResult(output, result, sandbox);
         status.textContent = result.error ? failed : done;
     } catch (exception) {
         if (!(exception instanceof SandboxAbortedError)) {

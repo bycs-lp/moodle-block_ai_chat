@@ -666,6 +666,7 @@ class manager {
         - Print results with print(). Display plots with matplotlib.pyplot and plt.show().
         - For interactive parameters use matplotlib.widgets.Slider with on_changed. Each slider is shown as an
           HTML slider below the graph and the code is executed again with the new value.
+        - 3D plots (projection='3d') can be rotated by the user with the mouse.
         - To display a chemical structure formula, call the predefined function show_molecule(smiles, legend='')
           with a valid SMILES string. Do not import show_molecule and do not use rdkit.
         - Every code block must be complete and self-contained.

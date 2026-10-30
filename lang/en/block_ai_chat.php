@@ -85,6 +85,7 @@ $string['executionerror'] = 'The code could not be executed.';
 $string['executionloading'] = 'Loading Python environment...';
 $string['executionoutputimage'] = 'Generated graphic {$a}';
 $string['executionoutputtruncated'] = 'The output has been truncated.';
+$string['executionrotatehint'] = 'Drag with the mouse or use the arrow keys to rotate the 3D view';
 $string['executionrunning'] = 'Calculating...';
 $string['executionstop'] = 'Stop';
 $string['executionstopped'] = 'The calculation has been stopped.';

@@ -40,17 +40,46 @@ warnings.filterwarnings('ignore', message='.*non-interactive.*')
 MAX_IMAGES = 10
 MAX_IMAGE_BYTES = 5 * 1024 * 1024
 MAX_SLIDERS = 10
+MAX_ROTATABLE_FIGURES = 5
 SCHOOL_AXES = False
 _outputs = []
 _sliders = []
 _slider_values = {}
+_figures = {}
+_next_handle = 0
 
-def _add_image(mime, data):
+def _add_image(mime, data, handle=None, view=None):
     if len(_outputs) >= MAX_IMAGES:
         raise RuntimeError(f'Too many images, at most {MAX_IMAGES} are displayed.')
     if len(data) > MAX_IMAGE_BYTES:
         raise RuntimeError('Image is too large to be displayed.')
-    _outputs.append([mime, base64.b64encode(data).decode('ascii')])
+    _outputs.append({'mime': mime, 'data': base64.b64encode(data).decode('ascii'), 'handle': handle, 'view': view})
+
+def _axes_3d(figure):
+    return [ax for ax in figure.axes if ax.name == '3d']
+
+def _render(figure, dpi=100):
+    buffer = io.BytesIO()
+    # Without tight bounding box the image size stays constant while a 3D figure is rotated.
+    figure.savefig(buffer, format='png', dpi=dpi, bbox_inches=None if _axes_3d(figure) else 'tight')
+    return buffer.getvalue()
+
+def _keep_figure(figure):
+    global _next_handle
+    handle = _next_handle
+    _next_handle += 1
+    _figures[handle] = figure
+    while len(_figures) > MAX_ROTATABLE_FIGURES:
+        del _figures[next(iter(_figures))]
+    return handle
+
+def rotate(handle, elev, azim, dpi):
+    figure = _figures.get(handle)
+    if figure is None:
+        raise KeyError('The figure is no longer available, please calculate again.')
+    for ax in _axes_3d(figure):
+        ax.view_init(elev=elev, azim=azim, roll=ax.roll)
+    return base64.b64encode(_render(figure, dpi)).decode('ascii')
 
 def _tick_label(value, position):
     return '' if abs(value) < 1e-9 else f'{value:g}'
@@ -108,9 +137,11 @@ def _show(*args, **kwargs):
         if SCHOOL_AXES:
             for ax in figure.axes:
                 _school_axes(ax)
-        buffer = io.BytesIO()
-        figure.savefig(buffer, format='png', dpi=100, bbox_inches='tight')
-        _add_image('image/png', buffer.getvalue())
+        axes3d = _axes_3d(figure)
+        if axes3d:
+            _add_image('image/png', _render(figure), _keep_figure(figure), [axes3d[0].elev, axes3d[0].azim])
+        else:
+            _add_image('image/png', _render(figure))
     plt.close('all')
 
 def show_molecule(smiles, legend='', width=350, height=260):
@@ -297,7 +328,7 @@ def finish():
             }
             const outputs = runtime.get('finish')();
             const [imageList, sliderList] = outputs.toJs({dict_converter: Object.fromEntries}); // eslint-disable-line camelcase
-            images = imageList.map(([mime, data]) => ({mime, data}));
+            images = imageList;
             sliders = sliderList;
             outputs.destroy();
         } catch (exception) {
@@ -306,8 +337,25 @@ def finish():
         self.postMessage({type: 'result', id, stdout, truncated, error, images, sliders});
     };
 
+    const rotate = async(id, handle, elev, azim, draft) => {
+        let error = null;
+        let images = [];
+        try {
+            await getPyodide();
+            const data = runtime.get('rotate')(handle, elev, azim, draft ? 50 : 100);
+            images = [{mime: 'image/png', data}];
+        } catch (exception) {
+            error = cleanTraceback(exception.message ?? String(exception)).split('\n').pop();
+        }
+        self.postMessage({type: 'result', id, stdout: '', truncated: false, error, images, sliders: []});
+    };
+
     self.addEventListener('message', (event) => {
         const data = event.data;
+        if (data && data.type === 'rotate') {
+            queue = queue.then(() => rotate(data.id, data.handle, data.elev, data.azim, data.draft));
+            return;
+        }
         if (!data || data.type !== 'run' || typeof data.code !== 'string') {
             return;
         }

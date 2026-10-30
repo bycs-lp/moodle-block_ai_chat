@@ -47,6 +47,15 @@ body:not(.block_ai_chat_replacehelp).hasstickyfooter #ai_chat_button {
   white-space: pre-wrap;
 }
 
+.block_ai_chat-rotatable {
+  cursor: grab;
+  touch-action: none;
+  user-select: none;
+}
+.block_ai_chat-rotatable:active {
+  cursor: grabbing;
+}
+
 .block_ai_chat_modal .modal-dialog {
   display: flex;
   align-items: end;
