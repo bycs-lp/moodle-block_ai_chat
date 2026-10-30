@@ -80,7 +80,27 @@ class Chat extends BaseContent {
             {watch: `messages:created`, handler: this._addMessageToChatArea},
             {watch: `personas${this.reactive.state.config.currentPersona}:deleted`, handler: this._removeCurrentPersona},
             {watch: `config.loadingState:updated`, handler: this._handleLoadingStateUpdated},
+            {watch: `config.codeExecutionEnabled:updated`, handler: this._handleCodeExecutionUpdated},
         ];
+    }
+
+    /**
+     * Adds or removes the code runners of all AI messages after the chat options have been changed.
+     *
+     * @param {object} args
+     * @param {object} args.element the config state object
+     */
+    async _handleCodeExecutionUpdated({element}) {
+        const CodeRunner = await import('block_ai_chat/code_runner');
+        const output = this.getElement(this.selectors.CHAT_OUTPUT);
+        const contextid = this.reactive.state.static.contextid;
+        if (!element.codeExecutionEnabled) {
+            CodeRunner.reset(output, contextid);
+            return;
+        }
+        output.querySelectorAll(`[data-block_ai_chat-component='message'].ai`).forEach(
+            (message) => CodeRunner.enhance(message, contextid)
+        );
     }
 
     async _addMessageToChatArea({element}) {
@@ -108,6 +128,10 @@ class Chat extends BaseContent {
         node.replaceChild(newelement, placeholder);
         this.reactive.dispatch('setMessageRendered', element.id, true);
         this._highlightCodeBlocks(newelement);
+        if (this.reactive.state.config.codeExecutionEnabled && element.sender === 'ai') {
+            const CodeRunner = await import('block_ai_chat/code_runner');
+            CodeRunner.enhance(newelement, this.reactive.state.static.contextid);
+        }
 
         // Pass the element to enable smart scrolling for long responses.
         this._debouncedScrollToBottom(newelement);

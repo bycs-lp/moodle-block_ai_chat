@@ -1,0 +1,191 @@
+<?xml version="1.0"?>
+<libraries>
+  <library>
+    <location>thirdparty/pyodide</location>
+    <name>Pyodide</name>
+    <description>Python distribution for the browser based on WebAssembly (core files, reduced lock file).</description>
+    <version>314.0.7</version>
+    <license>MPL</license>
+    <licenseversion>2.0</licenseversion>
+    <repository>https://github.com/pyodide/pyodide</repository>
+    <copyrights>
+      <copyright>Pyodide contributors</copyright>
+    </copyrights>
+    <customised/>
+  </library>
+  <library>
+    <location>thirdparty/pyodide/contourpy-1.3.3-cp314-cp314-pyemscripten_2026_0_wasm32.whl</location>
+    <name>contourpy</name>
+    <description>Contour calculation (matplotlib dependency).</description>
+    <version>1.3.3</version>
+    <license>BSD</license>
+    <licenseversion>3-Clause</licenseversion>
+    <repository>https://github.com/contourpy/contourpy</repository>
+    <copyrights>
+      <copyright>ContourPy Developers</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>thirdparty/pyodide/cycler-0.12.1-py3-none-any.whl</location>
+    <name>cycler</name>
+    <description>Composable style cycles (matplotlib dependency).</description>
+    <version>0.12.1</version>
+    <license>BSD</license>
+    <licenseversion>3-Clause</licenseversion>
+    <repository>https://github.com/matplotlib/cycler</repository>
+    <copyrights>
+      <copyright>Matplotlib Development Team</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>thirdparty/pyodide/fonttools-4.62.1-py3-none-any.whl</location>
+    <name>fontTools</name>
+    <description>Font manipulation library (matplotlib dependency).</description>
+    <version>4.62.1</version>
+    <license>MIT</license>
+    <repository>https://github.com/fonttools/fonttools</repository>
+    <copyrights>
+      <copyright>Just van Rossum and fontTools contributors</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>thirdparty/pyodide/kiwisolver-1.5.0-cp314-cp314-pyemscripten_2026_0_wasm32.whl</location>
+    <name>kiwisolver</name>
+    <description>Constraint solver (matplotlib dependency).</description>
+    <version>1.5.0</version>
+    <license>BSD</license>
+    <licenseversion>3-Clause</licenseversion>
+    <repository>https://github.com/nucleic/kiwi</repository>
+    <copyrights>
+      <copyright>Nucleic Development Team</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>thirdparty/pyodide/matplotlib-3.10.8-cp314-cp314-pyemscripten_2026_0_wasm32.whl</location>
+    <name>Matplotlib</name>
+    <description>Plotting library.</description>
+    <version>3.10.8</version>
+    <license>PSF</license>
+    <licenseversion>Matplotlib License</licenseversion>
+    <repository>https://github.com/matplotlib/matplotlib</repository>
+    <copyrights>
+      <copyright>Matplotlib Development Team</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>thirdparty/pyodide/mpmath-1.4.1-py3-none-any.whl</location>
+    <name>mpmath</name>
+    <description>Arbitrary-precision arithmetic (sympy dependency).</description>
+    <version>1.4.1</version>
+    <license>BSD</license>
+    <licenseversion>3-Clause</licenseversion>
+    <repository>https://github.com/mpmath/mpmath</repository>
+    <copyrights>
+      <copyright>Fredrik Johansson and mpmath contributors</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>thirdparty/pyodide/numpy-2.4.6-cp314-cp314-pyemscripten_2026_0_wasm32.whl</location>
+    <name>NumPy</name>
+    <description>Numerical computing library.</description>
+    <version>2.4.6</version>
+    <license>BSD</license>
+    <licenseversion>3-Clause</licenseversion>
+    <repository>https://github.com/numpy/numpy</repository>
+    <copyrights>
+      <copyright>NumPy Developers</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>thirdparty/pyodide/packaging-26.1-py3-none-any.whl</location>
+    <name>packaging</name>
+    <description>Core utilities for Python packages (matplotlib dependency).</description>
+    <version>26.1</version>
+    <license>Apache/BSD</license>
+    <licenseversion>2.0/2-Clause</licenseversion>
+    <repository>https://github.com/pypa/packaging</repository>
+    <copyrights>
+      <copyright>Donald Stufft and individual contributors</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>thirdparty/pyodide/pillow-12.2.0-cp314-cp314-pyemscripten_2026_0_wasm32.whl</location>
+    <name>Pillow</name>
+    <description>Imaging library (matplotlib dependency).</description>
+    <version>12.2.0</version>
+    <license>MIT-CMU</license>
+    <repository>https://github.com/python-pillow/Pillow</repository>
+    <copyrights>
+      <copyright>Jeffrey A. Clark and contributors</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>thirdparty/pyodide/pyparsing-3.3.2-py3-none-any.whl</location>
+    <name>pyparsing</name>
+    <description>Parsing module (matplotlib dependency).</description>
+    <version>3.3.2</version>
+    <license>MIT</license>
+    <repository>https://github.com/pyparsing/pyparsing</repository>
+    <copyrights>
+      <copyright>Paul McGuire</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>thirdparty/pyodide/python_dateutil-2.9.0.post0-py2.py3-none-any.whl</location>
+    <name>python-dateutil</name>
+    <description>Date utilities (matplotlib dependency).</description>
+    <version>2.9.0.post0</version>
+    <license>Apache/BSD</license>
+    <licenseversion>2.0/3-Clause</licenseversion>
+    <repository>https://github.com/dateutil/dateutil</repository>
+    <copyrights>
+      <copyright>Gustavo Niemeyer and dateutil contributors</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>thirdparty/pyodide/pytz-2026.1.post1-py2.py3-none-any.whl</location>
+    <name>pytz</name>
+    <description>Time zone definitions (matplotlib dependency).</description>
+    <version>2026.1.post1</version>
+    <license>MIT</license>
+    <repository>https://github.com/stub42/pytz</repository>
+    <copyrights>
+      <copyright>Stuart Bishop</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>thirdparty/pyodide/six-1.17.0-py2.py3-none-any.whl</location>
+    <name>six</name>
+    <description>Python 2 and 3 compatibility utilities.</description>
+    <version>1.17.0</version>
+    <license>MIT</license>
+    <repository>https://github.com/benjaminp/six</repository>
+    <copyrights>
+      <copyright>Benjamin Peterson</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>thirdparty/pyodide/sympy-1.14.0-py3-none-any.whl</location>
+    <name>SymPy</name>
+    <description>Symbolic mathematics.</description>
+    <version>1.14.0</version>
+    <license>BSD</license>
+    <licenseversion>3-Clause</licenseversion>
+    <repository>https://github.com/sympy/sympy</repository>
+    <copyrights>
+      <copyright>SymPy Development Team</copyright>
+    </copyrights>
+  </library>
+  <library>
+    <location>thirdparty/rdkit</location>
+    <name>RDKit.js</name>
+    <description>RDKit MinimalLib compiled to WebAssembly, renders chemical structure formulas.</description>
+    <version>2026.9.1</version>
+    <license>BSD</license>
+    <licenseversion>3-Clause</licenseversion>
+    <repository>https://github.com/rdkit/rdkit</repository>
+    <copyrights>
+      <copyright>2006-2015 Rational Discovery LLC, Greg Landrum, and Julie Penzotti and others</copyright>
+    </copyrights>
+  </library>
+</libraries>

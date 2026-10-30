@@ -97,4 +97,12 @@ $capabilities = [
         ],
         'clonepermissionsfrom' => 'block/ai_chat:edit',
     ],
+    'block/ai_chat:executecode' => [
+        'captype' => 'read',
+        // CONTEXT_MODULE like block/ai_chat:view, because mod_aichat uses this capability as well.
+        'contextlevel' => CONTEXT_MODULE,
+        'archetypes' => [
+            'user' => CAP_ALLOW,
+        ],
+    ],
 ];

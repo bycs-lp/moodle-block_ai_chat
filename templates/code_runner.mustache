@@ -1,0 +1,43 @@
+{{!
+    This file is part of Moodle - http://moodle.org/
+
+    Moodle is free software: you can redistribute it and/or modify
+    it under the terms of the GNU General Public License as published by
+    the Free Software Foundation, either version 3 of the License, or
+    (at your option) any later version.
+
+    Moodle is distributed in the hope that it will be useful,
+    but WITHOUT ANY WARRANTY; without even the implied warranty of
+    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+    GNU General Public License for more details.
+
+    You should have received a copy of the GNU General Public License
+    along with Moodle.  If not, see <http://www.gnu.org/licenses/>.
+}}
+{{!
+    @template block_ai_chat/code_runner
+
+    Controls and output area to execute a Python code block of an AI answer in the browser.
+
+    Example context (json):
+    {
+        "codeid": "block_ai_chat-code-1"
+    }
+}}
+<div class="block_ai_chat-coderunner mb-3" data-block_ai_chat-element="coderunner">
+    <div class="d-flex flex-wrap align-items-center gap-2">
+        <button type="button" class="btn btn-primary btn-sm" data-block_ai_chat-action="runcode">
+            <i class="fa fa-play me-1" aria-hidden="true"></i>{{#str}} executecode, block_ai_chat {{/str}}
+        </button>
+        <button type="button" class="btn btn-outline-secondary btn-sm" data-block_ai_chat-action="togglecode"{{!
+            }} aria-expanded="false" aria-controls="{{codeid}}">
+            <i class="fa fa-code me-1" aria-hidden="true"></i><span data-block_ai_chat-element="togglecodelabel">{{#str}} showcode, block_ai_chat {{/str}}</span>
+        </button>
+        <button type="button" class="btn btn-outline-secondary btn-sm d-none" data-block_ai_chat-action="stopcode">
+            <i class="fa fa-stop me-1" aria-hidden="true"></i>{{#str}} executionstop, block_ai_chat {{/str}}
+        </button>
+        <span class="small text-muted" data-block_ai_chat-element="coderunnerstatus" role="status" aria-live="polite"></span>
+    </div>
+    <div data-block_ai_chat-element="coderunnersliders"></div>
+    <div class="block_ai_chat-coderunner-output" data-block_ai_chat-element="coderunneroutput"></div>
+</div>

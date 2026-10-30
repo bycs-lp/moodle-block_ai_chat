@@ -41,6 +41,12 @@ body:not(.block_ai_chat_replacehelp).hasstickyfooter #ai_chat_button {
   overflow-y: auto;
 }
 
+.block_ai_chat-coderunner-output pre {
+  max-height: 20rem;
+  overflow: auto;
+  white-space: pre-wrap;
+}
+
 .block_ai_chat_modal .modal-dialog {
   display: flex;
   align-items: end;

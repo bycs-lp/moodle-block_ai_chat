@@ -65,6 +65,37 @@ if ($hassiteconfig) {
                 PARAM_TEXT
             )
         );
+        $settings->add(
+            new admin_setting_heading(
+                'block_ai_chat/codeexecutionheading',
+                new lang_string('codeexecution', 'block_ai_chat'),
+                ''
+            )
+        );
+        $settings->add(
+            new admin_setting_configcheckbox(
+                'block_ai_chat/enablecodeexecution',
+                new lang_string('enablecodeexecution', 'block_ai_chat'),
+                new lang_string('enablecodeexecution_desc', 'block_ai_chat'),
+                0,
+            )
+        );
+        $settings->add(
+            new admin_setting_configtextarea(
+                'block_ai_chat/codeexecutionprompt',
+                new lang_string('codeexecutionprompt', 'block_ai_chat'),
+                new lang_string('codeexecutionprompt_desc', 'block_ai_chat'),
+                \block_ai_chat\manager::get_default_code_execution_prompt(),
+            )
+        );
+        $settings->add(
+            new admin_setting_configcheckbox(
+                'block_ai_chat/schoolcoordinatesystem',
+                new lang_string('schoolcoordinatesystem', 'block_ai_chat'),
+                new lang_string('schoolcoordinatesystem_desc', 'block_ai_chat'),
+                0,
+            )
+        );
 
         // Add text with link to management as setting.
         $settings->add(new admin_setting_description(

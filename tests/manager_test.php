@@ -520,4 +520,79 @@ final class manager_test extends \advanced_testcase {
         }
         $this->assertTrue($exceptionthrown, 'Exception should be thrown for unauthorized persona access');
     }
+
+    /**
+     * Tests the admin setting, the instance option and the capability controlling the code execution.
+     *
+     * @covers \block_ai_chat\manager::is_code_execution_enabled
+     * @covers \block_ai_chat\manager::is_code_execution_available
+     */
+    public function test_is_code_execution_enabled(): void {
+        global $DB;
+        $this->resetAfterTest();
+
+        $course = $this->getDataGenerator()->create_course();
+        $student = $this->getDataGenerator()->create_and_enrol($course, 'student');
+        $coursecontext = \context_course::instance($course->id);
+        $block = $this->getDataGenerator()->create_block('ai_chat', ['parentcontextid' => $coursecontext->id]);
+        $blockcontext = \context_block::instance($block->id);
+        $manager = new manager($blockcontext->id, 'block_ai_chat');
+        $this->setUser($student);
+
+        $this->assertFalse($manager->is_code_execution_enabled());
+
+        set_config('enablecodeexecution', 1, 'block_ai_chat');
+        $this->assertTrue($manager->is_code_execution_enabled());
+
+        $optionid = $DB->insert_record('block_ai_chat_options', [
+            'contextid' => $blockcontext->id,
+            'name' => 'codeexecution',
+            'value' => '0',
+        ]);
+        $this->assertFalse(manager::is_code_execution_available($blockcontext->id));
+        $this->assertFalse($manager->is_code_execution_enabled());
+        $DB->set_field('block_ai_chat_options', 'value', '1', ['id' => $optionid]);
+        $this->assertTrue(manager::is_code_execution_available($blockcontext->id));
+        $this->assertTrue($manager->is_code_execution_enabled());
+
+        $studentrole = $DB->get_record('role', ['shortname' => 'student'], '*', MUST_EXIST);
+        assign_capability('block/ai_chat:executecode', CAP_PROHIBIT, $studentrole->id, $blockcontext->id);
+        $this->assertFalse($manager->is_code_execution_enabled());
+    }
+
+    /**
+     * Tests the composition of the chat system prompt from persona and code execution prompt.
+     *
+     * @covers \block_ai_chat\manager::get_chat_system_prompt
+     */
+    public function test_get_chat_system_prompt(): void {
+        global $DB;
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $course = $this->getDataGenerator()->create_course();
+        $coursecontext = \context_course::instance($course->id);
+        $block = $this->getDataGenerator()->create_block('ai_chat', ['parentcontextid' => $coursecontext->id]);
+        $blockcontext = \context_block::instance($block->id);
+        $manager = new manager($blockcontext->id, 'block_ai_chat');
+
+        $this->assertNull($manager->get_chat_system_prompt());
+
+        set_config('enablecodeexecution', 1, 'block_ai_chat');
+        $this->assertSame(manager::get_default_code_execution_prompt(), $manager->get_chat_system_prompt());
+
+        set_config('codeexecutionprompt', 'Custom code prompt', 'block_ai_chat');
+        $this->assertSame('Custom code prompt', $manager->get_chat_system_prompt());
+
+        $persona = $this->getDataGenerator()->get_plugin_generator('block_ai_chat')->create_persona([
+            'userid' => get_admin()->id,
+            'prompt' => 'Persona prompt',
+            'type' => persona::TYPE_USER,
+        ]);
+        $DB->insert_record('block_ai_chat_personas_selected', ['contextid' => $blockcontext->id, 'personasid' => $persona->id]);
+        $this->assertSame("Persona prompt\n\nCustom code prompt", $manager->get_chat_system_prompt());
+
+        set_config('enablecodeexecution', 0, 'block_ai_chat');
+        $this->assertSame('Persona prompt', $manager->get_chat_system_prompt());
+    }
 }

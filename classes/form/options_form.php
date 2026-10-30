@@ -54,6 +54,12 @@ class options_form extends dynamic_form {
         $mform->addElement('text', 'historycontextmax', get_string('historycontextmax', 'block_ai_chat'));
         $mform->setType('historycontextmax', PARAM_INT);
         $mform->setDefault('historycontextmax', 5);
+
+        if (!empty(get_config('block_ai_chat', 'enablecodeexecution'))) {
+            $mform->addElement('advcheckbox', 'codeexecution', get_string('enablecodeexecution', 'block_ai_chat'));
+            $mform->addHelpButton('codeexecution', 'codeexecutioninstance', 'block_ai_chat');
+            $mform->setDefault('codeexecution', 1);
+        }
     }
 
     /**
@@ -125,12 +131,28 @@ class options_form extends dynamic_form {
             $DB->insert_record('block_ai_chat_options', $record);
         }
 
+        if (isset($formdata->codeexecution)) {
+            $value = empty($formdata->codeexecution) ? '0' : '1';
+            $existing = $DB->get_record('block_ai_chat_options', ['contextid' => $context->id, 'name' => 'codeexecution']);
+            if ($existing) {
+                $DB->set_field('block_ai_chat_options', 'value', $value, ['id' => $existing->id]);
+            } else {
+                $DB->insert_record('block_ai_chat_options', [
+                    'contextid' => $context->id,
+                    'name' => 'codeexecution',
+                    'value' => $value,
+                ]);
+            }
+        }
+        $manager = new \block_ai_chat\manager($context->id, $formdata->component);
+
         return [
             [
                 'name' => 'config',
                 'action' => 'update',
                 'fields' => [
                     'conversationContextLimit' => $formdata->historycontextmax,
+                    'codeExecutionEnabled' => $manager->is_code_execution_enabled(),
                 ],
             ],
         ];
@@ -150,6 +172,7 @@ class options_form extends dynamic_form {
         // Set defaults.
         $data = [
             'historycontextmax' => 5,
+            'codeexecution' => 1,
         ];
         foreach ($options as $option) {
             $data[$option->name] = $option->value;

@@ -414,14 +414,13 @@ class manager {
         }
         $options['conversationcontext'] = $this->retrieve_conversationcontext($options['itemid'], $USER->id, $conversationlimit);
         if ($mode === 'chat') {
-            // Persona only makes sense in chat mode.
-            $currentpersona = persona::get_current_persona($this->context->id);
-            if (!empty($currentpersona)) {
+            $systemprompt = $this->get_chat_system_prompt();
+            if ($systemprompt !== null) {
                 $options['conversationcontext'] = array_merge(
                     [
                         [
                             'sender' => 'system',
-                            'message' => $currentpersona->prompt,
+                            'message' => $systemprompt,
                         ],
                     ],
                     $options['conversationcontext']
@@ -608,6 +607,72 @@ class manager {
     }
 
     /**
+     * Returns the system prompt for chat mode, composed of the persona prompt and the code execution prompt.
+     *
+     * Persona and code execution only make sense in chat mode.
+     *
+     * @return string|null the system prompt or null if there is none
+     */
+    public function get_chat_system_prompt(): ?string {
+        $prompts = [];
+        $currentpersona = persona::get_current_persona($this->context->id);
+        if (!empty($currentpersona)) {
+            $prompts[] = $currentpersona->prompt;
+        }
+        if ($this->is_code_execution_enabled()) {
+            $prompts[] = get_config('block_ai_chat', 'codeexecutionprompt') ?: self::get_default_code_execution_prompt();
+        }
+        return empty($prompts) ? null : implode("\n\n", $prompts);
+    }
+
+    /**
+     * Whether the current user may execute AI generated Python code in this chat.
+     *
+     * @return bool true if code execution is enabled and allowed
+     */
+    public function is_code_execution_enabled(): bool {
+        return self::is_code_execution_available($this->context->id)
+            && has_capability('block/ai_chat:executecode', $this->context);
+    }
+
+    /**
+     * Whether code execution is enabled site-wide and not disabled in the options of the chat instance.
+     *
+     * @param int $contextid the context id of the chat instance
+     * @return bool true if code execution is available in this chat instance
+     */
+    public static function is_code_execution_available(int $contextid): bool {
+        global $DB;
+        if (empty(get_config('block_ai_chat', 'enablecodeexecution'))) {
+            return false;
+        }
+        $option = $DB->get_field('block_ai_chat_options', 'value', ['contextid' => $contextid, 'name' => 'codeexecution']);
+        return $option === false || !empty($option);
+    }
+
+    /**
+     * Returns the default instruction telling the AI about the Python environment in the browser.
+     *
+     * @return string the default code execution prompt
+     */
+    public static function get_default_code_execution_prompt(): string {
+        return <<<EOT
+        Python code in a fenced code block with the language identifier "python" can be executed by the user
+        directly in the browser (Pyodide, Python 3.14). Provide such code when a calculation, a function graph,
+        a diagram or a chemical structure formula helps to answer the question.
+        Rules for this code:
+        - Only the Python standard library, numpy, matplotlib, sympy and mpmath are available.
+        - There is no network access, no file access and no input().
+        - Print results with print(). Display plots with matplotlib.pyplot and plt.show().
+        - For interactive parameters use matplotlib.widgets.Slider with on_changed. Each slider is shown as an
+          HTML slider below the graph and the code is executed again with the new value.
+        - To display a chemical structure formula, call the predefined function show_molecule(smiles, legend='')
+          with a valid SMILES string. Do not import show_molecule and do not use rdkit.
+        - Every code block must be complete and self-contained.
+        EOT;
+    }
+
+    /**
      * Return the structure for the initial state of the block_ai_chat reactive UI.
      *
      * @return array the initial state to be returned via external function
@@ -670,6 +735,8 @@ class manager {
                 // apply a default.
                 'view' => null,
                 'modalVisible' => false,
+                // Teachers can toggle code execution in the chat options, so it must be updatable.
+                'codeExecutionEnabled' => $this->is_code_execution_enabled(),
             ],
             // Will be lazy-loaded by the chat component, so state updates will directly trigger the
             // adding of messages in the UI.
@@ -714,6 +781,7 @@ class manager {
                 'loadingState' => new external_value(PARAM_BOOL, 'Loading state'),
                 'view' => new external_value(PARAM_RAW, 'Current view', VALUE_OPTIONAL),
                 'modalVisible' => new external_value(PARAM_BOOL, 'Modal visible'),
+                'codeExecutionEnabled' => new external_value(PARAM_BOOL, 'If Python code blocks may be executed'),
             ]),
             'messages' => new external_multiple_structure(
                 new external_value(PARAM_RAW, 'JSON encoded message object (lazy-loaded)'),
