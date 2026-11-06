@@ -26,7 +26,6 @@ import {showErrorToast} from 'block_ai_chat/utils';
 import {MODES} from 'block_ai_chat/constants';
 import * as DomExtractor from 'block_ai_chat/dom_extractor';
 import {debounce} from 'core/utils';
-import {getSelectedSourceIds} from 'local_ai_content/source_selector';
 
 class Chat extends BaseContent {
     /**
@@ -151,15 +150,19 @@ class Chat extends BaseContent {
             return;
         }
         const additionalOptions = {};
-        let selectedsourceids;
-        try {
-            selectedsourceids = await getSelectedSourceIds(this.reactive.state.static.contextid);
-        } catch (exception) {
-            // Do not silently answer without the selected sources.
-            await displayException(exception);
-            return;
+        // The source selection (RAG) is provided by the optional plugin local_ai_content and only used in chat mode.
+        if (this.reactive.state.static.ragAvailable && this.reactive.state.config.mode !== MODES.AGENT) {
+            let selectedsourceids;
+            try {
+                const {getSelectedSourceIds} = await import('local_ai_content/source_selector');
+                selectedsourceids = await getSelectedSourceIds(this.reactive.state.static.contextid);
+            } catch (exception) {
+                // Do not silently answer without the selected sources.
+                await displayException(exception);
+                return;
+            }
+            additionalOptions.sourceids = selectedsourceids.join(',');
         }
-        additionalOptions.sourceids = selectedsourceids.join(',');
         if (this.reactive.state.config.mode === MODES.AGENT) {
             additionalOptions.agentoptions = {
                 formelements: DomExtractor.extractDomElements(),

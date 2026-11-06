@@ -1,8 +1,9 @@
 import {BaseComponent} from 'core/reactive';
 import {getString} from 'core/str';
-import {confirm as confirmModal, alert as alertModal} from 'core/notification';
+import {confirm as confirmModal, alert as alertModal, exception as displayException} from 'core/notification';
 import ModalForm from 'core_form/modalform';
 import ModalCancel from 'core/modal_cancel';
+import Templates from 'core/templates';
 import {MODES} from 'block_ai_chat/constants';
 import {isMformVisibleOnPage} from 'block_ai_chat/utils';
 
@@ -38,12 +39,14 @@ class HeaderActions extends BaseComponent {
             MODE_SWITCH: `[data-block_ai_chat-element='modeswitch']`,
             PERSONA_BANNER: `[data-block_ai_chat-element='personabanner']`,
             PERSONA_INFO_MODAL_MANAGE_PERSONA_BUTTON: `[data-block_ai_chat-element='personainfomodalpersonalistbutton']`,
+            SOURCE_SELECTOR: `[data-block_ai_chat-element='sourceselector']`,
         };
     }
 
     async stateReady(state) {
         await this._modeUpdated({element: state.config});
         this._refreshPersona({element: state.config});
+        this._renderSourceSelector();
 
         this.addEventListener(
             this.getElement(this.selectors.NEW_CONVERSATION_BUTTON),
@@ -221,6 +224,24 @@ class HeaderActions extends BaseComponent {
 
     _optionsSubmitted(event) {
         this.reactive.dispatch('processDynamicFormUpdates', event.detail);
+    }
+
+    /**
+     * Renders the source selector of the optional plugin local_ai_content, if it is installed.
+     */
+    async _renderSourceSelector() {
+        const sourceSelector = this.getElement(this.selectors.SOURCE_SELECTOR);
+        if (!sourceSelector || !this.reactive.state.static.ragAvailable) {
+            return;
+        }
+        try {
+            const {html, js} = await Templates.renderForPromise('local_ai_content/source_selector', {
+                contextid: this.reactive.state.static.contextid,
+            });
+            Templates.replaceNodeContents(sourceSelector, html, js);
+        } catch (exception) {
+            displayException(exception);
+        }
     }
 
     async _showPersonaInfoModal() {

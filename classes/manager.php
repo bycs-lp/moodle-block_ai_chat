@@ -477,12 +477,13 @@ class manager {
         $unavailablesources = [];
         if (!empty($logentry->requestoptions)) {
             $requestoptions = json_decode($logentry->requestoptions, true, flags: JSON_THROW_ON_ERROR);
-            // Only requests using the selected sources (RAG) store a rag result.
-            $ragsources = $requestoptions['ragresult']['sources'] ?? [];
+            // Only requests using the selected sources (RAG) store a rag result, added by local_ai_content.
+            $ragresult = $requestoptions['contextdata']['ragresult'] ?? [];
+            $ragsources = $ragresult['sources'] ?? [];
             $unavailablesources = array_map(static fn(array $source): array => [
                 'name' => $source['name'],
                 'reason' => get_string('ragsourceunavailable_' . $source['reason'], 'block_ai_chat'),
-            ], $requestoptions['ragresult']['unavailableSources'] ?? []);
+            ], $ragresult['unavailableSources'] ?? []);
         }
 
         $aimessage = [
@@ -664,6 +665,8 @@ class manager {
                 // Whether the chat purpose itself is available. Used by the frontend to decide whether to start
                 // directly in agent mode (if chat is not available but the agent mode is usable on this page).
                 'chatAvailable' => $chatavailable,
+                // The source selection (RAG) is provided by the optional plugin local_ai_content.
+                'ragAvailable' => \core_component::get_component_directory('local_ai_content') !== null,
                 'agentModeUnavailablePagetypes' => $agentunavailablepagetypes,
                 'canEditSystemPersonas' => has_capability('block/ai_chat:managepersonatemplates', $this->context),
                 'isAdmin' => is_siteadmin(),
@@ -712,6 +715,7 @@ class manager {
                 'showOptions' => new external_value(PARAM_BOOL, 'Configuring options allowed'),
                 'showAgentMode' => new external_value(PARAM_BOOL, 'Agent mode allowed'),
                 'chatAvailable' => new external_value(PARAM_BOOL, 'Whether the chat purpose is available'),
+                'ragAvailable' => new external_value(PARAM_BOOL, 'Whether the source selection (RAG) is available'),
                 'agentModeUnavailablePagetypes' => new external_multiple_structure(
                     new external_value(
                         PARAM_RAW,

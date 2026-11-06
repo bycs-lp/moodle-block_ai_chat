@@ -35,5 +35,6 @@
          }} title="{{#str}}personabannerinfo, block_ai_chat{{/str}}">
         {{! This is populated dynamically with JS. }}
     </div>
-    {{> local_ai_content/source_selector }}
+    {{! The source selector of the optional plugin local_ai_content is rendered into this element with JS. }}
+    <div data-block_ai_chat-element="sourceselector"></div>
 </div>
