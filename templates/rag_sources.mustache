@@ -17,7 +17,8 @@
 {{!
     @template block_ai_chat/rag_sources
 
-    RAG source reference list rendered below an assistant message.
+    RAG source reference list rendered below an assistant message, followed by a notice about the selected sources which
+    could not be used.
 
     Context variables:
     * hasSources bool
@@ -25,6 +26,24 @@
     * collapseId string
     * initiallyVisibleSources array
     * collapsedSources array
+    * hasUnavailableSources bool
+    * unavailableSources array of {name, reason}
+
+    Example context (json):
+    {
+        "hasSources": true,
+        "hasMore": false,
+        "collapseId": "12-2-rag-sources-collapse",
+        "initiallyVisibleSources": [
+            {"sourceId": 4, "title": "Photosynthesis", "url": "https://example.com/mod/page/view.php?id=4", "isLinked": true,
+             "locatorDisplay": ""}
+        ],
+        "collapsedSources": [],
+        "hasUnavailableSources": true,
+        "unavailableSources": [
+            {"name": "Cell biology", "reason": "not prepared for your AI model"}
+        ]
+    }
 }}
 {{#hasSources}}
     <div class="mt-2 small">
@@ -48,3 +67,13 @@
         {{/hasMore}}
     </div>
 {{/hasSources}}
+{{#hasUnavailableSources}}
+    <div class="mt-2 small text-muted" data-block_ai_chat-element="ragunavailablesources">
+        <div class="fw-bold">{{#str}} ragsourcesunavailablelabel, block_ai_chat {{/str}}</div>
+        <ul class="mb-0 pl-3">
+            {{#unavailableSources}}
+                <li>{{name}}: {{reason}}</li>
+            {{/unavailableSources}}
+        </ul>
+    </div>
+{{/hasUnavailableSources}}

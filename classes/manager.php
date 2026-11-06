@@ -474,10 +474,15 @@ class manager {
         $connectorfactory = \core\di::get(\local_ai_manager\local\connector_factory::class);
         $purpose = $connectorfactory->get_purpose_by_purpose_string($logentry->purpose);
         $ragsources = [];
+        $unavailablesources = [];
         if (!empty($logentry->requestoptions)) {
             $requestoptions = json_decode($logentry->requestoptions, true, flags: JSON_THROW_ON_ERROR);
             // Only requests using the selected sources (RAG) store a rag result.
             $ragsources = $requestoptions['ragresult']['sources'] ?? [];
+            $unavailablesources = array_map(static fn(array $source): array => [
+                'name' => $source['name'],
+                'reason' => get_string('ragsourceunavailable_' . $source['reason'], 'block_ai_chat'),
+            ], $requestoptions['ragresult']['unavailableSources'] ?? []);
         }
 
         $aimessage = [
@@ -488,9 +493,10 @@ class manager {
             'messageMode' => $logentry->purpose === 'agent' ? 'agent' : 'chat',
             'rendered' => false,
         ];
-        if (!empty($ragsources)) {
+        if (!empty($ragsources) || !empty($unavailablesources)) {
             $aimessage['ragResult'] = [
                 'sources' => $ragsources,
+                'unavailableSources' => $unavailablesources,
             ];
         }
 

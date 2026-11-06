@@ -447,7 +447,7 @@ class Chat extends BaseContent {
      * @returns {?Object} Mustache context or null if the answer is not based on selected sources
      */
     _getRagSourcesTemplateContext(message) {
-        // Only answers based on the selected sources carry a rag result, which then always contains sources.
+        // Only answers of requests with selected sources carry a rag result.
         if (!message.ragResult) {
             return null;
         }
@@ -458,13 +458,16 @@ class Chat extends BaseContent {
             isLinked: source.url !== '',
             itemId: `${message.id}-rag-source-${index}`,
         }));
+        const unavailableSources = message.ragResult.unavailableSources;
 
         return {
-            hasSources: true,
+            hasSources: sources.length > 0,
             hasMore: sources.length > 2,
             collapseId: `${message.id}-rag-sources-collapse`,
             initiallyVisibleSources: sources.slice(0, 2),
             collapsedSources: sources.slice(2),
+            hasUnavailableSources: unavailableSources.length > 0,
+            unavailableSources,
         };
     }
 }
