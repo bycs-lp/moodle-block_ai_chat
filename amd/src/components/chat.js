@@ -102,8 +102,8 @@ class Chat extends BaseContent {
             templateData = {...templateData, ...agentResponse};
         } else {
             templateData.content = element.content;
-            templateData.ragSources = this._getRagSourcesTemplateContext(element);
         }
+        templateData.ragSources = this._getRagSourcesTemplateContext(element);
         const newcomponent = await this.renderComponent(placeholder, 'block_ai_chat/components/message', templateData);
         const newelement = newcomponent.getElement();
         node.replaceChild(newelement, placeholder);
@@ -150,8 +150,8 @@ class Chat extends BaseContent {
             return;
         }
         const additionalOptions = {};
-        // The source selection (RAG) is provided by the optional plugin local_ai_content and only used in chat mode.
-        if (this.reactive.state.static.ragAvailable && this.reactive.state.config.mode !== MODES.AGENT) {
+        // The source selection (RAG) is provided by the optional plugin local_ai_content.
+        if (this.reactive.state.static.ragAvailable) {
             let selectedsourceids;
             try {
                 const {getSelectedSourceIds} = await import('local_ai_content/source_selector');
