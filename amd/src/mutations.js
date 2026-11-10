@@ -59,7 +59,6 @@ export default class {
                 mode: stateManager.state.config.mode,
                 prompt: prompt,
                 options: requestOptions,
-                sourceids: additionalOptions.sourceids,
             }
         );
         if (result === null) {

@@ -49,12 +49,6 @@ class request_ai extends external_api {
                     VALUE_DEFAULT,
                     '{}'
                 ),
-                'sourceids' => new external_value(
-                    PARAM_SEQUENCE,
-                    'Comma-separated list of source IDs',
-                    VALUE_DEFAULT,
-                    ''
-                ),
             ]
         );
     }
@@ -67,7 +61,6 @@ class request_ai extends external_api {
      * @param string $mode The mode to be used (can be "chat" or "agent")
      * @param string $prompt The prompt to send to the AI
      * @param string $options Additional options for the AI request as stringified JSON
-     * @param string $sourceids Comma-separated list of source IDs
      * @return array response array including status code and content array containing reactive state updates
      */
     public static function execute(
@@ -75,8 +68,7 @@ class request_ai extends external_api {
         string $component,
         string $mode,
         string $prompt,
-        string $options,
-        string $sourceids
+        string $options
     ): array {
         [
             'contextid' => $contextid,
@@ -84,14 +76,12 @@ class request_ai extends external_api {
             'mode' => $mode,
             'prompt' => $prompt,
             'options' => $options,
-            'sourceids' => $sourceids,
         ] = external_api::validate_parameters(self::execute_parameters(), [
             'contextid' => $contextid,
             'component' => $component,
             'mode' => $mode,
             'prompt' => $prompt,
             'options' => $options,
-            'sourceids' => $sourceids,
         ]);
 
         $context = \context_helper::instance_by_id($contextid);
@@ -100,9 +90,6 @@ class request_ai extends external_api {
         $options = json_decode($options, true);
         if (!is_array($options)) {
             $options = [];
-        }
-        if ($sourceids !== '') {
-            $options['sourceids'] = $sourceids;
         }
 
         // We do not need capability for local_ai_manager, because it is checked in the ai_manager directly.
