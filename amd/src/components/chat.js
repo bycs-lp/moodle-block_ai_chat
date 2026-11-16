@@ -381,6 +381,9 @@ class Chat extends BaseContent {
         if (aiConfig.availability.available === 'disabled') {
             return aiConfig.availability.errormessage || await getString('aichatnotavailable', 'block_ai_chat');
         }
+        if (aiConfig.purposes[0].available === 'hidden') {
+            return aiConfig.purposes[0].errormessage || await getString('aichatnotavailable', 'block_ai_chat');
+        }
         if (aiConfig.purposes[0].available === 'disabled') {
             return aiConfig.purposes[0].errormessage || await getString('aichatnotavailable', 'block_ai_chat');
         }

@@ -472,7 +472,7 @@ class manager {
      */
     public function convert_log_entry_to_messages(stdClass $logentry): array {
         $connectorfactory = \core\di::get(\local_ai_manager\local\connector_factory::class);
-        $purpose = $connectorfactory->get_purpose_by_purpose_string($logentry->purpose);
+        $purpose = $connectorfactory->get_purpose_by_purpose_string($logentry->purpose, true);
         return [
             [
                 'name' => 'messages',
