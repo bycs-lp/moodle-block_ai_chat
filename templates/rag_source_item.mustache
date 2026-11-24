@@ -25,6 +25,7 @@
     * url string
     * isLinked bool
     * locatorDisplay string
+    * complete bool Whether the complete content of the source has been used instead of excerpts
 }}
 <li data-sourceid="{{sourceId}}">
     {{#isLinked}}
@@ -34,4 +35,5 @@
         {{title}}
     {{/isLinked}}
     {{#locatorDisplay}} {{locatorDisplay}}{{/locatorDisplay}}
+    {{#complete}} ({{#str}} ragsourcecomplete, block_ai_chat {{/str}}){{/complete}}
 </li>
