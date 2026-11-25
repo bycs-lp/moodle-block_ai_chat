@@ -144,7 +144,9 @@ final class ai_chat_test extends \advanced_testcase {
             ]),
         );
 
-        // Prepare renderer.
+        // Prepare renderer. Use a system context so the floating instance is anchored system-wide
+        // (outside any course), which is what this test asserts below.
+        $PAGE->set_context(\context_system::instance());
         $PAGE->blocks->add_region('side-pre');
         $renderer = $PAGE->get_renderer('core', null, RENDERER_TARGET_GENERAL);
 
@@ -185,6 +187,57 @@ final class ai_chat_test extends \advanced_testcase {
         // Assert there is no additional block instance created.
         $aiblockinstances = $DB->get_records('block_instances', ['blockname' => 'ai_chat']);
         $this->assertCount(1, $aiblockinstances);
+    }
+
+    /**
+     * When the user is browsing inside a course, the floating button instance must be anchored to the
+     * course context (not the system context), so capability checks and web service calls resolve
+     * against a context where course-assigned roles apply.
+     *
+     * @return void
+     *
+     * @covers \block_ai_chat\local\hook_callbacks::handle_before_footer_html_generation
+     */
+    public function test_before_footer_html_generation_hook_course_context(): void {
+        global $PAGE, $CFG, $DB;
+
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        $course = $this->getDataGenerator()->create_course();
+        $coursecontext = \context_course::instance($course->id);
+
+        // Replace the version of the manager in the DI container with a phpunit one.
+        \core\di::set(
+            \core\hook\manager::class,
+            \core\hook\manager::phpunit_get_instance([
+                'block_ai_chat' => $CFG->dirroot . '/blocks/ai_chat/db/hooks.php',
+            ]),
+        );
+
+        // Simulate browsing a course page that uses a layout without block regions (e.g.
+        // course/editsection.php): a course context but no block regions on the page.
+        $PAGE->set_context($coursecontext);
+        $PAGE->set_course($course);
+        $renderer = $PAGE->get_renderer('core', null, RENDERER_TARGET_GENERAL);
+
+        set_config('showonpagetypes', '*', 'block_ai_chat');
+        $configmanager = \core\di::get(\local_ai_manager\local\config_manager::class);
+        $configmanager->set_config('tenantenabled', true);
+
+        $hook = new before_footer_html_generation($renderer);
+        ob_start();
+        di::get(\core\hook\manager::class)->dispatch($hook);
+        $output = ob_get_clean();
+
+        // The floating button is printed and the instance is anchored to the course context.
+        $this->assertStringContainsString('id="ai_chat_button"', $output);
+        $aiblockinstances = $DB->get_records('block_instances', ['blockname' => 'ai_chat']);
+        $this->assertCount(1, $aiblockinstances);
+        $aiblockinstance = array_shift($aiblockinstances);
+        $this->assertEquals($coursecontext->id, $aiblockinstance->parentcontextid);
+        $this->assertEquals(0, $aiblockinstance->showinsubcontexts);
+        $this->assertEquals('', $aiblockinstance->pagetypepattern);
     }
 
     /**

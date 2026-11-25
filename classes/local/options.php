@@ -16,7 +16,6 @@
 
 namespace block_ai_chat\local;
 
-
 /**
  * Class helper
  *

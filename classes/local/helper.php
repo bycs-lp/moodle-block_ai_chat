@@ -35,16 +35,22 @@ class helper {
     public static function has_block_in_course_context(int $courseid): object|bool {
         global $DB;
 
+        // Only match the block instance created through the course "Add AI chat" setting, which uses
+        // a pagetypepattern of '*'. This must NOT match the floating-button instance (pagetypepattern
+        // '') that block_ai_chat anchors to the course context for layouts without block regions,
+        // otherwise saving the course settings could delete that floating instance or skip creating
+        // the real course block. See hook_callbacks::handle_before_footer_html_generation().
         $sql = "SELECT bi.*
                   FROM {block_instances} bi
                   JOIN {context} ctx ON bi.parentcontextid = ctx.id
                  WHERE bi.blockname = :blockname AND ctx.contextlevel = :contextlevel
-                   AND ctx.instanceid = :courseid";
+                   AND ctx.instanceid = :courseid AND bi.pagetypepattern = :pagetypepattern";
 
         $params = [
             'blockname' => 'ai_chat',
             'contextlevel' => CONTEXT_COURSE,
             'courseid' => $courseid,
+            'pagetypepattern' => '*',
         ];
 
         return $DB->get_record_sql($sql, $params);

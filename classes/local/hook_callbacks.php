@@ -124,37 +124,73 @@ class hook_callbacks {
         if (!helper::show_global_block($PAGE)) {
             return;
         }
-        $systemcontext = context_system::instance();
+
+        // Anchor the floating button to the course context the user is currently browsing, so that
+        // role assignments (for example editing teachers) apply and both the capability check in
+        // block_ai_chat::get_content() and the subsequent web service calls resolve against a context
+        // where the user actually has rights. This makes the button work on course pages that use a
+        // layout without block regions, such as course/editsection.php. Outside a course (dashboard,
+        // admin pages, ...) we fall back to the system context, keeping the previous behaviour.
+        $coursecontext = $PAGE->context->get_course_context(false);
+        $parentcontext = $coursecontext ?: context_system::instance();
+
         $blockinstancerecord = $DB->get_record(
             'block_instances',
-            ['blockname' => 'ai_chat', 'parentcontextid' => $systemcontext->id, 'pagetypepattern' => '']
+            [
+                'blockname' => 'ai_chat',
+                'parentcontextid' => $parentcontext->id,
+                'pagetypepattern' => '',
+                'showinsubcontexts' => 0,
+            ]
         );
 
         if (!$blockinstancerecord) {
-            $defaultregion = $PAGE->blocks->get_default_region();
-            // Add a special system-wide block instance.
-            $blockinstancerecord = new stdClass();
-            $blockinstancerecord->blockname = 'ai_chat';
-            $blockinstancerecord->parentcontextid = $systemcontext->id;
-            $blockinstancerecord->showinsubcontexts = false;
-            $blockinstancerecord->requiredbytheme = false;
-            $blockinstancerecord->pagetypepattern = '';
-            $blockinstancerecord->subpagepattern = null;
-            $blockinstancerecord->defaultregion = $defaultregion;
-            $blockinstancerecord->defaultweight = 0;
-            $blockinstancerecord->configdata = '';
-            $blockinstancerecord->timecreated = time();
-            $blockinstancerecord->timemodified = $blockinstancerecord->timecreated;
-            $blockinstancerecord->id = $DB->insert_record('block_instances', $blockinstancerecord);
+            $blockinstancerecord = self::create_floating_instance($PAGE, $parentcontext);
+        }
 
-            // Ensure the block context is created.
-            context_block::instance($blockinstancerecord->id);
-        }
-        // If the new instance was created, allow it to do additional setup.
+        // The floating-button record is fully configured on creation (empty pagetypepattern so it is
+        // never rendered as a regular block), so we deliberately do NOT call instance_create() here:
+        // for a course-parented instance it would wrongly flip the pagetypepattern to '*'.
         if ($block = block_instance('ai_chat', $blockinstancerecord)) {
-            $block->instance_create();
+            echo $block->get_content()->text;
         }
-        echo $block->get_content()->text;
+    }
+
+    /**
+     * Create the hidden block instance used to render the floating chat button.
+     *
+     * The instance uses an empty pagetype pattern so it is never rendered as a regular block in a
+     * region; it exists only so that {@see self::handle_before_footer_html_generation()} can render
+     * the floating button through the block's get_content().
+     *
+     * @param \moodle_page $page the current page, used to determine a sensible default block region
+     * @param \context $parentcontext the context the floating button instance is anchored to
+     * @return stdClass the created block_instances record
+     */
+    private static function create_floating_instance(\moodle_page $page, \context $parentcontext): stdClass {
+        global $DB;
+
+        $blockinstancerecord = new stdClass();
+        $blockinstancerecord->blockname = 'ai_chat';
+        $blockinstancerecord->parentcontextid = $parentcontext->id;
+        $blockinstancerecord->showinsubcontexts = false;
+        $blockinstancerecord->requiredbytheme = false;
+        $blockinstancerecord->pagetypepattern = '';
+        $blockinstancerecord->subpagepattern = null;
+        // Function get_default_region() returns null on layouts without block regions (e.g. the 'base' layout
+        // used by course/editsection.php); fall back to 'side-pre' because defaultregion is NOT NULL.
+        // The value is irrelevant anyway, as this instance is never rendered inside a theme region.
+        $blockinstancerecord->defaultregion = $page->blocks->get_default_region() ?: 'side-pre';
+        $blockinstancerecord->defaultweight = 0;
+        $blockinstancerecord->configdata = '';
+        $blockinstancerecord->timecreated = time();
+        $blockinstancerecord->timemodified = $blockinstancerecord->timecreated;
+        $blockinstancerecord->id = $DB->insert_record('block_instances', $blockinstancerecord);
+
+        // Ensure the block context is created.
+        context_block::instance($blockinstancerecord->id);
+
+        return $blockinstancerecord;
     }
 
     /**
