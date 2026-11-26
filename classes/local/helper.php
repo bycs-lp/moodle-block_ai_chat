@@ -91,4 +91,29 @@ class helper {
         }
         return $pagetypecheck;
     }
+
+    /**
+     * Returns the ai_chat block instance that is configured to appear on a page without block regions.
+     *
+     * Moodle does not load any blocks on pages without block regions. To not reimplement the core block matching rules
+     * (context, showinsubcontexts, page type, subpage, visibility), a separate block manager loads the blocks into a
+     * probe region: the block manager moves blocks from regions it does not know into its default region, so the probe
+     * region collects all blocks configured to appear on this page.
+     *
+     * @param moodle_page $page the page without block regions
+     * @return \block_ai_chat|null the matching block instance, null if no ai_chat block is configured for this page
+     */
+    public static function get_block_for_page_without_regions(moodle_page $page): ?\block_ai_chat {
+        $probe = new \block_manager($page);
+        // Not a custom region, so nothing is stored in the session.
+        $probe->add_region('block_ai_chat_probe', false);
+        // Never include hidden blocks: if the course block is hidden, the system wide instance should be used.
+        $probe->load_blocks(false);
+        foreach ($probe->get_blocks_for_region('block_ai_chat_probe') as $block) {
+            if ($block instanceof \block_ai_chat) {
+                return $block;
+            }
+        }
+        return null;
+    }
 }

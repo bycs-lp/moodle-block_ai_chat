@@ -121,6 +121,20 @@ class hook_callbacks {
      */
     public static function handle_before_footer_html_generation(\core\hook\output\before_footer_html_generation $hook): void {
         global $DB, $PAGE;
+
+        // Workaround for pages using the layout 'base' without block regions (e.g. course/editsection.php in theme_boost):
+        // Moodle does not load any blocks there, so a course block configured for this page is not present and the
+        // system wide instance would be used instead, which is checked against the wrong (system) context. So we render
+        // the matching course block here like on any other course page. Other layouts without block regions (popup,
+        // print, frametop, ...) are intentionally excluded, because a chat makes no sense there.
+        if (isloggedin() && $PAGE->pagelayout === 'base' && empty($PAGE->blocks->get_regions())) {
+            $block = helper::get_block_for_page_without_regions($PAGE);
+            if ($block) {
+                echo $block->get_content()->text;
+                return;
+            }
+        }
+
         if (!helper::show_global_block($PAGE)) {
             return;
         }
@@ -131,7 +145,9 @@ class hook_callbacks {
         );
 
         if (!$blockinstancerecord) {
-            $defaultregion = $PAGE->blocks->get_default_region();
+            // Pages without block regions have no default region, but the column is NOT NULL. The value does not matter,
+            // because this instance is never displayed in a block region (empty pagetypepattern).
+            $defaultregion = $PAGE->blocks->get_default_region() ?: 'side-pre';
             // Add a special system-wide block instance.
             $blockinstancerecord = new stdClass();
             $blockinstancerecord->blockname = 'ai_chat';
