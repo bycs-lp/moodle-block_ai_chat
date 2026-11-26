@@ -45,6 +45,8 @@ require_once($CFG->dirroot . '/course/edit_form.php');
  * @author     Andreas Wagner
  * @license    http://www.gnu.org/copyleft/gpl.html GNU GPL v3 or later
  */
+#[\PHPUnit\Framework\Attributes\CoversClass(\block_ai_chat\local\hook_callbacks::class)]
+#[\PHPUnit\Framework\Attributes\CoversClass(\block_ai_chat\local\helper::class)]
 final class ai_chat_test extends \advanced_testcase {
     /**
      * Create a page with regions.
@@ -185,6 +187,104 @@ final class ai_chat_test extends \advanced_testcase {
         // Assert there is no additional block instance created.
         $aiblockinstances = $DB->get_records('block_instances', ['blockname' => 'ai_chat']);
         $this->assertCount(1, $aiblockinstances);
+    }
+
+    /**
+     * Data provider for test_before_footer_html_generation_hook_without_regions.
+     *
+     * @return array Datasets with the pagetype pattern of the course block (null for no course block), whether the
+     *  course block is hidden on the page and whether the course block is expected to be rendered.
+     */
+    public static function before_footer_html_generation_hook_without_regions_provider(): array {
+        return [
+            'course_block_matching' => ['pagetypepattern' => '*', 'hidden' => false, 'expectcourseblock' => true],
+            'course_block_other_pagetype' => [
+                'pagetypepattern' => 'course-view-*',
+                'hidden' => false,
+                'expectcourseblock' => false,
+            ],
+            'course_block_hidden' => ['pagetypepattern' => '*', 'hidden' => true, 'expectcourseblock' => false],
+            'no_course_block' => ['pagetypepattern' => null, 'hidden' => false, 'expectcourseblock' => false],
+        ];
+    }
+
+    /**
+     * Test hook before_footer on a page without block regions (course/editsection.php in theme_boost).
+     *
+     * @param string|null $pagetypepattern the pagetype pattern of the course block, null for no course block
+     * @param bool $hidden whether the course block is hidden on the page
+     * @param bool $expectcourseblock whether the course block is expected to be rendered instead of the system instance
+     */
+    #[\PHPUnit\Framework\Attributes\DataProvider('before_footer_html_generation_hook_without_regions_provider')]
+    public function test_before_footer_html_generation_hook_without_regions(
+        ?string $pagetypepattern,
+        bool $hidden,
+        bool $expectcourseblock
+    ): void {
+        global $PAGE, $CFG, $DB;
+
+        $this->resetAfterTest();
+        $this->setAdminUser();
+
+        \core\di::set(
+            \core\hook\manager::class,
+            \core\hook\manager::phpunit_get_instance([
+                'block_ai_chat' => $CFG->dirroot . '/blocks/ai_chat/db/hooks.php',
+            ]),
+        );
+        set_config('showonpagetypes', '*', 'block_ai_chat');
+        \core\di::get(\local_ai_manager\local\config_manager::class)->set_config('tenantenabled', true);
+
+        $course = $this->getDataGenerator()->create_course();
+        $coursecontext = \context_course::instance($course->id);
+        if ($pagetypepattern !== null) {
+            // Course block as created by hook_callbacks::handle_after_form_submission().
+            $courseblockid = $DB->insert_record('block_instances', [
+                'blockname' => 'ai_chat',
+                'parentcontextid' => $coursecontext->id,
+                'showinsubcontexts' => 1,
+                'pagetypepattern' => $pagetypepattern,
+                'subpagepattern' => null,
+                'defaultregion' => 'side-pre',
+                'defaultweight' => 1,
+                'configdata' => '',
+                'timecreated' => \core\di::get(\core\clock::class)->time(),
+                'timemodified' => \core\di::get(\core\clock::class)->time(),
+            ]);
+            \context_block::instance($courseblockid);
+            if ($hidden) {
+                $DB->insert_record('block_positions', [
+                    'blockinstanceid' => $courseblockid,
+                    'contextid' => $coursecontext->id,
+                    'pagetype' => 'course-editsection',
+                    'subpage' => '',
+                    'visible' => 0,
+                    'region' => 'side-pre',
+                    'weight' => 1,
+                ]);
+            }
+        }
+
+        // Layout 'base' (default, not set by course/editsection.php) has no block regions in theme_boost.
+        $PAGE->set_url(new \moodle_url('/course/editsection.php'));
+        $PAGE->set_course($course);
+        $PAGE->set_pagetype('course-editsection');
+        $PAGE->force_theme('boost');
+        $renderer = $PAGE->get_renderer('core', null, RENDERER_TARGET_GENERAL);
+        $this->assertSame('base', $PAGE->pagelayout);
+        $this->assertEmpty($PAGE->blocks->get_regions());
+
+        ob_start();
+        di::get(\core\hook\manager::class)->dispatch(new before_footer_html_generation($renderer));
+        $output = ob_get_clean();
+
+        $this->assertStringContainsString('id="ai_chat_button"', $output);
+        // The system wide floating button instance is only created and used if the course block is not rendered.
+        $systeminstances = $DB->count_records(
+            'block_instances',
+            ['blockname' => 'ai_chat', 'parentcontextid' => \context_system::instance()->id]
+        );
+        $this->assertSame($expectcourseblock ? 0 : 1, $systeminstances);
     }
 
     /**
